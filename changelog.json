@@ -8,11 +8,12 @@
         "Camera, microphone and location in use show as their own icon; tap to see which app"
       ],
       "better": [
-        "With two things on the island, the other one steps aside in place when you open one",
+        "With two things on the island, the other one steps aside in place when you open one, and a tap on the small drop opens it",
         "An opened card closes on its own when a screenshot or another app comes up",
-        "The heart shows whether a song is liked, in Spotify and PixelPlayer too",
+        "The heart follows your tap, and the player's own state where it gives one",
         "Slider icons and names never sit under the handle",
-        "The torch strength only shows on phones that can dim it"
+        "The chosen sound mode becomes a pill of its own",
+        "The torch strength goes away when the flash turns out not to take it"
       ],
       "fixed": [
         "Closing a card after switching the torch off no longer jumps"
@@ -24,11 +25,12 @@
         "Camera, microfoon en locatie in gebruik krijgen een eigen icoon; tik om te zien welke app"
       ],
       "better": [
-        "Met twee dingen op het eiland stapt de ander op zijn plek opzij als je er een opent",
+        "Met twee dingen op het eiland stapt de ander op zijn plek opzij als je er een opent, en een tik op de kleine druppel opent hem",
         "Een open kaart klapt vanzelf in als er een screenshot of andere app komt",
-        "Het hartje laat zien of een nummer geliked is, ook in Spotify en PixelPlayer",
+        "Het hartje volgt je tik, en de stand van de speler als die hem doorgeeft",
         "Iconen en namen in sliders zitten nooit meer onder het handvat",
-        "De sterkte van de zaklamp staat er alleen op telefoons die kunnen dimmen"
+        "De gekozen geluidsstand wordt een losse pil",
+        "De sterkte van de zaklamp verdwijnt als de flitser hem niet blijkt te pakken"
       ],
       "fixed": [
         "Een kaart sluiten na de zaklamp uit verspringt niet meer"

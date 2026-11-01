@@ -95,6 +95,15 @@ internal fun likedOfIconName(name: String?): Boolean? {
     }
 }
 
+/**
+ * Whether the heart is filled. Right after a press, and for as long as the player keeps offering the very same action
+ * it offered when pressed (so its words and icon carry no state), the press says it. Otherwise the player does.
+ */
+internal fun heartOf(stated: Boolean?, pressed: Boolean?, pressedJustNow: Boolean, actionUnchanged: Boolean): Boolean = when {
+    pressed != null && (pressedJustNow || actionUnchanged) -> pressed
+    else -> stated ?: pressed ?: false
+}
+
 /** The extra in which Media3 players say which of its standard icons a custom action shows. */
 internal const val MEDIA3_ICON_KEY = "androidx.media3.session.EXTRAS_KEY_COMMAND_BUTTON_ICON_COMPAT"
 

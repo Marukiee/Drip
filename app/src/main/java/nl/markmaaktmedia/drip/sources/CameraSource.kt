@@ -18,11 +18,11 @@ internal class CameraPart(env: SourceEnv) : Part(env) {
     private val busy = HashSet<String>()
 
     /**
-     * Whether the torch really dims. Some phones report strength levels but their flash ignores them, so the first time
-     * the strength is set it is read back; a phone that does not take it never shows the slider again. Null: not tried.
+     * False once the flash turned out not to take a strength: setting it failed, or reading it back gave another level.
+     * It is never set true, since a phone that reports the requested level proves nothing. Then the slider stays away.
      */
     private val device = context.getSharedPreferences("drip_device", android.content.Context.MODE_PRIVATE)
-    private var dims: Boolean? = if (device.contains(KEY_DIMS)) device.getBoolean(KEY_DIMS, false) else null
+    private var dims: Boolean? = if (device.getBoolean(KEY_NO_DIM, false)) false else null
 
     private val torchCallback = object : CameraManager.TorchCallback() {
         override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
@@ -46,7 +46,6 @@ internal class CameraPart(env: SourceEnv) : Part(env) {
         override fun onTorchStrengthLevelChanged(cameraId: String, newStrengthLevel: Int) {
             if (cameraId != torchId) return
             strength = newStrengthLevel
-            if (newStrengthLevel == asked) remember(true)
             publishTorch()
         }
     }
@@ -79,17 +78,14 @@ internal class CameraPart(env: SourceEnv) : Part(env) {
             asked = wanted
             val done = safely("torch strength") { cameras?.turnOnTorchWithStrengthLevel(id, wanted) }
             if (done == null) {
-                remember(false)
-                publishTorch()
+                cannotDim()
                 return
             }
-            if (dims != null) return
-            // Read back a moment later: a flash that ignores the level still reports the old one.
+            // Read back a moment later: a flash that ignores the level may still report the old one.
             env.handler.postDelayed({
-                if (dims != null || asked != wanted) return@postDelayed
+                if (dims == false || asked != wanted) return@postDelayed
                 val got = safely("torch strength") { cameras?.getTorchStrengthLevel(id) }
-                remember(got == wanted)
-                publishTorch()
+                if (got != wanted) cannotDim()
             }, 500)
         }
     }
@@ -146,10 +142,10 @@ internal class CameraPart(env: SourceEnv) : Part(env) {
 
     private var asked = 0
 
-    private fun remember(value: Boolean) {
-        if (dims == value) return
-        dims = value
-        device.edit().putBoolean(KEY_DIMS, value).apply()
+    private fun cannotDim() {
+        dims = false
+        device.edit().putBoolean(KEY_NO_DIM, true).apply()
+        publishTorch()
     }
 
     private fun publishTorch() {
@@ -177,4 +173,4 @@ internal class CameraPart(env: SourceEnv) : Part(env) {
     }
 }
 
-private const val KEY_DIMS = "torch_dims"
+private const val KEY_NO_DIM = "torch_cannot_dim"

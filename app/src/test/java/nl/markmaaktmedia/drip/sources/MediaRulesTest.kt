@@ -47,6 +47,18 @@ class MediaRulesTest {
         assertNull(likedStatedBy("TOGGLE_FAVORITE", "Favorite"))
     }
 
+    @Test fun heartFollowsPressWhenPlayerSaysNothingNew() {
+        // Spotify-like: the action reads "add" in both states and does not change after a press.
+        assertTrue(heartOf(stated = false, pressed = true, pressedJustNow = false, actionUnchanged = true))
+        // The player swapped its action after the press: it now speaks for itself.
+        assertFalse(heartOf(stated = false, pressed = true, pressedJustNow = false, actionUnchanged = false))
+        // Right after the press, before the player answers.
+        assertTrue(heartOf(stated = false, pressed = true, pressedJustNow = true, actionUnchanged = false))
+        // Never pressed here.
+        assertTrue(heartOf(stated = true, pressed = null, pressedJustNow = false, actionUnchanged = true))
+        assertFalse(heartOf(stated = null, pressed = null, pressedJustNow = false, actionUnchanged = true))
+    }
+
     @Test fun likeStateFromIcons() {
         assertEquals(true, likedOfMedia3Icon(0xfe87d))
         assertEquals(false, likedOfMedia3Icon(0xe87d))

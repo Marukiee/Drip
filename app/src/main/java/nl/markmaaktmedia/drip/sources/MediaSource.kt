@@ -116,12 +116,19 @@ internal class MediaSource(
     private fun likedOf(s: Session, m: MediaMetadata, rated: Boolean, like: PlaybackState.CustomAction?, packageName: String, title: String): Boolean? {
         if (rated && m.containsKey(MediaMetadata.METADATA_KEY_USER_RATING)) return likedByRating(m)
         if (like == null && !rated) return null
-        val pressed = s.pressedLike?.takeIf { it.first == title }
-        val stated = like?.let { likedOfAction(it, packageName) }
-        // Right after a press the player may take a moment to send its new state; show the press until then.
-        if (pressed != null && SystemClock.elapsedRealtime() - s.pressedAt < 1500) return pressed.second
-        return stated ?: pressed?.second ?: false
+        val pressed = s.pressedLike?.takeIf { it.first == title }?.second
+        return heartOf(
+            stated = like?.let { likedOfAction(it, packageName) },
+            pressed = pressed,
+            // The player may take a moment to send its new state.
+            pressedJustNow = SystemClock.elapsedRealtime() - s.pressedAt < 1500,
+            actionUnchanged = like == null || signatureOf(like) == s.pressedSignature,
+        )
     }
+
+    /** Everything a player could change about its heart action to show the new state. */
+    private fun signatureOf(a: PlaybackState.CustomAction): String =
+        "${a.action}|${a.name}|${a.icon}|${a.extras?.getInt(MEDIA3_ICON_KEY, -1)}"
 
     private fun likedOfAction(a: PlaybackState.CustomAction, packageName: String): Boolean? =
         a.extras?.takeIf { it.containsKey(MEDIA3_ICON_KEY) }?.getInt(MEDIA3_ICON_KEY)?.let(::likedOfMedia3Icon)
@@ -148,6 +155,8 @@ internal class MediaSource(
         /** The song and the state the heart was last pressed to here, for players that never say it themselves. */
         var pressedLike: Pair<String, Boolean>? = null
         var pressedAt = 0L
+        /** The heart action as it was when pressed, to see whether the player changed it afterwards. */
+        var pressedSignature: String? = null
         var metadata: MediaMetadata? = null
         var state: PlaybackState? = null
         var lastPlayingAt = 0L
@@ -249,6 +258,7 @@ internal class MediaSource(
             val shown = safely("liked") { build(s)?.liked } == true
             s.title()?.let { s.pressedLike = it to !shown }
             s.pressedAt = SystemClock.elapsedRealtime()
+            s.pressedSignature = s.controller.playbackState?.customActions?.firstOrNull { kindOf(it) == CustomKind.LIKE }?.let(::signatureOf)
             handler.post { update() }
             if (!likesByRating(s.ratingType, s.controller.playbackState?.actions ?: 0L)) return custom(CustomKind.LIKE)
             val rating = if (s.ratingType == Rating.RATING_HEART) Rating.newHeartRating(!shown) else Rating.newThumbRating(!shown)

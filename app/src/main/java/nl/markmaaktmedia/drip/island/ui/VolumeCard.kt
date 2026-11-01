@@ -2,6 +2,7 @@ package nl.markmaaktmedia.drip.island.ui
 
 import android.media.AudioManager
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -96,8 +97,10 @@ private fun RingerGroup(mode: Int, onPick: (Int) -> Unit) {
             val on = value == mode
             val container by animateColorAsState(if (on) MaterialTheme.colorScheme.primary else IslandInk.Surface, tween(220), label = "ringer$i")
             val content by animateColorAsState(if (on) MaterialTheme.colorScheme.onPrimary else IslandInk.Primary, tween(220), label = "ringerText$i")
+            // Joined like a Material 3 Expressive button group; the chosen one lets go of its neighbours and becomes a
+            // pill of its own, its inner corners rounding out on a spring.
             val outer = 22.dp
-            val inner = 6.dp
+            val inner by animateDpAsState(if (on) outer else 6.dp, spring(0.6f, 500f), label = "ringerCorner$i")
             val shape = when (i) {
                 0 -> RoundedCornerShape(outer, inner, inner, outer)
                 options.lastIndex -> RoundedCornerShape(inner, outer, outer, inner)

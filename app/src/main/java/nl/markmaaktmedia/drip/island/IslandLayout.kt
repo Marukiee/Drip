@@ -174,9 +174,7 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
         return when (stage) {
             // Shrinks up into the top edge on a notch phone, into the camera around a hole, or to a point otherwise.
             Stage.HIDDEN -> when {
-                // No height, but shoulders and a round bottom to aim for: on the way up they shrink with the height, so
-                // it goes into the edge as a small notch instead of a flat bar.
-                notch -> collapsedShape(idleWidth * 0.7f, 0f, roundness).copy(topCorner = shoulder, bottomRadius = compactHeight / 2f)
+                notch -> collapsedShape(idleWidth * 0.7f, 0f, roundness).copy(topCorner = 0f, bottomRadius = 0f)
                 cutout != null -> {
                     val size = min(cutout.width(), cutout.height()).toFloat()
                     IslandGeometry(centerX, cutout.exactCenterY() + topNudge - size / 2f, size, size, -size / 2f, size / 2f)

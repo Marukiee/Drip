@@ -137,10 +137,17 @@ fun IslandOverlay(
     var shownSecond by remember { mutableStateOf<IslandContent?>(null) }
     if (ui.second != null) shownSecond = ui.second
     LaunchedEffect(secondTarget, s.bounce, s.speed) {
+        // The touch window follows the drop too: it comes and goes while the island itself can stay where it is, and
+        // then the island's own move does not run to widen or narrow the window.
+        if (second != null) window.setTouchBounds(touchRect(shape.value.bounds, withSecond(target.bounds, secondTarget, true), layout))
         secondShape.animateTo(secondTarget, second != null, s.bounce, s.speed * if (aside) 1.4f else 0.9f)
         if (ui.second == null) shownSecond = null
+        if (ui.second == null && ui.stage == Stage.COMPACT) window.setTouchBounds(touchRect(shape.value.bounds, shape.value.bounds, layout))
     }
     val secondPath = remember { Path() }
+    // Read when the island's own move ends, which can be after the drop came or went.
+    val dropNow by rememberUpdatedState(secondTarget)
+    val dropOut by rememberUpdatedState(second != null)
 
     // Moving between stages: grow the window to hold both shapes, run the springs, then fit the window to where it ended.
     LaunchedEffect(target, s.bounce, s.speed) {
@@ -166,7 +173,7 @@ fun IslandOverlay(
         shape.animateTo(target, opening, s.bounce, s.speed)
         window.setMoving(false)
         window.setHeight(max(drawHeight(target.bounds, target.bounds, layout), drawHeight(ready, ready, layout)))
-        val end = withSecond(target.bounds, secondTarget, second != null)
+        val end = withSecond(target.bounds, dropNow, dropOut)
         window.setTouchBounds(touchRect(end, end, layout))
     }
 
