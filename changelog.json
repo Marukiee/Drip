@@ -1,5 +1,29 @@
 [
   {
+    "version": "0.1.2",
+    "date": "2026-11-01",
+    "en": {
+      "title": "Slimmer announcements",
+      "better": [
+        "Volume, ringer, charging and other states only widen the notch a little instead of opening a big panel",
+        "Swiping down from the notch opens your notifications"
+      ],
+      "new": [
+        "Tap the notch spot to close an opened island, and a double tap you can set"
+      ]
+    },
+    "nl": {
+      "title": "Slankere meldingen",
+      "better": [
+        "Volume, stil, opladen en andere standen maken de notch alleen iets breder in plaats van een groot paneel",
+        "Omlaag vegen vanaf de notch opent je meldingen"
+      ],
+      "new": [
+        "Tik op de plek van de notch om een open eiland te sluiten, en een dubbeltik die je kunt instellen"
+      ]
+    }
+  },
+  {
     "version": "0.1.1",
     "date": "2026-11-01",
     "en": {
