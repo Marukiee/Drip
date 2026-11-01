@@ -52,13 +52,21 @@ Material 3 Expressive (1.5): `MaterialShapes`, golvende voortgang, button groups
 - Rechten in de emulator: `adb shell settings put secure enabled_accessibility_services nl.markmaaktmedia.drip.debug/nl.markmaaktmedia.drip.island.IslandService`,
   `adb shell settings put secure accessibility_enabled 1`,
   `adb shell cmd notification allow_listener nl.markmaaktmedia.drip.debug/nl.markmaaktmedia.drip.sources.DripListener`.
-- Notch testen: een emulator zonder cutout. Pixel 10 nadoen: `adb shell cmd overlay enable com.android.internal.display.cutout.emulation.hole`.
+- Notch testen op een emulator met cameragat: `adb shell am broadcast -a nl.markmaaktmedia.drip.DEMO -p nl.markmaaktmedia.drip.debug --es fit NOTCH`
+  (terug met `--es fit AUTO`). Start de emulator met `-gpu host`, anders zijn opnames van de animatie schokkerig door de emulator.
+- Animaties nakijken: `adb shell "screenrecord --time-limit 6 /sdcard/a.mp4 & sleep 1.5; input tap 540 60; sleep 2; input tap 540 1900; wait"`,
+  dan de frames naast elkaar met ffmpeg (`-fps_mode passthrough -vf "crop=1080:900:0:0,scale=200:-1,tile=10x4"`).
+- Het eiland zit in twee vensters: een vast tekenvenster linksboven (alleen hoogte verandert, laat aanrakingen door) en een
+  onzichtbaar aanraakvenster over het eiland. Een venster dat verschuift laat het eiland een frame verspringen.
 
 ## Signing en releases
 
 - Release-sleutel `~/keystores/drip-release.jks`, wachtwoord in `drip-release.password` ernaast, als GitHub-secrets
   `ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Nooit kwijtraken.
 - Taggen (`vX.Y.Z`) bouwt en publiceert `Drip.apk`. Repo `Marukiee/Drip` is publiek, anders werkt de updater niet.
+- SHA-256 van het releasecertificaat (alias `drip`, RSA 4096, 100 jaar):
+  `6A:2A:43:FF:CE:D5:5F:DC:67:06:2C:9B:69:AE:BF:04:57:CC:99:5B:0C:73:B3:CA:13:26:6E:B6:0D:0C:14:DA`
+  (staat ook in `.github/workflows/release.yml`).
 - `changelog.json` heel kort houden. Nieuwe wensen op `docs/ROADMAP.md`.
 - Nooit `git add -A` met half werk. Agents committen met expliciete paden en pushen of taggen nooit.
 

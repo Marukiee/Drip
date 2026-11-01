@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "version": "0.1.0",
+    "date": "2026-11-01",
+    "highlight": true,
+    "en": { "title": "The first drop", "new": ["A notch on phones without a camera hole, a pill around the camera on phones with one", "Music, calls, timers, charging, the torch and notifications on the island", "Opens with a tap, closes with a swipe up or a tap beside it"] },
+    "nl": { "title": "De eerste druppel", "new": ["Een notch op telefoons zonder cameragat, een pil om de camera op telefoons met een", "Muziek, gesprekken, timers, opladen, de zaklamp en meldingen op het eiland", "Opent met een tik, sluit met omhoog vegen of een tik ernaast"] }
+  }
+]

@@ -1,0 +1,142 @@
+name: Release
+
+# Push a tag like v1.2.3 and this builds, signs and publishes the APK.
+# Run by hand from the Actions tab to try the build without publishing.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Version tag to build, for example v0.1.0 (ignored when run from a tag)
+        type: string
+      publish:
+        description: Create the GitHub Release, not only build the file
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    env:
+      # Public fingerprint of the release key (see CLAUDE.md). Publishing an APK
+      # signed by anything else would strand every installed copy.
+      EXPECTED_SHA256: 6a2a43ffced55fdc67062c9b69aebf0457cc995b0c73b3ca13266eb60d0c14da
+    steps:
+      - uses: actions/checkout@v5
+
+      - id: v
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_PUBLISH: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+          if [ "$REF_TYPE" = tag ]; then tag="$REF_NAME"; else tag="$INPUT_TAG"; fi
+          re='^v([0-9]+)\.([0-9]+)\.([0-9]+)(-[0-9A-Za-z.-]+)?$'
+          [[ "$tag" =~ $re ]] || { echo "::error::'$tag' is not a version tag like v1.2.3"; exit 1; }
+          major=$((10#${BASH_REMATCH[1]})); minor=$((10#${BASH_REMATCH[2]})); patch=$((10#${BASH_REMATCH[3]}))
+          # Android needs a versionCode that only ever goes up. Two digits each for minor and patch keep that true.
+          if [ "$minor" -gt 99 ] || [ "$patch" -gt 99 ]; then
+            echo "::error::minor and patch must stay below 100 for the versionCode scheme"; exit 1
+          fi
+          publish=false
+          if [ "$REF_TYPE" = tag ] || [ "$INPUT_PUBLISH" = true ]; then publish=true; fi
+          {
+            echo "tag=$tag"
+            echo "version=${tag#v}"
+            echo "code=$((major * 10000 + minor * 100 + patch))"
+            echo "prerelease=$([[ "$tag" == *-* ]] && echo true || echo false)"
+            echo "publish=$publish"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Write the keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          [ -n "$KEYSTORE_B64" ] || { echo "::error::ANDROID_KEYSTORE_B64 is not set"; exit 1; }
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > keystore.jks
+          {
+            echo "storeFile=keystore.jks"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > keystore.properties
+
+      - name: Test and build the signed APK
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+          CODE: ${{ steps.v.outputs.code }}
+        run: ./gradlew --no-daemon --console=plain :app:testDebugUnitTest :app:assembleRelease -PversionName="$VERSION" -PversionCode="$CODE"
+
+      # Gradle falls back to the debug key when the keystore is missing, and the build still
+      # succeeds. This makes that a failure instead of a bad release.
+      - name: Check the signing key
+        run: |
+          set -euo pipefail
+          apk=app/build/outputs/apk/release/app-release.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$apk" | tee certs.txt
+          grep -q "SHA-256 digest: $EXPECTED_SHA256" certs.txt \
+            || { echo "::error::the APK is not signed with the Drip release key"; exit 1; }
+
+      - name: Name the files
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir dist
+          apk=app/build/outputs/apk/release/app-release.apk
+          cp "$apk" "dist/Drip-v$VERSION.apk"
+          cp "$apk" dist/Drip.apk
+          (cd dist && sha256sum Drip.apk > Drip.apk.sha256)
+          python3 scripts/release-notes.py "$VERSION" > notes.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: dist/*
+          if-no-files-found: error
+
+      # The app looks for Drip.apk and Drip.apk.sha256 in releases/latest.
+      - uses: softprops/action-gh-release@v2
+        if: ${{ steps.v.outputs.publish == 'true' }}
+        with:
+          tag_name: ${{ steps.v.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: Drip ${{ steps.v.outputs.version }}
+          body_path: notes.md
+          make_latest: ${{ steps.v.outputs.prerelease != 'true' }}
+          prerelease: ${{ steps.v.outputs.prerelease == 'true' }}
+          fail_on_unmatched_files: true
+          files: dist/*
