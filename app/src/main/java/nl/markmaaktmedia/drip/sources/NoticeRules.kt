@@ -280,7 +280,7 @@ internal fun arrivalTime(f: NoticeFacts): String? {
 private const val UNITS = "min|mins|minuten|m|km|mi|h|hr|hrs|hours|u|uur|d|day|days|dag|dagen|s|sec|wk|weeks|weken|files|bestanden|items|x"
 private val scoreDash = Regex(
     "(?<![\\p{N}\\-\\u2013\\u2014/:.,])(\\d{1,3})$GAP?[-\\u2013\\u2014]$GAP?(\\d{1,3})" +
-        "(?![\\p{N}\\-\\u2013\\u2014/:%]|[.,]\\p{N}|$GAP?(?:$UNITS)(?![\\p{L}]))",
+        "(?![\\p{N}\\-\\u2013\\u2014/:%\\u00B0]|[.,]\\p{N}|$GAP?(?:$UNITS)(?![\\p{L}]))",
     RegexOption.IGNORE_CASE,
 )
 private val scoreTeams = Regex("\\b[A-Z]{2,4}$GAP+(\\d{1,3})$GAP+(\\d{1,3})$GAP+[A-Z]{2,4}\\b")

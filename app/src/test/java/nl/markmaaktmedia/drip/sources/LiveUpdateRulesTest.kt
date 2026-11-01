@@ -63,6 +63,7 @@ class LiveUpdateRulesTest {
         assertNull(scoreOf("Arrives 14:32"))
         assertNull(scoreOf("10 - 15 min"))
         assertNull(scoreOf("Delivery in 2-3 days"))
+        assertNull(scoreOf("Tomorrow 12-15\u00B0"))
         assertNull(scoreOf("2026-11-01"))
         assertNull(scoreOf("Call 06-12345678"))
         assertNull(scoreOf("14:00 - 15:00"))

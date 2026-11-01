@@ -32,12 +32,13 @@ All extras may be sent as text. Anything out of range is clamped, anything unrea
 
 ## adb
 
-```sh
-adb shell am broadcast -a nl.markmaaktmedia.drip.SHOW -p nl.markmaaktmedia.drip \
-  --es id oven --es kind live --es title Pizza --es text "Almost done" \
-  --es icon timer --es color "#FF8800" --es seconds 600
+The single quotes matter: the phone's shell reads the line again, and would split "Almost done" and take `#` as the
+start of a comment. The `#` of a colour may also be left out.
 
-adb shell am broadcast -a nl.markmaaktmedia.drip.HIDE -p nl.markmaaktmedia.drip --es id oven
+```sh
+adb shell 'am broadcast -a nl.markmaaktmedia.drip.SHOW -p nl.markmaaktmedia.drip --es id oven --es kind live --es title Pizza --es text "Almost done" --es icon timer --es color "#FF8800" --es seconds 600'
+
+adb shell 'am broadcast -a nl.markmaaktmedia.drip.HIDE -p nl.markmaaktmedia.drip --es id oven'
 ```
 
 ## Tasker
@@ -52,5 +53,5 @@ Task, action **System > Send Intent**:
 - Target: Broadcast Receiver
 
 Each SHOW replaces the item with that `id` as a whole, so send every extra each time. Send Intent has three extra
-fields; for more, use **Code > Run Shell** with the `am broadcast` line from the adb example (without `adb shell`).
+fields; for more, use **Code > Run Shell** with the part of the adb example inside the single quotes.
 End it with a Send Intent of `nl.markmaaktmedia.drip.HIDE` and `id:washer`.
