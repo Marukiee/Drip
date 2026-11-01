@@ -65,7 +65,7 @@
 
     <!-- Permissions -->
     <string name="perm_island">The island</string>
-    <string name="perm_island_why">Switch Drip on under Accessibility. It only draws the island and does your gestures, and never reads what is on your screen.</string>
+    <string name="perm_island_why">Switch Drip on under Accessibility. It draws the island, does your gestures and looks where windows are, so it can step aside in full screen apps. It never reads what is in them.</string>
     <string name="perm_listener">Notification access</string>
     <string name="perm_listener_why">So the island can show music, calls, timers and notifications. Nothing leaves your phone.</string>
     <string name="perm_post">Update notices</string>

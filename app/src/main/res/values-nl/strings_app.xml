@@ -65,7 +65,7 @@
 
     <!-- Rechten -->
     <string name="perm_island">Het eiland</string>
-    <string name="perm_island_why">Zet Drip aan onder Toegankelijkheid. Het tekent alleen het eiland en doet je gebaren, en leest nooit wat er op je scherm staat.</string>
+    <string name="perm_island_why">Zet Drip aan onder Toegankelijkheid. Het tekent het eiland, doet je gebaren en kijkt waar vensters staan, zodat het opzij gaat bij apps op volledig scherm. Het leest nooit wat erin staat.</string>
     <string name="perm_listener">Toegang tot meldingen</string>
     <string name="perm_listener_why">Zodat het eiland muziek, gesprekken, timers en meldingen kan laten zien. Er gaat niets van je telefoon af.</string>
     <string name="perm_post">Updatemeldingen</string>

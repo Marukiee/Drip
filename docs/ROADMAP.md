@@ -6,14 +6,17 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 
 - Hoogte van de notch tegen de statusbalk, de hoeken van 16 dp, het volume-signaal (de emulator heeft geen audio).
 - Gedrag als Sony de toegankelijkheidsdienst uitzet na een update (IslandKeeper met Shizuku).
+- Batterij: de equalizer in het dichte eiland beweegt zolang er muziek speelt en houdt het scherm zo op hoge verversing.
+  Rustiger laten bewegen of de framerate omlaag als het eiland een tijd dicht is.
+- Echte muziekapps, echte gesprekken en het installeren via de browser (beperkte instellingen) op het toestel doorlopen.
 
 ## Muziek
 
 - ★ Gesynchroniseerde songteksten op de kaart, regel voor regel meelopend (uit de speler, of optioneel online via LRCLIB).
 - Een equalizer die echt op de muziek beweegt (Visualizer, vraagt microfoonrecht, daarom een keuze).
-- Uitvoer kiezen vanaf de kaart: telefoon, koptelefoon, speaker (de uitvoerkiezer van Android openen).
+- ★Uitvoer kiezen vanaf de kaart: telefoon, koptelefoon, speaker (de uitvoerkiezer van Android openen). (wel met mooie animatie)
 - De hoes vervaagd als achtergrond van de geopende kaart.
-- Het volgende nummer in de wachtrij tonen, als de speler het geeft.
+- ★Het volgende nummer in de wachtrij tonen, als de speler het geeft.
 
 ## Gesprekken
 
@@ -31,6 +34,7 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 - Wekker die afgaat: snoozen en uitzetten in de notch.
 - Wifi of mobiel weg, vliegtuigmodus, hotspot aan met het aantal verbonden apparaten.
 - Locatie in gebruik als derde privacy-stip.
+- ★Ook als de locatie gebruikt wordt door een app en micrfoon/camera dat je dat dan ook ziet. erop drukken mnaakt m groter en zie je meer info erover.
 
 ## Tijd en planning
 
@@ -40,10 +44,10 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 
 ## Live updates
 
-- Live Updates van Android 16 volledig: de stappen en punten van ProgressStyle (bezorging, rit) als lijn met tussenpunten.
-- Navigatie: aankomsttijd en rijstrookadvies erbij.
-- Sportuitslagen en andere live activiteiten die apps als live update sturen.
-- Installaties uit de Play Store met voortgang.
+- ★Live Updates van Android 16 volledig: de stappen en punten van ProgressStyle (bezorging, rit) als lijn met tussenpunten.
+- ★Navigatie: aankomsttijd en rijstrookadvies erbij.
+- ★Sportuitslagen en andere live activiteiten die apps als live update sturen.
+- ★Installaties uit de Play Store met voortgang.
 
 ## Meldingen
 

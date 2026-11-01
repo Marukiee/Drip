@@ -1,5 +1,21 @@
 [
   {
+    "version": "0.1.1",
+    "date": "2026-11-01",
+    "en": {
+      "title": "Clearer about privacy",
+      "better": [
+        "Says plainly that Drip looks where windows are to step aside in full screen apps, and never at what is in them"
+      ]
+    },
+    "nl": {
+      "title": "Duidelijker over privacy",
+      "better": [
+        "Zegt eerlijk dat Drip kijkt waar vensters staan om opzij te gaan bij volledig scherm, en nooit wat erin staat"
+      ]
+    }
+  },
+  {
     "version": "0.1.0",
     "date": "2026-11-01",
     "highlight": true,
