@@ -1,5 +1,7 @@
 package nl.markmaaktmedia.drip.ui.screens.settings
 
+import nl.markmaaktmedia.drip.island.IslandLayout
+import nl.markmaaktmedia.drip.island.DeviceFit
 import android.view.RoundedCorner
 import android.view.WindowInsets
 import androidx.compose.animation.AnimatedVisibility
@@ -253,28 +255,22 @@ internal class AutoGuess(
 )
 
 /**
- * A guess from the same things the island measures: the camera hole, the status bar and the screen corners. It only
- * has to be close, so switching Auto off moves the island a little rather than jumping it to a default.
+ * What Auto means on this phone, worked out by the island's own arithmetic, so the number next to an Auto slider is the
+ * size the island really has and switching Auto off does not move it at all.
  */
 @Composable
 private fun rememberAutoGuess(island: IslandSettings): AutoGuess {
-    val view = LocalView.current
-    val density = LocalDensity.current.density
-    return remember(island.fitMode, island.cutoutPaddingDp, island.expandedMarginDp, island.expandedBottomRadiusDp) {
-        val insets = view.rootWindowInsets
-        val hole = insets?.displayCutout?.boundingRects?.firstOrNull { it.top <= 0 && !it.isEmpty }
-        val statusBar = (insets?.getInsets(WindowInsets.Type.statusBars())?.top ?: 0) / density
-        val corner = (insets?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)?.radius ?: 0) / density
-        val ring = hole != null && island.fitMode != FitMode.NOTCH
-        // The bounding rect of a camera hole runs from the top edge down past the hole, so its width is the hole.
-        val height = if (ring) hole!!.width() / density + island.cutoutPaddingDp * 2 else statusBar.takeIf { it > 0 } ?: 28f
-        val width = if (ring) height else height * 3.8f
+    val context = LocalContext.current
+    return remember(island) {
+        val fit = DeviceFit.read(context)
+        val auto = island.copy(idleWidthDp = null, idleHeightDp = null, compactWidthDp = null, expandedTopRadiusDp = null, buttonOuterRadiusDp = null)
+        val l = IslandLayout(fit, auto)
         AutoGuess(
-            idleWidth = width,
-            idleHeight = height,
-            compactWidth = maxOf(width + 130f, 200f),
-            topRadius = (corner - island.expandedMarginDp).coerceAtLeast(12f),
-            buttonOuter = (island.expandedBottomRadiusDp - 12f).coerceAtLeast(4f),
+            idleWidth = l.idleWidth / fit.density,
+            idleHeight = l.idleHeight / fit.density,
+            compactWidth = l.compactWidth / fit.density,
+            topRadius = l.expandedTopRadius / fit.density,
+            buttonOuter = l.buttonOuterRadius / fit.density,
         )
     }
 }
