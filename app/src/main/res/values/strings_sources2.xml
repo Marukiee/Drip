@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Appointments -->
+    <string name="src2_calendar">Calendar</string>
+    <string name="src2_appointment">Appointment</string>
+    <string name="src2_join">Join</string>
+    <!-- The start time, then where: "14:30, Room 4" -->
+    <string name="src2_time_place">%1$s, %2$s</string>
+
+    <!-- Installs -->
+    <string name="src2_installing">Installing</string>
+    <string name="src2_updating">Updating</string>
+    <string name="src2_an_app">An app</string>
+    <string name="src2_percent">%1$d%%</string>
+
+    <!-- Earbuds and unlocking -->
+    <string name="src2_connected_battery">Connected, %1$d%%</string>
+    <string name="src2_unlocked">Unlocked</string>
+
+    <!-- What the island shows, the second round -->
+    <string name="set2_section_more">More on the island</string>
+    <string name="set2_second">Two things at once</string>
+    <string name="set2_second_sub">A second thing gets a small drop of its own next to the island</string>
+    <string name="set2_lyrics">Lyrics</string>
+    <string name="set2_lyrics_sub">Synced lyrics on the music card when the player has them</string>
+    <string name="set2_lyrics_online">Look lyrics up online</string>
+    <string name="set2_lyrics_online_sub">When the player has none, Drip asks lrclib.net. That sends the title and artist of the song there, nothing else.</string>
+    <string name="set2_calendar">Appointments</string>
+    <string name="set2_calendar_sub">A countdown to your next appointment, with a button to join a video call</string>
+    <string name="set2_calendar_lead">How long before</string>
+    <string name="set2_minutes">%1$d min</string>
+    <string name="set2_unlock">Unlocking</string>
+    <string name="set2_unlock_sub">A lock that opens when you unlock the phone</string>
+    <string name="set2_installs">Installs and updates</string>
+    <string name="set2_installs_sub">An app that is being installed or updated, with its progress</string>
+    <string name="set2_tandem">Tandem</string>
+    <string name="set2_tandem_sub">Transfers, the clipboard and the connected computer</string>
+
+    <string name="set2_section_announcements">Announcements</string>
+    <string name="set2_sum_duration">%1$s s on screen</string>
+
+    <string name="set2_section_other_apps">Other apps</string>
+    <string name="set2_automation">Let other apps use the island</string>
+    <string name="set2_automation_sub">Apps like Tasker can put their own things on it</string>
+    <string name="set2_automation_docs">How it works</string>
+    <string name="set2_automation_docs_sub">What to send and how, on GitHub</string>
+
+    <!-- Permission rows, shown only while the switch they belong to is on -->
+    <string name="set2_perm_calendar">Calendar</string>
+    <string name="set2_perm_calendar_why">To count down to your next appointment. Drip only reads what is coming up, on this phone.</string>
+    <string name="set2_perm_bluetooth">Nearby devices</string>
+    <string name="set2_perm_bluetooth_why">So the announcement of your earbuds or headphones shows their battery.</string>
+    <string name="set2_perm_location">Precise location</string>
+    <string name="set2_perm_location_why">For a dot while an app uses GPS. Drip itself never asks where you are.</string>
+    <string name="set2_perm_location_partly">Only approximate location is allowed. Android tells whether GPS runs only with precise location.</string>
+    <string name="set2_perm_settings">Open app info</string>
+
+    <!-- Gestures -->
+    <string name="set2_gesture_double_tap">Double tap</string>
+    <string name="set2_gesture_scope">Applies to</string>
+    <string name="set2_gesture_scope_note">%1$s: grey follows the default</string>
+    <string name="set2_gesture_same">Same as default</string>
+    <string name="set2_scope_default">Default</string>
+    <string name="set2_scope_music">Music</string>
+    <string name="set2_scope_call">Call</string>
+    <string name="set2_scope_timer">Timer</string>
+    <string name="set2_scope_route">Route</string>
+    <string name="set2_scope_charging">Charging</string>
+    <string name="set2_scope_notice">Notification</string>
+
+    <!-- Search words -->
+    <string name="set2_kw_more">second, two, lyrics, karaoke, unlock, calendar, meeting, appointment, install, update, play store, tandem</string>
+    <string name="set2_kw_automation">tasker, automation, automate, macrodroid, intent, broadcast, api</string>
+</resources>

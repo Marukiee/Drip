@@ -129,14 +129,27 @@ fun <T> DropdownRow(
     value: String,
     options: List<Pair<T, String>>,
     onSelect: (T) -> Unit,
+    /** For a value that is inherited rather than chosen here: shown in the quiet colour. */
+    valueMuted: Boolean = false,
 ) {
     val open = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     Box {
         GroupedRow(index, total, onClick = { open.value = true }) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 RowIcon(icon)
-                RowText(title, subtitle, Modifier.weight(1f))
-                Text(value, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, maxLines = 2, modifier = Modifier.widthIn(max = 140.dp))
+                // One line each, so every row of the list stays the same height: the title keeps its width and a long
+                // choice is cut off at its end rather than wrapped.
+                if (subtitle == null) {
+                    Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+                } else {
+                    RowText(title, subtitle)
+                }
+                Text(
+                    value, style = MaterialTheme.typography.labelLarge,
+                    color = if (valueMuted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
+                    maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f),
+                )
                 Icon(DripIcons.ChevronDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
             }
         }

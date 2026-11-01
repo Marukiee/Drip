@@ -91,6 +91,16 @@ internal object FocusKeys {
     const val AlertBrightness = "alerts.brightness"
     const val AlertHeadphones = "alerts.headphones"
     const val AlertDuration = "alerts.duration"
+    const val ShowSecond = "shows.second"
+    const val ShowLyrics = "shows.lyrics"
+    const val LyricsOnline = "shows.lyrics.online"
+    const val ShowCalendar = "shows.calendar"
+    const val CalendarLead = "shows.calendar.lead"
+    const val ShowInstalls = "shows.installs"
+    const val ShowUnlock = "shows.unlock"
+    const val ShowTandem = "shows.tandem"
+    const val AllowAutomation = "shows.automation"
+    const val AutomationDocs = "shows.automation.docs"
 
     const val NotifyOn = "notif.on"
     const val NotifyWhich = "notif.which"
@@ -101,6 +111,8 @@ internal object FocusKeys {
     const val GestureDown = "gesture.down"
     const val GestureLeft = "gesture.left"
     const val GestureRight = "gesture.right"
+    const val GestureDoubleTap = "gesture.double"
+    const val GestureScope = "gesture.scope"
 
     const val HideFullscreen = "hide.fullscreen"
     const val HideLandscape = "hide.landscape"
@@ -220,10 +232,20 @@ internal object SettingsCatalog {
         row("alert_volume", R.string.alert_volume, R.string.settings_kw_alerts, SettingsCategory.Shows, FocusKeys.AlertVolume, { DripIcons.VolumeUp }),
         row("alert_brightness", R.string.alert_brightness, R.string.settings_kw_alerts, SettingsCategory.Shows, FocusKeys.AlertBrightness, { DripIcons.Brightness }),
         row("alert_headphones", R.string.alert_headphones, R.string.settings_kw_alerts, SettingsCategory.Shows, FocusKeys.AlertHeadphones, { DripIcons.Headphones }),
-        row("alert_duration", R.string.alert_duration, R.string.settings_kw_alerts, SettingsCategory.Shows, FocusKeys.AlertDuration, { DripIcons.Hourglass }, R.string.alert_duration_sub),
+        row("show_second", R.string.set2_second, R.string.set2_kw_more, SettingsCategory.Shows, FocusKeys.ShowSecond, { DripIcons.Tab }, R.string.set2_second_sub),
+        row("show_lyrics", R.string.set2_lyrics, R.string.set2_kw_more, SettingsCategory.Shows, FocusKeys.ShowLyrics, { DripIcons.Lyrics }, R.string.set2_lyrics_sub),
+        row("lyrics_online", R.string.set2_lyrics_online, R.string.set2_kw_more, SettingsCategory.Shows, FocusKeys.LyricsOnline, { DripIcons.Language }, R.string.set2_lyrics_online_sub),
+        row("show_calendar", R.string.set2_calendar, R.string.set2_kw_more, SettingsCategory.Shows, FocusKeys.ShowCalendar, { DripIcons.Calendar }, R.string.set2_calendar_sub),
+        row("calendar_lead", R.string.set2_calendar_lead, R.string.set2_kw_more, SettingsCategory.Shows, FocusKeys.CalendarLead, { DripIcons.Hourglass }),
+        row("show_installs", R.string.set2_installs, R.string.set2_kw_more, SettingsCategory.Shows, FocusKeys.ShowInstalls, { DripIcons.InstallMobile }, R.string.set2_installs_sub),
+        row("show_unlock", R.string.set2_unlock, R.string.set2_kw_more, SettingsCategory.Shows, FocusKeys.ShowUnlock, { DripIcons.LockOpen }, R.string.set2_unlock_sub),
+        row("show_tandem", R.string.set2_tandem, R.string.set2_kw_more, SettingsCategory.Shows, FocusKeys.ShowTandem, { DripIcons.Devices }, R.string.set2_tandem_sub),
+        row("allow_automation", R.string.set2_automation, R.string.set2_kw_automation, SettingsCategory.Shows, FocusKeys.AllowAutomation, { DripIcons.Hub }, R.string.set2_automation_sub),
+        row("automation_docs", R.string.set2_automation_docs, R.string.set2_kw_automation, SettingsCategory.Shows, FocusKeys.AutomationDocs, { DripIcons.OpenInNew }, R.string.set2_automation_docs_sub),
 
         // Notifications
         page(SettingsCategory.Notifications, R.string.settings_kw_notifications),
+        row("alert_duration", R.string.alert_duration, R.string.settings_kw_alerts, SettingsCategory.Notifications, FocusKeys.AlertDuration, { DripIcons.Hourglass }, R.string.alert_duration_sub),
         row("notif_on", R.string.notif_on, R.string.settings_kw_notifications, SettingsCategory.Notifications, FocusKeys.NotifyOn, { DripIcons.Notifications }, R.string.notif_on_sub),
         row("notif_which", R.string.notif_which, R.string.settings_kw_notifications, SettingsCategory.Notifications, FocusKeys.NotifyWhich, { DripIcons.Apps }),
         SettingsEntry(
@@ -234,7 +256,9 @@ internal object SettingsCatalog {
 
         // Gestures
         page(SettingsCategory.Gestures, R.string.settings_kw_gestures),
+        row("gesture_scope", R.string.set2_gesture_scope, R.string.settings_kw_gestures, SettingsCategory.Gestures, FocusKeys.GestureScope, { DripIcons.Gesture }),
         row("gesture_tap", R.string.gesture_tap, R.string.settings_kw_gestures, SettingsCategory.Gestures, FocusKeys.GestureTap, { DripIcons.Touch }),
+        row("gesture_double", R.string.set2_gesture_double_tap, R.string.settings_kw_gestures, SettingsCategory.Gestures, FocusKeys.GestureDoubleTap, { DripIcons.Touch }),
         row("gesture_hold", R.string.gesture_hold, R.string.settings_kw_gestures, SettingsCategory.Gestures, FocusKeys.GestureHold, { DripIcons.Touch }),
         row("gesture_down", R.string.gesture_swipe_down, R.string.settings_kw_gestures, SettingsCategory.Gestures, FocusKeys.GestureDown, { DripIcons.KeyDown }),
         row("gesture_left", R.string.gesture_swipe_left, R.string.settings_kw_gestures, SettingsCategory.Gestures, FocusKeys.GestureLeft, { DripIcons.KeyLeft }),

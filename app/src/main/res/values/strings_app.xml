@@ -203,21 +203,21 @@
     <string name="gesture_swipe_left">Swipe left</string>
     <string name="gesture_swipe_right">Swipe right</string>
     <string name="gesture_none">Nothing</string>
-    <string name="gesture_expand">Open the island</string>
-    <string name="gesture_open_app">Open the app it shows</string>
+    <string name="gesture_expand">Open island</string>
+    <string name="gesture_open_app">Open app</string>
     <string name="gesture_play_pause">Play or pause</string>
     <string name="gesture_next">Next track</string>
     <string name="gesture_previous">Previous track</string>
     <string name="gesture_back">Back</string>
     <string name="gesture_home">Home screen</string>
     <string name="gesture_recents">Recent apps</string>
-    <string name="gesture_notifications">Notification shade</string>
+    <string name="gesture_notifications">Notifications</string>
     <string name="gesture_quick_settings">Quick Settings</string>
-    <string name="gesture_lock">Lock the screen</string>
+    <string name="gesture_lock">Lock screen</string>
     <string name="gesture_screenshot">Screenshot</string>
-    <string name="gesture_torch">Torch on or off</string>
+    <string name="gesture_torch">Torch</string>
     <string name="gesture_open_drip">Open Drip</string>
-    <string name="gesture_output">Choose where sound plays</string>
+    <string name="gesture_output">Sound output</string>
     <string name="gesture_dismiss">Put away</string>
 
     <!-- When to step aside -->

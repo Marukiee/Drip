@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import nl.markmaaktmedia.drip.data.IslandSettings
 import nl.markmaaktmedia.drip.graph
@@ -31,7 +32,10 @@ class Sources(private val context: Context) {
         val app = context.applicationContext
         val e = env ?: SourceEnv(app, app.graph.hub).also {
             env = it
-            parts = listOf(BatteryPart(it), CameraPart(it), AudioPart(it), SignalsPart(it))
+            parts = listOf(
+                BatteryPart(it), CameraPart(it), AudioPart(it), SignalsPart(it), CalendarPart(it), InstallPart(it),
+                EarbudsPart(it), UnlockPart(it), LocationPart(it),
+            )
         }
         parts.forEach { safely("start ${it.javaClass.simpleName}") { it.start() } }
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).also {
@@ -39,6 +43,12 @@ class Sources(private val context: Context) {
                 app.graph.prefs.island.collect { s ->
                     e.settings = s
                     parts.forEach { p -> safely("settings ${p.javaClass.simpleName}") { p.onSettings() } }
+                }
+            }
+            // A permission allowed in the app: the parts that need one register what they could not before.
+            it.launch {
+                SourceGrants.version.drop(1).collect {
+                    if (e.settings != null) parts.forEach { p -> safely("grants ${p.javaClass.simpleName}") { p.onSettings() } }
                 }
             }
         }

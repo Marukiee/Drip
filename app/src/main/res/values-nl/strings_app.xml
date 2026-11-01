@@ -204,20 +204,20 @@
     <string name="gesture_swipe_right">Naar rechts vegen</string>
     <string name="gesture_none">Niets</string>
     <string name="gesture_expand">Eiland openen</string>
-    <string name="gesture_open_app">De app openen die het laat zien</string>
-    <string name="gesture_play_pause">Afspelen of pauzeren</string>
+    <string name="gesture_open_app">App openen</string>
+    <string name="gesture_play_pause">Afspelen of pauze</string>
     <string name="gesture_next">Volgend nummer</string>
     <string name="gesture_previous">Vorig nummer</string>
     <string name="gesture_back">Terug</string>
     <string name="gesture_home">Startscherm</string>
     <string name="gesture_recents">Recente apps</string>
-    <string name="gesture_notifications">Meldingenpaneel</string>
+    <string name="gesture_notifications">Meldingen</string>
     <string name="gesture_quick_settings">Snelle instellingen</string>
-    <string name="gesture_lock">Scherm vergrendelen</string>
-    <string name="gesture_screenshot">Schermafbeelding</string>
-    <string name="gesture_torch">Zaklamp aan of uit</string>
+    <string name="gesture_lock">Vergrendelen</string>
+    <string name="gesture_screenshot">Screenshot</string>
+    <string name="gesture_torch">Zaklamp</string>
     <string name="gesture_open_drip">Drip openen</string>
-    <string name="gesture_output">Kiezen waar geluid speelt</string>
+    <string name="gesture_output">Geluid naar</string>
     <string name="gesture_dismiss">Wegzetten</string>
 
     <!-- Wanneer het opzij gaat -->

@@ -192,7 +192,8 @@ class DripListener : NotificationListenerService() {
         } else {
             emptyList()
         }
-        hub.live.update { now -> now.filter { s.allowAutomation && isAutomationKey(it.key) } + mine }
+        // Automation entries and Drip's own (an appointment, an install) share the list and are not the listener's to drop.
+        hub.live.update { now -> now.filter { (s.allowAutomation && isAutomationKey(it.key)) || it.key.startsWith(OWN_LIVE_PREFIX) } + mine }
     }
 
     private fun teardown() {
@@ -209,6 +210,6 @@ class DripListener : NotificationListenerService() {
         nowPlaying = null
         hub.nowPlaying.value = null
         hub.call.value = null
-        hub.live.update { now -> now.filter { isAutomationKey(it.key) } }
+        hub.live.update { now -> now.filter { isAutomationKey(it.key) || it.key.startsWith(OWN_LIVE_PREFIX) } }
     }
 }
