@@ -1,5 +1,35 @@
 [
   {
+    "version": "0.1.6",
+    "date": "2026-11-01",
+    "en": {
+      "title": "Volume card",
+      "new": [
+        "Tap the slim volume bar for media, ringtone and alarm, sound, vibrate or silent, and where sound plays",
+        "Tap the slim charging bar for the charging card"
+      ],
+      "fixed": [
+        "The torch switch shows its real state and turns the torch off and on again"
+      ],
+      "better": [
+        "Bounce reads 100% at the standard"
+      ]
+    },
+    "nl": {
+      "title": "Volumekaart",
+      "new": [
+        "Tik op de smalle volumebalk voor media, beltoon en wekker, geluid, trillen of stil, en waar het geluid speelt",
+        "Tik op de smalle oplaadbalk voor de oplaadkaart"
+      ],
+      "fixed": [
+        "De zaklampknop laat zijn echte stand zien en zet de lamp uit en weer aan"
+      ],
+      "better": [
+        "Veerkracht heet 100% bij de standaard"
+      ]
+    }
+  },
+  {
     "version": "0.1.5",
     "date": "2026-11-01",
     "en": {

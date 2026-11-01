@@ -32,7 +32,8 @@ internal fun MotionPage(onBack: () -> Unit) {
             SettingsTarget(FocusKeys.Bounce, 0, 3) {
                 SliderRow(
                     0, 3, DripIcons.Swipe, stringResource(R.string.motion_bounce), stringResource(R.string.motion_bounce_sub),
-                    island.bounce, 0f..1f, 0.05f, { percentLabel(it) },
+                    // Shown against the standard: the default bounce reads as 100%, so less is calmer and more is livelier.
+                    island.bounce, 0f..1f, 0.05f, { percentLabel(it * 2f) },
                     onChange = { v -> edit { it.copy(bounce = v) } },
                 )
             }

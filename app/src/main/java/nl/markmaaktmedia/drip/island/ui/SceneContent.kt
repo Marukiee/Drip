@@ -33,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -94,8 +95,14 @@ fun SceneContent(scene: Scene, privacy: PrivacyInfo, controller: IslandControlle
                 is IslandContent.Call -> CallCard(c.call)
                 is IslandContent.Live -> LiveCard(c.live)
                 is IslandContent.Charging -> ChargingCard(c.battery)
-                is IslandContent.Torch -> TorchCard(c.torch, hub)
-                is IslandContent.Notice -> NoticeCard(c.alert, controller)
+                // The live state, not the one from when the card opened: after a tap on the switch it must show off.
+                is IslandContent.Torch -> TorchCard(hub.torch.collectAsState().value, hub)
+                is IslandContent.Notice -> when (c.alert.kind) {
+                    // The slim announcements open into the card of what they are about.
+                    AlertKind.VOLUME, AlertKind.RINGER -> VolumeCard(hub)
+                    AlertKind.CHARGING, AlertKind.BATTERY_FULL, AlertKind.UNPLUGGED -> ChargingCard(hub.battery.collectAsState().value)
+                    else -> NoticeCard(c.alert, controller)
+                }
                 null -> Unit
             }
         }

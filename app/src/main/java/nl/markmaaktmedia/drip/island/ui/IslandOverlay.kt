@@ -242,8 +242,8 @@ fun IslandOverlay(
                                     travel.getDistance() < swipe -> when (stage) {
                                         // Tapping where the closed island sits closes the opened one again.
                                         Stage.EXPANDED -> if (layout.geometry(Stage.COMPACT).bounds.inflate(8.dp.toPx()).contains(at)) controller.collapse()
-                                        // A volume bar or a state has nothing more to show: a tap puts it away.
-                                        Stage.MINI -> controller.dismissAlert()
+                                        // A slim announcement opens into the card of what it is about (the volume, the battery).
+                                        Stage.MINI -> controller.expand()
                                         else -> {
                                             val double = s.actionFor(scopeOf, Gesture.DOUBLE_TAP)
                                             val now = currentTime()
@@ -437,7 +437,10 @@ private fun estimateHeight(content: IslandContent?, density: Density): Float = w
         is IslandContent.Live -> 168.dp
         is IslandContent.Charging -> 150.dp
         is IslandContent.Torch -> 156.dp
-        is IslandContent.Notice -> 150.dp
+        is IslandContent.Notice -> when (content.alert.kind) {
+            nl.markmaaktmedia.drip.island.AlertKind.VOLUME, nl.markmaaktmedia.drip.island.AlertKind.RINGER -> 250.dp
+            else -> 150.dp
+        }
         null -> 120.dp
     }.toPx()
 }

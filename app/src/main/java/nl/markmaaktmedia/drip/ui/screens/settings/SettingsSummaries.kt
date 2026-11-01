@@ -58,7 +58,7 @@ internal fun rememberCategorySummaries(): Map<SettingsCategory, String> {
 
     val motion = stringResource(
         R.string.settings_sum_motion,
-        stringResource(R.string.value_percent, (island.bounce * 100).roundToInt()),
+        stringResource(R.string.value_percent, (island.bounce * 200).roundToInt()),
         stringResource(R.string.value_speed, speedText(island.speed)),
     ) + if (island.hapticsEnabled) "" else ", " + stringResource(R.string.settings_sum_haptics_off)
 

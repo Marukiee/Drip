@@ -53,4 +53,10 @@
     <string name="demo_reply_action">Antwoorden</string>
     <string name="demo_sent">Verstuurd</string>
     <string name="demo_unlocked">Ontgrendeld</string>
+    <string name="island_media">Media</string>
+    <string name="island_ring">Beltoon</string>
+    <string name="island_alarm">Wekker</string>
+    <string name="island_ringer_sound">Geluid</string>
+    <string name="island_ringer_vibrate">Trillen</string>
+    <string name="island_ringer_silent">Stil</string>
 </resources>

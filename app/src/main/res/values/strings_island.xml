@@ -53,4 +53,10 @@
     <string name="demo_reply_action">Reply</string>
     <string name="demo_sent">Sent</string>
     <string name="demo_unlocked">Unlocked</string>
+    <string name="island_media">Media</string>
+    <string name="island_ring">Ringtone</string>
+    <string name="island_alarm">Alarm</string>
+    <string name="island_ringer_sound">Sound</string>
+    <string name="island_ringer_vibrate">Vibrate</string>
+    <string name="island_ringer_silent">Silent</string>
 </resources>
