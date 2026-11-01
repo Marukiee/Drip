@@ -118,11 +118,19 @@ fun rememberAccess(): AccessState {
     return state
 }
 
-/** Asks for POST_NOTIFICATIONS and reads the answer again when it comes. */
+/**
+ * Asks for POST_NOTIFICATIONS. After one no, Android may not show its question again, so a second tap goes to the
+ * app's notification settings instead, where it can always be switched on.
+ */
 @Composable
-fun rememberPostRequest(onAnswer: () -> Unit = {}): () -> Unit {
-    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { onAnswer() }
-    return { ask.launch(Manifest.permission.POST_NOTIFICATIONS) }
+fun rememberPostRequest(): () -> Unit {
+    val context = LocalContext.current
+    var asked by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { asked = true }
+    return {
+        if (asked && !Access.postAllowed(context)) Access.openNotificationSettings(context)
+        else ask.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
 }
 
 /** The line under the island card for a phone that greys the switch out for a sideloaded app. */

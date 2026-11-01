@@ -49,6 +49,11 @@ object Access {
         if (!start(context, detail)) start(context, Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
     }
 
+    /** Drip's own notification settings, for a permission Android no longer asks about. */
+    fun openNotificationSettings(context: Context) {
+        start(context, Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
+    }
+
     /** App info, where a sideloaded app gets its restricted settings allowed. */
     fun openAppInfo(context: Context) {
         start(context, Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)))

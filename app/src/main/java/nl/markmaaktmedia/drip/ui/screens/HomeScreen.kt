@@ -196,7 +196,6 @@ private val Groups = listOf(
 private fun Overview(summaries: Map<SettingsCategory, String>, listState: LazyListState, onOpen: (Route) -> Unit) {
     val context = LocalContext.current
     val access = rememberAccess()
-    val askPost = rememberPostRequest()
     val restricted = restrictedNote()
     // The hint about restricted settings only after a first try came back without the permission, not as a warning up front.
     var askedIsland by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
@@ -205,7 +204,6 @@ private fun Overview(summaries: Map<SettingsCategory, String>, listState: LazyLi
     val missing = listOfNotNull(
         Missing.Island.takeIf { !access.island },
         Missing.Listener.takeIf { !access.listener },
-        Missing.Post.takeIf { !access.post },
     )
 
     // The list runs on under the gesture bar and stops above it at the end.
@@ -236,11 +234,6 @@ private fun Overview(summaries: Map<SettingsCategory, String>, listState: LazyLi
                                     granted = false, onGrant = { askedListener = true; Access.openListener(context) },
                                     note = restricted.takeIf { askedListener }, index = position, total = missing.size,
                                 )
-                                Missing.Post -> PermissionCard(
-                                    DripIcons.Update, stringResource(R.string.perm_post), stringResource(R.string.perm_post_why),
-                                    granted = false, onGrant = askPost,
-                                    index = position, total = missing.size,
-                                )
                             }
                         }
                     }
@@ -270,7 +263,8 @@ private fun Overview(summaries: Map<SettingsCategory, String>, listState: LazyLi
     }
 }
 
-private enum class Missing { Island, Listener, Post }
+// Update notices are not here: they are optional, and a card for something declined on purpose would never go away.
+private enum class Missing { Island, Listener }
 
 /** One category: its icon, its name, and a line that says how it is set right now. */
 @Composable

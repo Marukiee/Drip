@@ -55,10 +55,10 @@ internal fun ShapePage(onBack: () -> Unit) {
     val guess = rememberAutoGuess(island)
     var showOpened by remember { mutableStateOf(false) }
 
-    // The opened island is only on screen when something opens it, so moving one of its sliders opens it once, and a
-    // slider of the closed island closes it again.
+    // The opened island is only on screen when something opens it, so each drag of one of its sliders opens it (it may
+    // have closed by itself since the last one), and a slider of the closed island closes it again.
     val opened: () -> Unit = {
-        if (!showOpened) graph.hub.demo(Demo.EXPAND)
+        graph.hub.demo(Demo.EXPAND)
         showOpened = true
     }
     val closed: () -> Unit = {
