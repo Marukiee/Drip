@@ -18,6 +18,6 @@
             </gradient>
         </aapt:attr>
     </path>
-    <!-- The light catch follows the curve of the bulb, top left, where the light falls. -->
-    <path android:fillColor="#FFFFFF" android:fillAlpha="0.85" android:pathData="M37.74,50.08A17.3,17.3 0 0 1 51.59,38.87A2.3,2.3 0 0 1 52.23,43.42A12.7,12.7 0 0 0 42.07,51.66A2.3,2.3 0 0 1 37.74,50.08Z" />
+    <!-- The light catch follows the curve of the bulb, on the lower left, where the light falls through. -->
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.85" android:pathData="M45.35,70.98A17.3,17.3 0 0 1 39.02,47.35A2.3,2.3 0 0 1 43,49.65A12.7,12.7 0 0 0 47.65,67A2.3,2.3 0 0 1 45.35,70.98Z" />
 </vector>
