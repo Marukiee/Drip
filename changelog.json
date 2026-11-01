@@ -1,5 +1,31 @@
 [
   {
+    "version": "0.1.5",
+    "date": "2026-11-01",
+    "en": {
+      "title": "Smoother music",
+      "new": [
+        "Tap the cover or the title to open the player, like Spotify's now playing screen"
+      ],
+      "better": [
+        "The volume bar follows your finger without stutter",
+        "The song does not jump back for a moment after you let go",
+        "The title and search field scroll away on the home screen"
+      ]
+    },
+    "nl": {
+      "title": "Soepelere muziek",
+      "new": [
+        "Tik op de hoes of de titel om de speler te openen, zoals het nu-spelen-scherm van Spotify"
+      ],
+      "better": [
+        "De volumebalk volgt je vinger zonder haperen",
+        "Het nummer springt na loslaten niet even terug",
+        "Titel en zoekveld schuiven mee weg op het beginscherm"
+      ]
+    }
+  },
+  {
     "version": "0.1.4",
     "date": "2026-11-01",
     "en": {

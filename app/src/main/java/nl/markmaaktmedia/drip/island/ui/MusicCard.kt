@@ -74,6 +74,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.PI
 import kotlin.math.sin
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import androidx.compose.ui.draw.drawBehind
 import nl.markmaaktmedia.drip.R
 import nl.markmaaktmedia.drip.graph
 import nl.markmaaktmedia.drip.island.Haptics
@@ -93,7 +96,22 @@ import nl.markmaaktmedia.drip.ui.theme.DripIcons
 fun MusicCard(np: NowPlaying, hub: IslandHub) {
     val c = np.commands
 
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+    // The cover and the title open the player itself (Spotify's now playing screen, say), and the island closes.
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    val dip by animateFloatAsState(if (pressed) 0.97f else 1f, spring(0.5f, 600f), label = "headerDip")
+    val context = LocalContext.current
+    Row(
+        Modifier
+            .graphicsLayer { scaleX = dip; scaleY = dip }
+            .clickable(source, null) {
+                context.graph.haptics.play(Haptics.Kind.TAP)
+                c.openPlayer()
+                hub.demo(nl.markmaaktmedia.drip.island.Demo.COLLAPSE)
+            },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
         Cover(np)
         Column(Modifier.weight(1f)) {
             AnimatedContent(
@@ -340,6 +358,13 @@ private fun SeekBar(np: NowPlaying) {
     }
     fun position(at: Long) = (np.positionMs + if (np.playing) ((at - np.positionAtElapsed) * np.speed).toLong() else 0L).coerceIn(0L, duration)
     var drag by remember { mutableStateOf<Float?>(null) }
+    // Where it was let go and which report of the player it waits past: the bar stays there until the player says where
+    // the song really is, instead of jumping back to the old spot for a moment.
+    var held by remember { mutableStateOf<Triple<Float, Long, Long>?>(null) }
+    fun jump(fraction: Float) {
+        held = Triple(fraction, SystemClock.elapsedRealtime(), np.positionAtElapsed)
+        np.commands.seekTo((fraction * duration).toLong())
+    }
     val context = LocalContext.current
     val amplitude by animateFloatAsState(if (np.playing && drag == null) 1f else 0f, spring(0.9f, 220f), label = "wave")
     val knob by animateFloatAsState(if (drag != null) 1f else 0f, spring(0.55f, 600f), label = "knob")
@@ -347,7 +372,8 @@ private fun SeekBar(np: NowPlaying) {
     val track = IslandInk.SurfaceHigh
     // The played part fades towards the track while the music is paused, so the bar says it stands still.
     val fill by animateColorAsState(if (np.playing) scheme.primary else androidx.compose.ui.graphics.lerp(scheme.primary, track, 0.5f), tween(320), label = "fill")
-    val shown = drag ?: (position(clock.longValue) / duration.toFloat())
+    val hold = held?.takeIf { (_, at, report) -> report == np.positionAtElapsed && SystemClock.elapsedRealtime() - at < 2500 }
+    val shown = drag ?: hold?.first ?: (position(clock.longValue) / duration.toFloat())
     val wave = remember { androidx.compose.ui.graphics.Path() }
 
     Column(
@@ -359,13 +385,13 @@ private fun SeekBar(np: NowPlaying) {
                         .pointerInput(np.durationMs) {
                             detectTapGestures { offset ->
                                 context.graph.haptics.play(Haptics.Kind.TICK)
-                                np.commands.seekTo((offset.x / size.width * duration).toLong())
+                                jump((offset.x / size.width).coerceIn(0f, 1f))
                             }
                         }
                         .pointerInput(np.durationMs) {
                             detectHorizontalDragGestures(
                                 onDragStart = { drag = (it.x / size.width).coerceIn(0f, 1f); context.graph.haptics.play(Haptics.Kind.TICK) },
-                                onDragEnd = { drag?.let { np.commands.seekTo((it * duration).toLong()) }; drag = null },
+                                onDragEnd = { drag?.let { jump(it) }; drag = null },
                                 onDragCancel = { drag = null },
                             ) { change, _ ->
                                 change.consume()
@@ -412,7 +438,7 @@ private fun SeekBar(np: NowPlaying) {
             drawRoundRect(fill, Offset(cx - handleW / 2, mid - handleH / 2), Size(handleW, handleH), CornerRadius(handleW / 2))
         }
         rememberNow(1000)
-        val at = drag?.let { (it * duration).toLong() } ?: position(SystemClock.elapsedRealtime())
+        val at = (drag ?: hold?.first)?.let { (it * duration).toLong() } ?: position(SystemClock.elapsedRealtime())
         Row(Modifier.fillMaxWidth()) {
             TimeText(formatClock(at))
             Spacer(Modifier.weight(1f))
@@ -434,45 +460,65 @@ private val WaveTaper = 18.dp
 @Composable
 private fun TimeText(text: String) = Text(text, color = IslandInk.Secondary, fontSize = 12.sp, fontWeight = FontWeight.Medium, style = TabularNumbers)
 
-/** The media volume as a thick bar: its bottom corners concentric with the island, its top corners small. */
+/**
+ * The media volume as a thick bar: its bottom corners concentric with the island, its top corners small.
+ *
+ * Under the finger the fill follows it exactly, with no spring in between. The volume itself is set off the main thread
+ * and only when it really changes a step, so a quick drag never waits on the audio service. Let go, the bar stays where it
+ * was left until Android reports the new volume, instead of jumping back for a moment.
+ */
 @Composable
 private fun VolumeBar(hub: IslandHub) {
     val m = LocalCardMetrics.current
     val scheme = MaterialTheme.colorScheme
     val volume by hub.musicVolume.collectAsState()
-    var local by remember { mutableStateOf<Float?>(null) }
-    val shown by animateFloatAsState(local ?: volume, spring(1f, 900f), label = "volume")
+    var dragging by remember { mutableStateOf(false) }
+    var held by remember { mutableStateOf<Pair<Float, Long>?>(null) }
+    val requests = remember { kotlinx.coroutines.flow.MutableStateFlow<Float?>(null) }
+    LaunchedEffect(Unit) {
+        var last = -1f
+        requests.collect { f ->
+            if (f == null || kotlin.math.abs(f - last) < 0.01f) return@collect
+            last = f
+            withContext(Dispatchers.Default) { hub.setMusicVolume?.invoke(f) }
+        }
+    }
+    // A report that matches, or a second and a half, ends the hold.
+    val now = SystemClock.elapsedRealtime()
+    val hold = held?.takeIf { (f, at) -> now - at < 1500 && kotlin.math.abs(f - volume) > 0.04f }
+    val target = hold?.first ?: volume
+    val smooth = remember { Animatable(volume) }
+    LaunchedEffect(target, dragging) { if (!dragging) smooth.animateTo(target, spring(0.9f, 500f)) }
     val context = LocalContext.current
     val shape = RoundedCornerShape(topStart = m.buttonInnerRadius, topEnd = m.buttonInnerRadius, bottomStart = m.buttonOuterRadius, bottomEnd = m.buttonOuterRadius)
-    fun set(fraction: Float) {
+    val scope = rememberCoroutineScope()
+    fun set(fraction: Float, final: Boolean) {
         val f = fraction.coerceIn(0f, 1f)
-        local = f
-        hub.setMusicVolume?.invoke(f)
+        scope.launch { smooth.snapTo(f) }
+        requests.value = f
+        if (final) held = f to SystemClock.elapsedRealtime()
     }
+    val fill = scheme.primary
     Box(
         Modifier
             .fillMaxWidth()
             .height(48.dp)
             .clip(shape)
             .background(IslandInk.Surface)
-            .pointerInput(Unit) { detectTapGestures { set(it.x / size.width) } }
+            .drawBehind { drawRect(fill, size = Size(size.width * smooth.value.coerceIn(0f, 1f), size.height)) }
+            .pointerInput(Unit) { detectTapGestures { set(it.x / size.width, final = true) } }
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
-                    onDragStart = { context.graph.haptics.play(Haptics.Kind.TICK) },
-                    onDragEnd = { local = null },
-                    onDragCancel = { local = null },
+                    onDragStart = { dragging = true; context.graph.haptics.play(Haptics.Kind.TICK) },
+                    onDragEnd = { set(smooth.value, final = true); dragging = false },
+                    onDragCancel = { dragging = false },
                 ) { change, _ ->
                     change.consume()
-                    set(change.position.x / size.width)
+                    set(change.position.x / size.width, final = false)
                 }
             },
     ) {
-        Box(
-            Modifier
-                .fillMaxHeight()
-                .fillMaxWidth(shown.coerceIn(0.001f, 1f))
-                .background(scheme.primary),
-        )
+        val shown = smooth.value
         Icon(
             if (shown <= 0.001f) DripIcons.VolumeOff else DripIcons.VolumeUp, contentDescription = stringResource(R.string.island_volume),
             tint = if (shown > 0.12f) scheme.onPrimary else IslandInk.Secondary,
