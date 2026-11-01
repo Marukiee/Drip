@@ -123,7 +123,7 @@ fun AppPickerScreen(kind: AppPickerKind, onBack: () -> Unit) {
         if (kind == AppPickerKind.NOTIFY) {
             Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
                 SwitchRow(
-                    0, 1, DripIcons.Apps, stringResource(R.string.notif_all), stringResource(R.string.notif_all_sub),
+                    0, 1, DripIcons.CheckCircle, stringResource(R.string.notif_all), stringResource(R.string.notif_all_sub),
                     everyApp, { on -> edit { it.copy(notifyAllApps = on) } },
                 )
             }
