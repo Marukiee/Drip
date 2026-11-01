@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Charger and battery -->
+    <string name="src_charging">Charging</string>
+    <!-- The plug, then the battery level: "Wireless, 54%" -->
+    <string name="src_charging_text">%1$s, %2$d%%</string>
+    <string name="src_plug_ac">Charger</string>
+    <string name="src_plug_usb">USB</string>
+    <string name="src_plug_wireless">Wireless</string>
+    <string name="src_plug_dock">Dock</string>
+    <string name="src_unplugged">Unplugged</string>
+    <string name="src_percent">%1$d%%</string>
+    <string name="src_battery_low">Battery low</string>
+    <string name="src_battery_left">%1$d%% left</string>
+    <string name="src_battery_full">Fully charged</string>
+    <string name="src_saver_on">Battery Saver on</string>
+    <string name="src_saver_off">Battery Saver off</string>
+
+    <!-- System switches -->
+    <string name="src_dnd_on">Do Not Disturb on</string>
+    <string name="src_dnd_off">Do Not Disturb off</string>
+    <string name="src_dnd_priority">Priority only</string>
+    <string name="src_dnd_alarms">Alarms only</string>
+    <string name="src_dnd_silence">Total silence</string>
+    <string name="src_rotation_on">Auto rotate on</string>
+    <string name="src_rotation_off">Rotation locked</string>
+    <string name="src_ringer_normal">Ring</string>
+    <string name="src_ringer_vibrate">Vibrate</string>
+    <string name="src_ringer_silent">Silent</string>
+    <string name="src_volume">Volume</string>
+    <string name="src_brightness">Brightness</string>
+    <string name="src_headphones">Headphones</string>
+    <string name="src_connected">Connected</string>
+
+    <!-- Calls -->
+    <string name="src_call_answer">Answer</string>
+    <string name="src_call_decline">Decline</string>
+    <string name="src_call_hang_up">Hang up</string>
+    <string name="src_call_incoming">Incoming call</string>
+    <string name="src_call_ongoing">Ongoing call</string>
+</resources>

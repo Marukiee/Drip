@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Lader en batterij -->
+    <string name="src_charging">Opladen</string>
+    <string name="src_charging_text">%1$s, %2$d%%</string>
+    <string name="src_plug_ac">Lader</string>
+    <string name="src_plug_usb">USB</string>
+    <string name="src_plug_wireless">Draadloos</string>
+    <string name="src_plug_dock">Dock</string>
+    <string name="src_unplugged">Losgekoppeld</string>
+    <string name="src_percent">%1$d%%</string>
+    <string name="src_battery_low">Batterij bijna leeg</string>
+    <string name="src_battery_left">Nog %1$d%%</string>
+    <string name="src_battery_full">Volledig opgeladen</string>
+    <string name="src_saver_on">Batterijbesparing aan</string>
+    <string name="src_saver_off">Batterijbesparing uit</string>
+
+    <!-- Systeemschakelaars -->
+    <string name="src_dnd_on">Niet storen aan</string>
+    <string name="src_dnd_off">Niet storen uit</string>
+    <string name="src_dnd_priority">Alleen prioriteit</string>
+    <string name="src_dnd_alarms">Alleen wekkers</string>
+    <string name="src_dnd_silence">Totale stilte</string>
+    <string name="src_rotation_on">Automatisch draaien aan</string>
+    <string name="src_rotation_off">Draaien vergrendeld</string>
+    <string name="src_ringer_normal">Geluid aan</string>
+    <string name="src_ringer_vibrate">Trillen</string>
+    <string name="src_ringer_silent">Stil</string>
+    <string name="src_volume">Volume</string>
+    <string name="src_brightness">Helderheid</string>
+    <string name="src_headphones">Koptelefoon</string>
+    <string name="src_connected">Verbonden</string>
+
+    <!-- Gesprekken -->
+    <string name="src_call_answer">Opnemen</string>
+    <string name="src_call_decline">Weigeren</string>
+    <string name="src_call_hang_up">Ophangen</string>
+    <string name="src_call_incoming">Inkomend gesprek</string>
+    <string name="src_call_ongoing">Lopend gesprek</string>
+</resources>
