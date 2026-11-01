@@ -26,6 +26,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ButtonGroup
@@ -144,42 +151,60 @@ fun HomeScreen(onOpen: (Route) -> Unit, modifier: Modifier = Modifier, listState
         onOpen(entry.route)
     }
 
-    Column(modifier.fillMaxSize().statusBarsPadding()) {
-        Text(
-            stringResource(R.string.app_name), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 12.dp),
-        )
-        SettingsSearchField(
-            query = state.query,
-            onQueryChange = { state.query = it },
-            active = active,
-            onFocusChange = { focused = it },
-            onBack = ::endSearch,
-            onSearch = { keyboard?.hide(); focusManager.clearFocus() },
-            focusRequester = fieldFocus,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
-        )
-
-        Box(Modifier.weight(1f).fillMaxWidth().imePadding()) {
+    // The title and the search field scroll away with the list like the top of one page, and come back at the top.
+    // While searching the field stays put, since it is what is being typed in.
+    val header = remember { mutableIntStateOf(0) }
+    val pinned = searching || active
+    val scrolledAway by remember {
+        derivedStateOf { if (listState.firstVisibleItemIndex > 0) Int.MAX_VALUE else listState.firstVisibleItemScrollOffset }
+    }
+    val density = LocalDensity.current
+    // Clipped at the status bar, so the title does not slide on underneath the clock.
+    Box(modifier.fillMaxSize().statusBarsPadding().clipToBounds()) {
+        Box(Modifier.fillMaxSize().imePadding()) {
             AnimatedContent(
                 targetState = searching,
                 transitionSpec = { fadeIn(DripMotion.fadeSpec()) togetherWith fadeOut(DripMotion.fadeSpec()) },
                 label = "homeContent",
             ) { showResults ->
                 if (showResults) {
-                    SettingsResults(
-                        hits = hits,
-                        index = index,
-                        summaries = summaries,
-                        query = state.query,
-                        bottomPadding = if (imeVisible) 16.dp else 40.dp,
-                        onDragStart = { keyboard?.hide() },
-                        onPick = ::open,
-                    )
+                    Box(Modifier.padding(top = with(density) { header.intValue.toDp() })) {
+                        SettingsResults(
+                            hits = hits,
+                            index = index,
+                            summaries = summaries,
+                            query = state.query,
+                            bottomPadding = if (imeVisible) 16.dp else 40.dp,
+                            onDragStart = { keyboard?.hide() },
+                            onPick = ::open,
+                        )
+                    }
                 } else {
-                    Overview(summaries, listState, onOpen)
+                    Overview(summaries, listState, onOpen, top = with(density) { header.intValue.toDp() })
                 }
             }
+        }
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .onSizeChanged { header.intValue = it.height }
+                .offset { IntOffset(0, if (pinned) 0 else -minOf(scrolledAway, header.intValue)) }
+                .background(MaterialTheme.colorScheme.background),
+        ) {
+            Text(
+                stringResource(R.string.app_name), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 12.dp),
+            )
+            SettingsSearchField(
+                query = state.query,
+                onQueryChange = { state.query = it },
+                active = active,
+                onFocusChange = { focused = it },
+                onBack = ::endSearch,
+                onSearch = { keyboard?.hide(); focusManager.clearFocus() },
+                focusRequester = fieldFocus,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
+            )
         }
     }
 }
@@ -193,7 +218,7 @@ private val Groups = listOf(
 )
 
 @Composable
-private fun Overview(summaries: Map<SettingsCategory, String>, listState: LazyListState, onOpen: (Route) -> Unit) {
+private fun Overview(summaries: Map<SettingsCategory, String>, listState: LazyListState, onOpen: (Route) -> Unit, top: androidx.compose.ui.unit.Dp) {
     val context = LocalContext.current
     val access = rememberAccess()
     val restricted = restrictedNote()
@@ -211,7 +236,7 @@ private fun Overview(summaries: Map<SettingsCategory, String>, listState: LazyLi
     LazyColumn(
         Modifier.fillMaxSize(),
         state = listState,
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = bottom),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = top + 4.dp, bottom = bottom),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item(key = "master") { MasterSwitch(allowed = access.island, modifier = Modifier.animateItem()) }
