@@ -233,10 +233,18 @@ class IslandController(
         if (expandedKey != null) collapse() else expand()
     }
 
+    private var typing = false
+
+    /** While a reply is typed the card stays open; afterwards it closes after the usual while again. */
+    fun setTyping(on: Boolean) {
+        typing = on
+        if (on) expandJob?.cancel() else poke()
+    }
+
     /** Someone touched the opened card: it stays open a while longer. */
     fun poke() {
         expandJob?.cancel()
-        if (expandedKey == null) return
+        if (expandedKey == null || typing) return
         expandJob = scope.launch {
             delay(EXPANDED_IDLE_MS)
             collapse()

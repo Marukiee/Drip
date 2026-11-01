@@ -101,7 +101,7 @@ fun SceneContent(scene: Scene, privacy: PrivacyInfo, controller: IslandControlle
                     // The slim announcements open into the card of what they are about.
                     AlertKind.VOLUME, AlertKind.RINGER -> VolumeCard(hub)
                     AlertKind.CHARGING, AlertKind.BATTERY_FULL, AlertKind.UNPLUGGED -> ChargingCard(hub.battery.collectAsState().value)
-                    else -> NoticeCard(c.alert, controller)
+                    else -> NoticeCard(c.alert, controller, hub)
                 }
                 null -> Unit
             }

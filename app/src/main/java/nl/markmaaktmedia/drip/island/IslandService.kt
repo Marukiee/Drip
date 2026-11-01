@@ -79,6 +79,10 @@ class IslandService : AccessibilityService() {
         scope.launch { graph.hub.demos.collect { Demos.play(applicationContext, it, controller) } }
         graph.hub.islandRunning.value = true
         graph.hub.openOutput = { openOutputSwitcher(graph.hub.nowPlaying.value?.packageName) }
+        graph.hub.setTyping = { on ->
+            window.setTyping(on)
+            controller.setTyping(on)
+        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -213,6 +217,7 @@ class IslandService : AccessibilityService() {
         tornDown = true
         applicationContext.graph.hub.islandRunning.value = false
         applicationContext.graph.hub.openOutput = null
+        applicationContext.graph.hub.setTyping = null
         runCatching { unregisterReceiver(screenReceiver) }
         sources.stop()
         window.hide()

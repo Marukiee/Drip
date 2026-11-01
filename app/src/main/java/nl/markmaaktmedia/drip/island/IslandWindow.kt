@@ -139,6 +139,20 @@ class IslandWindow(private val context: Context) {
         if (attached) runCatching { windowManager.updateViewLayout(touch, touchParams) }
     }
 
+    /**
+     * While a reply is typed the island's window takes the keyboard: it becomes focusable for that time only, and lets
+     * go again afterwards so it never holds the focus of the app underneath.
+     */
+    fun setTyping(on: Boolean) {
+        val focusable = drawParams.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE == 0
+        if (focusable == on) return
+        drawParams.flags = if (on) drawParams.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv()
+        else drawParams.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+        drawParams.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING or
+            (if (on) WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE else WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN)
+        if (attached) runCatching { windowManager.updateViewLayout(root, drawParams) }
+    }
+
     /** Asks for the fastest refresh rate while the island moves, and lets the phone save power when it rests. */
     fun setMoving(moving: Boolean) {
         if (Build.VERSION.SDK_INT >= 35) {

@@ -24,6 +24,8 @@ class IslandHub {
     val musicVolume = MutableStateFlow(0f)
 
     @Volatile var torchCommands: TorchCommands? = null
+    /** Gives the island the keyboard while a reply is typed, and takes it away again. Set by the island service. */
+    @Volatile var setTyping: ((Boolean) -> Unit)? = null
     /** Opens Android's panel for where sound plays. Set by the island service. */
     @Volatile var openOutput: (() -> Unit)? = null
     /** Sets the media volume, 0 to 1, without the system's own volume panel. */

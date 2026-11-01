@@ -44,6 +44,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.animation.togetherWith
 import nl.markmaaktmedia.drip.R
 import nl.markmaaktmedia.drip.graph
 import nl.markmaaktmedia.drip.island.ActionKind
@@ -250,9 +253,9 @@ fun TorchCard(torch: TorchInfo, hub: IslandHub) {
     }
 }
 
-/** An opened announcement: the whole message and its buttons. */
+/** An opened announcement: the whole message and its buttons, and a reply typed right here when the app allows it. */
 @Composable
-fun NoticeCard(alert: Alert, controller: IslandController) {
+fun NoticeCard(alert: Alert, controller: IslandController, hub: IslandHub) {
     val accent = alertAccent(alert)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         when {
@@ -276,21 +279,108 @@ fun NoticeCard(alert: Alert, controller: IslandController) {
         LevelBar(it, accent, Modifier.fillMaxWidth().height(8.dp))
     }
     Spacer(Modifier.height(16.dp))
-    val open = stringResource(R.string.island_open)
-    val buttons = alert.actions.take(2).map { action ->
-        RowButton(action.title, null, IslandInk.Surface, IslandInk.Primary, 1f) {
-            action.run()
-            controller.dismissAlert()
-        }
-    } + listOfNotNull(
-        alert.open?.let { run ->
-            RowButton(open, DripIcons.OpenInNew, accent, Color.Black, 1f) {
-                run()
-                controller.dismissAlert()
-            }
+    var replying by remember { mutableStateOf<IslandAction?>(null) }
+    val reply = replying
+    androidx.compose.animation.AnimatedContent(
+        targetState = reply,
+        transitionSpec = {
+            (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(180)) +
+                androidx.compose.animation.slideInVertically(spring(0.8f, 500f)) { it / 3 })
+                .togetherWith(androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(120)))
         },
-    )
-    if (buttons.isNotEmpty()) ConcentricButtonRow(buttons)
+        label = "replyRow",
+    ) { action ->
+        if (action != null) {
+            ReplyField(action, accent, hub, onDone = {
+                replying = null
+                controller.dismissAlert()
+            }, onCancel = { replying = null })
+        } else {
+            val open = stringResource(R.string.island_open)
+            val buttons = alert.actions.take(3).map { a ->
+                if (a.reply != null) {
+                    RowButton(a.title, DripIcons.Reply, accent.copy(alpha = 0.22f), accent, 1f) { replying = a }
+                } else {
+                    RowButton(a.title, null, IslandInk.Surface, IslandInk.Primary, 1f) {
+                        a.run()
+                        controller.dismissAlert()
+                    }
+                }
+            } + listOfNotNull(
+                alert.open?.takeIf { alert.actions.size < 3 }?.let { run ->
+                    RowButton(open, DripIcons.OpenInNew, accent, Color.Black, 1f) {
+                        run()
+                        controller.dismissAlert()
+                    }
+                },
+            )
+            if (buttons.isNotEmpty()) ConcentricButtonRow(buttons)
+        }
+    }
+}
+
+/**
+ * Typing a reply in the island: a pill for the text and a round send button, its outer corners concentric with the
+ * island. The island takes the keyboard for as long as this is on screen.
+ */
+@Composable
+private fun ReplyField(action: IslandAction, accent: Color, hub: IslandHub, onDone: () -> Unit, onCancel: () -> Unit) {
+    val m = LocalCardMetrics.current
+    var text by remember { mutableStateOf("") }
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    val keyboard = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        hub.setTyping?.invoke(true)
+        onDispose { hub.setTyping?.invoke(false) }
+    }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        // The window has to become focusable first; give it a frame or two.
+        kotlinx.coroutines.delay(120)
+        runCatching { focus.requestFocus() }
+        keyboard?.show()
+    }
+    fun send() {
+        val t = text.trim()
+        if (t.isEmpty()) return
+        context.graph.haptics.play(Haptics.Kind.TAP)
+        action.reply?.invoke(t)
+        keyboard?.hide()
+        onDone()
+    }
+    Row(Modifier.fillMaxWidth().height(52.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(topStart = m.buttonInnerRadius, topEnd = m.buttonInnerRadius, bottomEnd = m.buttonInnerRadius, bottomStart = m.buttonOuterRadius))
+                .background(IslandInk.Surface)
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            if (text.isEmpty()) Text(action.title, color = IslandInk.Tertiary, fontSize = 15.sp)
+            androidx.compose.foundation.text.BasicTextField(
+                value = text,
+                onValueChange = { text = it },
+                singleLine = true,
+                textStyle = androidx.compose.ui.text.TextStyle(color = IslandInk.Primary, fontSize = 15.sp),
+                cursorBrush = androidx.compose.ui.graphics.SolidColor(accent),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Send),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSend = { send() }),
+                modifier = Modifier.fillMaxWidth().focusRequester(focus),
+            )
+        }
+        Box(
+            Modifier
+                .size(52.dp)
+                .clip(RoundedCornerShape(topStart = m.buttonInnerRadius, topEnd = m.buttonInnerRadius, bottomStart = m.buttonInnerRadius, bottomEnd = m.buttonOuterRadius))
+                .background(if (text.isBlank()) IslandInk.Surface else accent)
+                .clickable { if (text.isBlank()) onCancel() else send() },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(if (text.isBlank()) DripIcons.Close else DripIcons.Send, null, tint = if (text.isBlank()) IslandInk.Secondary else Color.Black, modifier = Modifier.size(22.dp))
+        }
+    }
 }
 
 /** The app a card belongs to, its name, and a small icon for what kind of thing it is. */
