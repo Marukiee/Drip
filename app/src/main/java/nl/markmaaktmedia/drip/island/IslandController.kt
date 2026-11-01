@@ -168,12 +168,19 @@ class IslandController(
 
     private var lingerJob: Job? = null
 
-    /** The small drop becomes the island and the island the small drop. */
-    fun swapSecond(): Boolean {
+    /**
+     * The small drop opens at once as the card, and becomes the island: closed again it stays in front, with what was
+     * the island now the small drop. Unless it ended while open, like a torch switched off: then it is simply gone.
+     */
+    fun openSecond(): Boolean {
         val content = second ?: return false
         pinnedKey = content.key
-        haptics.play(Haptics.Kind.SWIPE)
         repick()
+        expandedKey = content.key
+        expandedFallback = content
+        expandJob?.cancel()
+        haptics.play(Haptics.Kind.EXPAND)
+        poke()
         refresh()
         return true
     }
@@ -252,17 +259,6 @@ class IslandController(
             if (queue.isNotEmpty()) delay(180)
             showNextAlert()
         }
-    }
-
-    /** Opens the card of the second thing, the small drop next to the island. */
-    fun expandSecond(): Boolean {
-        val content = second ?: return false
-        expandedKey = content.key
-        expandedFallback = content
-        haptics.play(Haptics.Kind.EXPAND)
-        poke()
-        refresh()
-        return true
     }
 
     /** Opens the card of what is showing. Returns false when there is nothing to open. */

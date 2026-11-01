@@ -151,14 +151,20 @@ fun IslandOverlay(
     val dropNow by rememberUpdatedState(secondTarget)
     val dropOut by rememberUpdatedState(second != null)
 
-    // Moving between stages: grow the window to hold both shapes, run the springs, then fit the window to where it ended.
+    // Moving between stages: make sure the window holds both shapes, run the springs, and let the window go small again
+    // only once nothing of the island shows.
+    //
+    // A window that changes height shows its old picture for one frame in the middle of the new size, so the island
+    // would jump down or up for a frame. So while anything of it is on screen the window keeps one height, as tall as a
+    // card can get; it only grows or shrinks while the island is gone. It lets every touch through, so its size costs
+    // nothing else, and an opened card is never waiting for a taller window.
     LaunchedEffect(target, s.bounce, s.speed) {
-        window.setTouchable(ui.stage != Stage.HIDDEN)
+        val showing = ui.stage != Stage.HIDDEN
+        window.setTouchable(showing)
         val from = shape.value.bounds
-        // While something is on the island the window is already as tall as its opened card, so a tap opens it at once
-        // instead of waiting for a taller window. The window lets every touch through, so its size costs nothing else.
         val ready = if (ui.stage == Stage.HIDDEN || ui.stage == Stage.IDLE) target.bounds else layout.geometry(Stage.EXPANDED, expandedHeight).bounds
-        val tall = max(drawHeight(from, target.bounds, layout), drawHeight(ready, ready, layout))
+        val needed = max(drawHeight(from, target.bounds, layout), drawHeight(ready, ready, layout))
+        val tall = if (showing) max(needed, (layout.fit.screenHeight * ROOMY_SHARE).roundToInt()) else max(needed, window.height)
         window.setHeight(tall)
         window.setTouchBounds(touchRect(from, withSecond(target.bounds, secondTarget, second != null), layout))
         // A taller window lands a frame or two later. Starting before it does would cut the growing shape off at the
@@ -174,7 +180,7 @@ fun IslandOverlay(
         }
         shape.animateTo(target, opening, s.bounce, s.speed)
         window.setMoving(false)
-        window.setHeight(max(drawHeight(target.bounds, target.bounds, layout), drawHeight(ready, ready, layout)))
+        if (!showing) window.setHeight(drawHeight(target.bounds, target.bounds, layout))
         val end = withSecond(target.bounds, dropNow, dropOut)
         window.setTouchBounds(touchRect(end, end, layout))
     }
@@ -214,9 +220,9 @@ fun IslandOverlay(
                     val at = Offset(down.position.x + o.x, down.position.y + o.y)
                     val onSecond = ui.second != null && stage == Stage.COMPACT && secondShape.value.bounds.contains(at) && !shape.value.bounds.contains(at)
                     if (onSecond) {
-                        // The small drop: a tap swaps it with the island; anything else on it is left alone.
+                        // The small drop: a tap opens it as the card, and it becomes the island; anything else is left alone.
                         val up = waitForUpOrCancellation()
-                        if (up != null) controller.swapSecond()
+                        if (up != null) controller.openSecond()
                         return@awaitEachGesture
                     }
                     val inside = shape.value.bounds.contains(at)
@@ -622,3 +628,6 @@ private fun Modifier.blurWhileMoving(scope: AnimatedVisibilityScope): Modifier {
         renderEffect = if (r > 0.5f) BlurEffect(r, r) else null
     }
 }
+
+/** How much of the screen's height the island's window takes while anything of it shows: room for the tallest card. */
+private const val ROOMY_SHARE = 0.8f

@@ -1,5 +1,27 @@
 [
   {
+    "version": "0.1.12",
+    "date": "2026-11-01",
+    "en": {
+      "title": "Smoother",
+      "better": [
+        "A tap on the small drop opens it as the card at once, and closed it stays in front"
+      ],
+      "fixed": [
+        "Closing a card no longer jumps for a frame"
+      ]
+    },
+    "nl": {
+      "title": "Soepeler",
+      "better": [
+        "Een tik op de kleine druppel opent hem meteen als kaart, en dicht blijft hij vooraan"
+      ],
+      "fixed": [
+        "Een kaart sluiten verspringt niet meer een frame"
+      ]
+    }
+  },
+  {
     "version": "0.1.11",
     "date": "2026-11-01",
     "en": {

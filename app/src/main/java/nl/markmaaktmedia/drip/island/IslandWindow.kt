@@ -111,6 +111,9 @@ class IslandWindow(private val context: Context) {
     fun originNow(): Offset = Offset.Zero
 
     /** Makes the drawing window [height] pixels tall. Does nothing when it already is. */
+    /** The height asked for last, which the window has or is about to get. */
+    val height: Int get() = drawParams.height
+
     fun setHeight(height: Int) {
         val h = height.coerceAtLeast(1)
         if (drawParams.height == h) return
