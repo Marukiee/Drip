@@ -87,3 +87,17 @@ internal fun pickSession(sessions: List<SessionView>): Int? {
     known.filter { it.value.playing }.maxWithOrNull(order)?.let { return it.index }
     return known.filter { it.value.usable }.maxWithOrNull(order)?.index
 }
+
+/** One song of a player's queue: MediaSession.QueueItem's id and the title of its description. */
+data class QueueEntry(val id: Long, val title: String?)
+
+/** MediaSession.QueueItem.UNKNOWN_ID: the player does not say which item plays. */
+private const val UNKNOWN_QUEUE_ID = -1L
+
+/** The title of what comes after the item that plays, or null without a queue, at its end, or when that is unknown. */
+internal fun nextInQueue(queue: List<QueueEntry>, activeId: Long): String? {
+    if (activeId == UNKNOWN_QUEUE_ID || queue.isEmpty()) return null
+    val at = queue.indexOfFirst { it.id == activeId }
+    if (at < 0) return null
+    return queue.getOrNull(at + 1)?.title?.trim()?.takeIf { it.isNotEmpty() }
+}

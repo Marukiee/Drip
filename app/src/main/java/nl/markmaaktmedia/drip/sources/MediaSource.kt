@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.media.MediaMetadata
 import android.media.session.MediaController
+import android.media.session.MediaSession
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
 import android.os.Handler
@@ -100,6 +101,7 @@ internal class MediaSource(
             repeat = repeat?.let { repeatModeOf(it.action, it.name?.toString()) },
             shuffle = shuffle?.let { shuffleOnOf(it.action, it.name?.toString()) },
             liked = like?.let { likedOf(it.action, it.name?.toString()) },
+            next = nextInQueue(s.queue, state?.activeQueueItemId ?: MediaSession.QueueItem.UNKNOWN_ID.toLong()),
             commands = s.commands,
         )
     }
@@ -109,6 +111,8 @@ internal class MediaSource(
         var state: PlaybackState? = null
         var lastPlayingAt = 0L
         var art: Bitmap? = null
+        /** Kept from the callback: a long queue is a big binder call, too much to ask for on every state change. */
+        var queue: List<QueueEntry> = emptyList()
         private var artSource: Bitmap? = null
         val commands = Commands(this)
 
@@ -116,6 +120,7 @@ internal class MediaSource(
             metadata = safely("metadata") { controller.metadata }
             state = safely("playback state") { controller.playbackState }
             if (isActive(state)) lastPlayingAt = SystemClock.elapsedRealtime()
+            readQueue(safely("queue") { controller.queue })
             readArt()
             safely("media callback") { controller.registerCallback(this, handler) }
         }
@@ -140,6 +145,15 @@ internal class MediaSource(
             // Both the start and the stop count, so among paused players the one paused last wins.
             if (isActive(state) != was) lastPlayingAt = SystemClock.elapsedRealtime()
             update()
+        }
+
+        override fun onQueueChanged(queue: MutableList<MediaSession.QueueItem>?) {
+            readQueue(queue)
+            update()
+        }
+
+        private fun readQueue(items: List<MediaSession.QueueItem>?) {
+            queue = items.orEmpty().map { QueueEntry(it.queueId, it.description?.title?.toString()) }
         }
 
         override fun onSessionDestroyed() {

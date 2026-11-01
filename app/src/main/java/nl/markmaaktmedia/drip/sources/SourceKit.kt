@@ -29,9 +29,9 @@ internal inline fun <T> safely(what: String, block: () -> T): T? = try {
 
 /**
  * Sends [this] with Drip's own right to start an activity. Since Android 14 a PendingIntent no longer gets that by
- * itself, and a tap on the island would quietly do nothing.
+ * itself, and a tap on the island would quietly do nothing. [fillIn] carries extras along, like the text of a reply.
  */
-internal fun PendingIntent.sendFrom(context: Context): Boolean = safely("send ${creatorPackage}") {
+internal fun PendingIntent.sendFrom(context: Context, fillIn: Intent? = null): Boolean = safely("send ${creatorPackage}") {
     val options = if (Build.VERSION.SDK_INT >= 34) {
         val mode = if (Build.VERSION.SDK_INT >= 36) {
             ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS
@@ -43,7 +43,7 @@ internal fun PendingIntent.sendFrom(context: Context): Boolean = safely("send ${
     } else {
         null
     }
-    send(context, 0, null, null, null, null, options)
+    send(context, 0, fillIn, null, null, null, options)
     true
 } ?: false
 

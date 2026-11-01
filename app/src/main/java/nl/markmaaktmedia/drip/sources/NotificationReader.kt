@@ -3,7 +3,10 @@ package nl.markmaaktmedia.drip.sources
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Person
+import android.app.RemoteInput
 import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
 import android.service.notification.StatusBarNotification
@@ -16,6 +19,9 @@ import nl.markmaaktmedia.drip.island.AlertKind
 import nl.markmaaktmedia.drip.island.CallInfo
 import nl.markmaaktmedia.drip.island.IslandAction
 import nl.markmaaktmedia.drip.island.LiveInfo
+import nl.markmaaktmedia.drip.island.LiveKind
+import nl.markmaaktmedia.drip.island.ProgressPoint
+import nl.markmaaktmedia.drip.island.ProgressSegment
 
 /** Turns a StatusBarNotification into what the island shows. [cancel] removes a notification by its key. */
 internal class NotificationReader(
@@ -34,14 +40,13 @@ internal class NotificationReader(
         var indeterminate = e.getBoolean(Notification.EXTRA_PROGRESS_INDETERMINATE)
         if (Build.VERSION.SDK_INT >= 36 && template == "ProgressStyle" && max <= 0) {
             // Android 16's progress style keeps its length in segments, which only the style itself adds up.
-            safely("progress style") {
-                (Notification.Builder.recoverBuilder(context, n).style as? Notification.ProgressStyle)?.let {
-                    progress = it.progress
-                    max = it.progressMax
-                    indeterminate = it.isProgressIndeterminate
-                }
+            progressStyle(n)?.let {
+                progress = it.progress
+                max = it.progressMax
+                indeterminate = it.isProgressIndeterminate
             }
         }
+        val messages = messages(e)
         return NoticeFacts(
             packageName = sbn.packageName,
             category = n.category,
@@ -62,7 +67,31 @@ internal class NotificationReader(
             text = e.text(Notification.EXTRA_TEXT) ?: e.text(Notification.EXTRA_BIG_TEXT),
             subText = e.text(Notification.EXTRA_SUB_TEXT),
             channelId = n.channelId,
+            lastFromUser = messages.lastOrNull()?.let { fromUser(it, e) } == true,
         )
+    }
+
+    /** In a conversation a message without a sender is the user's own; some apps name the user as sender instead. */
+    private fun fromUser(m: Notification.MessagingStyle.Message, e: Bundle): Boolean {
+        val sender = m.senderPerson ?: return true
+        val user = BundleCompat.getParcelable(e, Notification.EXTRA_MESSAGING_PERSON, Person::class.java) ?: return false
+        return (user.key != null && user.key == sender.key) || (user.key == null && user.name != null && user.name == sender.name)
+    }
+
+    private var styleOf: Notification? = null
+    private var style: Notification.ProgressStyle? = null
+
+    /**
+     * Android 16's progress style, rebuilt from the notification. Kept for the last one, since [facts] and [live] both
+     * ask for it on the same post and rebuilding a notification is not cheap for a bar that moves every second.
+     */
+    private fun progressStyle(n: Notification): Notification.ProgressStyle? {
+        if (Build.VERSION.SDK_INT < 36) return null
+        if (styleOf !== n) {
+            styleOf = n
+            style = safely("progress style") { Notification.Builder.recoverBuilder(context, n).style as? Notification.ProgressStyle }
+        }
+        return style
     }
 
     /** What the notification says. A post with the same fingerprint is a silent refresh, not news. */
@@ -121,6 +150,8 @@ internal class NotificationReader(
         val n = sbn.notification
         val label = apps.label(sbn.packageName)
         val critical = if (Build.VERSION.SDK_INT >= 36) safely("short critical text") { n.shortCriticalText } else null
+        val kind = liveKindFor(f)
+        val bar = liveBar(n, f)
         return LiveInfo(
             key = sbn.key,
             packageName = sbn.packageName,
@@ -128,17 +159,44 @@ internal class NotificationReader(
             appIcon = apps.icon(sbn.packageName),
             picture = n.getLargeIcon()?.toBitmapWithin(context, PHOTO_PX),
             accent = n.color.takeIf { it != Notification.COLOR_DEFAULT },
-            kind = liveKindFor(f),
+            kind = kind,
             title = f.title ?: label,
             text = f.text,
             progress = liveProgress(f),
             indeterminate = f.indeterminate,
             chronometerBase = n.`when`.takeIf { f.showsChronometer && it > 0 },
             countDown = f.countDown,
-            shortText = shortTextFor(f, critical),
+            shortText = liveShortText(f, kind, critical),
+            segments = bar.segments,
+            points = bar.points,
+            tracker = bar.tracker,
+            detail = if (kind == LiveKind.NAVIGATION) arrivalTime(f)?.let { context.getString(R.string.notice_arrive, it) } else null,
             actions = buttons(n),
             open = opener(sbn),
         )
+    }
+
+    private class Bar(
+        val segments: List<ProgressSegment> = emptyList(),
+        val points: List<ProgressPoint> = emptyList(),
+        val tracker: Bitmap? = null,
+    )
+
+    /**
+     * The segments, points and tracker of a Live Update. The extras that hold them are hidden from apps, and so are the
+     * keys inside them, so their names only tell whether there is anything; the style itself reads them out.
+     */
+    private fun liveBar(n: Notification, f: NoticeFacts): Bar {
+        val e = n.extras
+        if (Build.VERSION.SDK_INT < 36 || f.template != "ProgressStyle" || PROGRESS_STYLE_EXTRAS.none(e::containsKey)) return Bar()
+        val style = progressStyle(n) ?: return Bar()
+        return safely("progress bar") {
+            Bar(
+                segments = progressSegments(style.progressSegments.map { BarPart(it.length, it.color) }),
+                points = progressPoints(style.progressPoints.map { BarPart(it.position, it.color) }, style.progressMax),
+                tracker = style.progressTrackerIcon?.toBitmapWithin(context, TRACKER_PX),
+            )
+        } ?: Bar()
     }
 
     fun alert(sbn: StatusBarNotification, f: NoticeFacts, kind: AlertKind, s: IslandSettings): Alert {
@@ -172,12 +230,63 @@ internal class NotificationReader(
             packageName = sbn.packageName,
             accent = n.color.takeIf { it != Notification.COLOR_DEFAULT },
             durationMs = s.alertDurationMs,
-            actions = buttons(n),
+            actions = alertButtons(n),
             open = opener(sbn),
         )
     }
 
-    /** Up to three buttons the island can press for the app. A reply needs a keyboard, so those stay in the shade. */
+    /** A device Tandem just connected to: a short word, nothing that stays. */
+    fun tandemConnected(sbn: StatusBarNotification, device: String, s: IslandSettings) = Alert(
+        id = "tandem:$device",
+        kind = AlertKind.OTHER,
+        title = device,
+        text = context.getString(R.string.notice_tandem_connected),
+        iconRes = R.drawable.sym_computer,
+        packageName = sbn.packageName,
+        durationMs = s.alertDurationMs,
+        open = opener(sbn),
+    )
+
+    /** What Quick Share put on the clipboard. Tandem files it as a quiet notification, which no plain alert would show. */
+    fun tandemClipboard(sbn: StatusBarNotification, f: NoticeFacts, s: IslandSettings) = Alert(
+        id = sbn.key,
+        kind = AlertKind.OTHER,
+        title = f.title ?: apps.label(sbn.packageName),
+        text = f.text,
+        iconRes = R.drawable.sym_content_paste,
+        packageName = sbn.packageName,
+        durationMs = s.alertDurationMs,
+        open = opener(sbn),
+    )
+
+    /** A reply first, since that is what a message is answered with, then the other buttons, three at most. */
+    private fun alertButtons(n: Notification): List<IslandAction> {
+        val replies = n.actions.orEmpty().mapNotNull(::replyAction)
+        return (replies + buttons(n)).take(MAX_ACTIONS)
+    }
+
+    /** A button that takes typed text. The island asks for the text and [IslandAction.reply] sends it like the shade does. */
+    private fun replyAction(a: Notification.Action): IslandAction? {
+        val intent = a.actionIntent ?: return null
+        val inputs = a.remoteInputs?.takeIf { it.isNotEmpty() } ?: return null
+        val input = inputs.firstOrNull { it.allowFreeFormInput } ?: return null
+        val title = a.title?.toString()?.trim()?.takeIf { it.isNotEmpty() } ?: context.getString(R.string.notice_reply)
+        return IslandAction(
+            title = title,
+            kind = ActionKind.REPLY,
+            reply = { text ->
+                safely("reply") {
+                    val fillIn = Intent().addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+                    RemoteInput.addResultsToIntent(inputs, fillIn, Bundle().apply { putCharSequence(input.resultKey, text) })
+                    RemoteInput.setResultsSource(fillIn, RemoteInput.SOURCE_FREE_FORM_INPUT)
+                    intent.sendFrom(context, fillIn)
+                }
+            },
+            run = {},
+        )
+    }
+
+    /** Up to three buttons the island can press for the app. A reply needs a keyboard, so those are added apart. */
     private fun buttons(n: Notification): List<IslandAction> = n.actions.orEmpty()
         .filter { it.remoteInputs.isNullOrEmpty() && it.actionIntent != null }
         .take(MAX_ACTIONS)
@@ -221,7 +330,10 @@ internal class NotificationReader(
         /** Notification.FLAG_PROMOTED_ONGOING, which only exists from Android 16. */
         const val FLAG_PROMOTED_ONGOING = 0x00040000
         const val PHOTO_PX = 192
+        const val TRACKER_PX = 96
         const val MAX_ACTIONS = 3
+        /** Notification.EXTRA_PROGRESS_SEGMENTS and friends, hidden in the SDK. */
+        val PROGRESS_STYLE_EXTRAS = listOf("android.progressSegments", "android.progressPoints", "android.progressTrackerIcon")
         val CALL_INTENTS = listOf(
             Notification.EXTRA_ANSWER_INTENT, Notification.EXTRA_DECLINE_INTENT, Notification.EXTRA_HANG_UP_INTENT,
         )

@@ -84,4 +84,14 @@ class MediaRulesTest {
         assertNull(pickSession(emptyList()))
         assertNull(pickSession(listOf(SessionView(playing = true, hasMetadata = false))))
     }
+
+    @Test fun nextInTheQueue() {
+        val queue = listOf(QueueEntry(10, "One"), QueueEntry(11, "Two"), QueueEntry(12, " "), QueueEntry(13, "Four"))
+        assertEquals("Two", nextInQueue(queue, 10))
+        assertNull(nextInQueue(queue, 11))
+        assertNull(nextInQueue(queue, 13))
+        assertNull(nextInQueue(queue, 99))
+        assertNull(nextInQueue(queue, -1))
+        assertNull(nextInQueue(emptyList(), 10))
+    }
 }

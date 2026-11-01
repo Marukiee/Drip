@@ -99,6 +99,16 @@
             android:name=".update.InstallResultReceiver"
             android:exported="false" />
 
+        <!-- Tasker and other automation apps put their own things on the island. Does nothing until allowed in the settings. -->
+        <receiver
+            android:name=".automation.AutomationReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="nl.markmaaktmedia.drip.SHOW" />
+                <action android:name="nl.markmaaktmedia.drip.HIDE" />
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"

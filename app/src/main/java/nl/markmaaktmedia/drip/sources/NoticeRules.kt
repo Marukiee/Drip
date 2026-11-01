@@ -4,6 +4,8 @@ import nl.markmaaktmedia.drip.data.IslandSettings
 import nl.markmaaktmedia.drip.island.ActionKind
 import nl.markmaaktmedia.drip.island.AlertKind
 import nl.markmaaktmedia.drip.island.LiveKind
+import nl.markmaaktmedia.drip.island.ProgressPoint
+import nl.markmaaktmedia.drip.island.ProgressSegment
 import kotlin.math.roundToInt
 
 /**
@@ -33,6 +35,8 @@ data class NoticeFacts(
     val text: String? = null,
     val subText: String? = null,
     val channelId: String? = null,
+    /** The newest message of a conversation is the user's own, which is how an app shows a reply that was just sent. */
+    val lastFromUser: Boolean = false,
 )
 
 /** What the ranking says about a notification. */
@@ -74,7 +78,8 @@ internal fun isLive(f: NoticeFacts, ownPackage: String): Boolean {
     // Something that rings full screen (an alarm, a timer that ran out) is an alert, not a card that stays.
     if (f.hasFullScreenIntent) return false
     val bar = f.progressMax > 0 || f.indeterminate
-    val strong = f.promoted || f.category in liveCategories || isClockApp(f.packageName)
+    // A match that is on has no bar and often no clock either, only the score.
+    val strong = f.promoted || f.category in liveCategories || isClockApp(f.packageName) || isSports(f)
     if (!strong && !bar && !f.showsChronometer) return false
     if (!strong && !bar) {
         // A notice that the app runs is not worth the room, even when it shows a clock.
@@ -110,10 +115,13 @@ internal fun liveKindFor(f: NoticeFacts): LiveKind {
     }
     val bar = f.progressMax > 0 || f.indeterminate
     return when {
+        // Tandem's own bar says "Receiving" over a file name, which no word below would find.
+        tandemRole(f) == TandemRole.TRANSFER -> LiveKind.DOWNLOAD
         f.category == "navigation" || navigationApps.any(pkg::startsWith) -> LiveKind.NAVIGATION
         // Uber Eats before Uber: the food app starts with the name of the ride app.
         deliveryApps.any(pkg::startsWith) -> LiveKind.DELIVERY
         rideApps.any(pkg::startsWith) -> LiveKind.RIDE
+        isSports(f) -> LiveKind.SPORTS
         isClockApp(pkg) -> if (f.category == "stopwatch" || mentions("stopwatch") || (f.showsChronometer && !f.countDown)) {
             LiveKind.STOPWATCH
         } else {
@@ -127,6 +135,8 @@ internal fun liveKindFor(f: NoticeFacts): LiveKind {
         mentions("ride", "rit", "taxi", "driver", "chauffeur") -> LiveKind.RIDE
         pkg.startsWith("com.android.providers.downloads") ||
             (bar && mentions("download", "upload", "install", "update", "bijwerk")) -> LiveKind.DOWNLOAD
+        // After the words: "2 - 1" in a delivery or a download is more likely a count than a score.
+        scoreIn(f) != null -> LiveKind.SPORTS
         f.countDown || mentions("timer") -> LiveKind.TIMER
         else -> LiveKind.GENERIC
     }
@@ -148,15 +158,27 @@ internal fun shortTextFor(f: NoticeFacts, criticalText: String? = null): String?
         .firstOrNull { it.length <= 10 && it.any(Char::isDigit) }
 }
 
+/**
+ * Android's own screenshot preview already pops up, and a second announcement of "Screenshot saved" on top of it is
+ * noise. The system UI posts nothing else worth an alert either (that is what Drip's own system sources are for).
+ */
+internal fun isSystemChatter(packageName: String): Boolean {
+    val pkg = packageName.lowercase()
+    return pkg == "com.android.systemui" || "screenshot" in pkg || "screenrecord" in pkg
+}
+
 /** Whether a new notification opens the island, and as what. Null keeps it quiet. */
 internal fun alertKindFor(f: NoticeFacts, rank: RankFacts, s: IslandSettings, ownPackage: String): AlertKind? {
     if (f.packageName == ownPackage || !s.showNotifications) return null
+    if (isSystemChatter(f.packageName)) return null
     if (!s.notifyAllApps && f.packageName !in s.notifyApps) return null
     if (f.groupSummary || isMedia(f) || isCall(f)) return null
     val alarm = f.category == "alarm"
     // An alarm that goes off stays ongoing until it is stopped, so alarms are the one ongoing thing let through.
     if (f.ongoing && !alarm) return null
     if (f.title.isNullOrBlank() && f.text.isNullOrBlank()) return null
+    // The app posts the conversation again with the reply in it; that is no news to the one who sent it.
+    if (f.lastFromUser) return null
     if (rank.importance < IMPORTANCE_DEFAULT || rank.ambient || !rank.matchesFilter || rank.suspended) return null
     return if (alarm) AlertKind.ALARM else AlertKind.NOTIFICATION
 }
@@ -192,4 +214,105 @@ internal fun actionKindFor(semantic: Int, title: String?, hasRemoteInput: Boolea
         has("open") -> ActionKind.OPEN
         else -> ActionKind.OTHER
     }
+}
+
+/** A segment or a point of an Android 16 progress style: a length or a position in the units of the bar, and a colour. */
+data class BarPart(val amount: Int, val color: Int = 0)
+
+/** Notification.COLOR_DEFAULT: the app left the colour to the system. */
+private const val NO_COLOR = 0
+
+/** The stretches of a bar as shares of the whole, so they add up to 1 whatever units the app counted in. */
+internal fun progressSegments(parts: List<BarPart>): List<ProgressSegment> {
+    val kept = parts.filter { it.amount > 0 }
+    val total = kept.sumOf { it.amount.toLong() }
+    if (total <= 0) return emptyList()
+    return kept.map { ProgressSegment(it.amount.toFloat() / total, it.color.takeIf { c -> c != NO_COLOR }) }
+}
+
+/** The marks on a bar of length [max], from 0 to 1. Android leaves out a mark beyond the bar, so Drip does too. */
+internal fun progressPoints(parts: List<BarPart>, max: Int): List<ProgressPoint> {
+    if (max <= 0) return emptyList()
+    return parts.filter { it.amount in 0..max }
+        .map { ProgressPoint(it.amount.toFloat() / max, it.color.takeIf { c -> c != NO_COLOR }) }
+        .sortedBy { it.position }
+}
+
+// Recent Android writes "2:32 PM" with a narrow no-break space and some apps put a no-break space in "200 m".
+private const val GAP = "[\\s\\u00A0\\u202F]"
+private val distancePattern = Regex(
+    "(?<![\\p{N}.,])(\\d{1,4}(?:[.,]\\d{1,2})?)$GAP?(km|mi|ft|yd|m)(?![\\p{L}\\p{N}])",
+    RegexOption.IGNORE_CASE,
+)
+private val clockPattern = Regex(
+    "(?<![\\p{N}:])((?:[01]?\\d|2[0-3]):[0-5]\\d)(?:$GAP?([AaPp])\\.?$GAP?[Mm]\\.?(?![\\p{L}]))?(?![\\p{N}])",
+)
+private val partSplit = Regex("[\\u00B7\\u2022|\\n]")
+private val arrivalStems = listOf("aankomst", "arriv", "eta")
+
+/**
+ * How far to the next turn: the first distance in the title or the text, where Maps and Waze put it. The sub text is
+ * left alone, because that is where the whole route's distance goes.
+ */
+internal fun nextTurnDistance(f: NoticeFacts): String? = listOf(f.title, f.text).firstNotNullOfOrNull { line ->
+    line?.let(distancePattern::find)?.let { "${it.groupValues[1]} ${it.groupValues[2].lowercase()}" }
+}
+
+private fun clockIn(line: String): String? = clockPattern.find(line)?.let {
+    val half = it.groupValues[2]
+    if (half.isEmpty()) it.groupValues[1] else "${it.groupValues[1]} ${half.uppercase()}M"
+}
+
+/**
+ * The arrival time of a route as the app wrote it, like "14:32" or "4:32 PM". A part that says arrival wins; without
+ * one, a time in the sub text, which is where Maps keeps it.
+ */
+internal fun arrivalTime(f: NoticeFacts): String? {
+    val parts = listOfNotNull(f.subText, f.title, f.text).flatMap { it.split(partSplit) }
+    parts.firstOrNull { part ->
+        val words = part.lowercase().split(wordSplit)
+        words.any { w -> arrivalStems.any { w.startsWith(it) && (it != "eta" || w == "eta") } } && clockIn(part) != null
+    }?.let { return clockIn(it) }
+    return f.subText?.let(::clockIn)
+}
+
+// A count with a unit after it ("10 - 15 min", "2-3 days") is a range, not a score.
+private const val UNITS = "min|mins|minuten|m|km|mi|h|hr|hrs|hours|u|uur|d|day|days|dag|dagen|s|sec|wk|weeks|weken|files|bestanden|items|x"
+private val scoreDash = Regex(
+    "(?<![\\p{N}\\-\\u2013\\u2014/:.,])(\\d{1,3})$GAP?[-\\u2013\\u2014]$GAP?(\\d{1,3})" +
+        "(?![\\p{N}\\-\\u2013\\u2014/:%]|[.,]\\p{N}|$GAP?(?:$UNITS)(?![\\p{L}]))",
+    RegexOption.IGNORE_CASE,
+)
+private val scoreTeams = Regex("\\b[A-Z]{2,4}$GAP+(\\d{1,3})$GAP+(\\d{1,3})$GAP+[A-Z]{2,4}\\b")
+
+/** "2 - 1", "2–1" or "NED 2 1 ESP" as "2-1"; null when the line holds no score. */
+internal fun scoreOf(line: String?): String? {
+    line ?: return null
+    val m = scoreTeams.find(line) ?: scoreDash.find(line) ?: return null
+    return "${m.groupValues[1]}-${m.groupValues[2]}"
+}
+
+internal fun scoreIn(f: NoticeFacts): String? = listOf(f.title, f.text, f.subText).firstNotNullOfOrNull(::scoreOf)
+
+private val sportsApps = listOf(
+    "com.espn", "de.motain.iliga", "com.onefootball", "com.mobilefootie", "com.fotmob", "com.livescore",
+    "com.sofascore", "eu.livesport",
+)
+/** Apps that bring much more than sport, so only a score makes their notification a match. */
+private val scoreCardApps = listOf("com.google.android.googlequicksearchbox", "nl.nos")
+
+internal fun isSports(f: NoticeFacts): Boolean {
+    val pkg = f.packageName.lowercase()
+    return sportsApps.any(pkg::startsWith) || (scoreCardApps.any(pkg::startsWith) && scoreIn(f) != null)
+}
+
+/** The short text for [kind]: Android 16's chip text, else the distance to the turn or the score, else [shortTextFor]. */
+internal fun liveShortText(f: NoticeFacts, kind: LiveKind, criticalText: String? = null): String? {
+    criticalText?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
+    when (kind) {
+        LiveKind.NAVIGATION -> nextTurnDistance(f)?.let { return it }
+        LiveKind.SPORTS -> scoreIn(f)?.let { return it }
+        else -> Unit
+    }
+    return shortTextFor(f)
 }
