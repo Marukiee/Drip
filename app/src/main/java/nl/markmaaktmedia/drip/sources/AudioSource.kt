@@ -134,13 +134,14 @@ internal class AudioPart(env: SourceEnv) : Part(env) {
         env.announce("ringer", AlertKind.RINGER, env.text(title), icon = icon)
     }
 
+    // Wired only: Bluetooth headphones are announced by EarbudsPart, which can add their battery. A wired plug reports the
+    // phone's own model as its name, so it gets the plain word.
     private fun onHeadphones(d: AudioDeviceInfo) {
         if (settings?.alertHeadphones != true) return
-        val bluetooth = d.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || d.type == AudioDeviceInfo.TYPE_BLE_HEADSET
-        // A wired plug reports the phone's own model as its name, so only Bluetooth gets its name shown.
-        val name = d.productName?.toString()?.trim()?.takeIf { bluetooth && it.isNotEmpty() }
-            ?: env.text(R.string.src_headphones)
-        env.announce("headphones", AlertKind.HEADPHONES, name, env.text(R.string.src_connected), R.drawable.sym_headphones)
+        env.announce(
+            "headphones", AlertKind.HEADPHONES, env.text(R.string.src_headphones), env.text(R.string.src_connected),
+            R.drawable.sym_headphones,
+        )
     }
 
     private fun publishMic() {
@@ -161,7 +162,6 @@ internal class AudioPart(env: SourceEnv) : Part(env) {
         const val OWN_VOLUME_WINDOW_MS = 600L
         val HEADSET_TYPES = setOf(
             AudioDeviceInfo.TYPE_WIRED_HEADSET, AudioDeviceInfo.TYPE_WIRED_HEADPHONES, AudioDeviceInfo.TYPE_USB_HEADSET,
-            AudioDeviceInfo.TYPE_BLUETOOTH_A2DP, AudioDeviceInfo.TYPE_BLE_HEADSET,
         )
     }
 }

@@ -59,9 +59,13 @@ internal fun ShowsPage(onBack: () -> Unit) {
     SettingsPageFrame(stringResource(R.string.settings_cat_shows), onBack) {
         SectionHeader(stringResource(R.string.shows_section), top = 20.dp)
         Toggles(Shown, island, edit)
+        LocationPermissionRow(island)
+
+        MoreShows(island, edit)
 
         SectionHeader(stringResource(R.string.shows_section_alerts), top = 20.dp)
         Toggles(Announced, island, edit)
+        BluetoothPermissionRow(island)
         Spacer(Modifier.height(12.dp))
         SettingsGroup {
             SettingsTarget(FocusKeys.AlertDuration, 0, 1) {
@@ -72,6 +76,8 @@ internal fun ShowsPage(onBack: () -> Unit) {
                 )
             }
         }
+
+        OtherAppsSection(island, edit)
     }
 }
 

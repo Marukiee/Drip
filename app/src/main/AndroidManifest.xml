@@ -9,6 +9,13 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- The volume slider on the music card. -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- The countdown to the next appointment. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <!-- The battery of Bluetooth earbuds and headphones. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- The location dot: whether GPS runs for some app. Android 12 only grants precise location asked for together with approximate. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Only when given by hand or through Shizuku: lets Drip switch its own island service back on. -->
     <uses-permission
         android:name="android.permission.WRITE_SECURE_SETTINGS"
@@ -19,6 +26,11 @@
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <!-- The calendar app, for its name and icon on an appointment. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="vnd.android.cursor.item/event" />
         </intent>
     </queries>
 

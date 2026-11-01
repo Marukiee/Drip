@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Afspraken -->
+    <string name="src2_calendar">Agenda</string>
+    <string name="src2_appointment">Afspraak</string>
+    <string name="src2_join">Deelnemen</string>
+    <string name="src2_time_place">%1$s, %2$s</string>
+
+    <!-- Installaties -->
+    <string name="src2_installing">Installeren</string>
+    <string name="src2_updating">Bijwerken</string>
+    <string name="src2_an_app">Een app</string>
+    <string name="src2_percent">%1$d%%</string>
+
+    <!-- Oordopjes en ontgrendelen -->
+    <string name="src2_connected_battery">Verbonden, %1$d%%</string>
+    <string name="src2_unlocked">Ontgrendeld</string>
+
+    <!-- Wat het eiland laat zien, tweede ronde -->
+    <string name="set2_section_more">Meer op het eiland</string>
+    <string name="set2_second">Twee dingen tegelijk</string>
+    <string name="set2_second_sub">Een tweede ding krijgt een eigen druppel naast het eiland</string>
+    <string name="set2_lyrics">Songteksten</string>
+    <string name="set2_lyrics_sub">Meelopende songteksten op de muziekkaart als de speler ze heeft</string>
+    <string name="set2_lyrics_online">Songteksten online opzoeken</string>
+    <string name="set2_lyrics_online_sub">Heeft de speler ze niet, dan vraagt Drip ze op bij lrclib.net. Daarvoor gaan de titel en de artiest van het nummer daarheen, verder niets.</string>
+    <string name="set2_calendar">Afspraken</string>
+    <string name="set2_calendar_sub">Aftellen naar je volgende afspraak, met een knop om een videogesprek in te gaan</string>
+    <string name="set2_calendar_lead">Zo lang van tevoren</string>
+    <string name="set2_minutes">%1$d min</string>
+    <string name="set2_unlock">Ontgrendelen</string>
+    <string name="set2_unlock_sub">Een slot dat opengaat als je de telefoon ontgrendelt</string>
+    <string name="set2_installs">Installaties en updates</string>
+    <string name="set2_installs_sub">Een app die wordt geïnstalleerd of bijgewerkt, met de voortgang</string>
+    <string name="set2_tandem">Tandem</string>
+    <string name="set2_tandem_sub">Overdrachten, het klembord en de verbonden computer</string>
+
+    <string name="set2_section_other_apps">Andere apps</string>
+    <string name="set2_automation">Andere apps het eiland laten gebruiken</string>
+    <string name="set2_automation_sub">Apps zoals Tasker kunnen er hun eigen dingen op zetten</string>
+    <string name="set2_automation_docs">Hoe het werkt</string>
+    <string name="set2_automation_docs_sub">Wat je stuurt en hoe, op GitHub</string>
+
+    <!-- Rechten, alleen te zien zolang de schakelaar waar ze bij horen aan staat -->
+    <string name="set2_perm_calendar">Agenda</string>
+    <string name="set2_perm_calendar_why">Om af te tellen naar je volgende afspraak. Drip leest alleen wat eraan komt, op deze telefoon.</string>
+    <string name="set2_perm_bluetooth">Apparaten in de buurt</string>
+    <string name="set2_perm_bluetooth_why">Zodat de aankondiging van je oordopjes of koptelefoon hun batterij laat zien.</string>
+    <string name="set2_perm_location">Precieze locatie</string>
+    <string name="set2_perm_location_why">Voor een stip zolang een app gps gebruikt. Drip vraagt zelf nooit waar je bent.</string>
+    <string name="set2_perm_location_partly">Alleen locatie bij benadering is toegestaan. Android vertelt alleen met precieze locatie of gps aan staat.</string>
+    <string name="set2_perm_settings">App-info openen</string>
+
+    <!-- Gebaren -->
+    <string name="set2_gesture_double_tap">Dubbeltikken</string>
+    <string name="set2_gesture_scope">Geldt voor</string>
+    <string name="set2_gesture_scope_note">%1$s: grijs volgt de standaard</string>
+    <string name="set2_gesture_same">Zelfde als standaard</string>
+    <string name="set2_scope_default">Standaard</string>
+    <string name="set2_scope_music">Muziek</string>
+    <string name="set2_scope_call">Gesprek</string>
+    <string name="set2_scope_timer">Timer</string>
+    <string name="set2_scope_route">Route</string>
+    <string name="set2_scope_charging">Opladen</string>
+    <string name="set2_scope_notice">Melding</string>
+
+    <!-- Zoekwoorden -->
+    <string name="set2_kw_more">tweede, twee, songtekst, karaoke, ontgrendelen, agenda, vergadering, afspraak, installeren, update, play store, tandem, lyrics</string>
+    <string name="set2_kw_automation">tasker, automatisering, automatiseren, macrodroid, intent, broadcast, api</string>
+</resources>

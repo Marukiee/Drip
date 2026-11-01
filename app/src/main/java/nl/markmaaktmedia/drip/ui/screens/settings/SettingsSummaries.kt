@@ -64,7 +64,8 @@ internal fun rememberCategorySummaries(): Map<SettingsCategory, String> {
 
     val shown = listOf(
         island.showMusic, island.showCharging, island.showCalls, island.showLive, island.showTorch,
-        island.showNotifications, island.showPrivacy,
+        island.showNotifications, island.showPrivacy, island.showSecond, island.showLyrics, island.showCalendar,
+        island.showInstalls, island.showUnlock, island.showTandem,
     )
 
     val notifications = when {

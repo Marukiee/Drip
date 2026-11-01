@@ -129,6 +129,8 @@ fun <T> DropdownRow(
     value: String,
     options: List<Pair<T, String>>,
     onSelect: (T) -> Unit,
+    /** For a value that is inherited rather than chosen here: shown in the quiet colour. */
+    valueMuted: Boolean = false,
 ) {
     val open = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     Box {
@@ -136,7 +138,13 @@ fun <T> DropdownRow(
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 RowIcon(icon)
                 RowText(title, subtitle, Modifier.weight(1f))
-                Text(value, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, maxLines = 2, modifier = Modifier.widthIn(max = 140.dp))
+                // One line, so every row of the list stays the same height; a long choice is cut off rather than wrapped.
+                Text(
+                    value, style = MaterialTheme.typography.labelLarge,
+                    color = if (valueMuted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
+                    maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.widthIn(max = 160.dp),
+                )
                 Icon(DripIcons.ChevronDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
             }
         }

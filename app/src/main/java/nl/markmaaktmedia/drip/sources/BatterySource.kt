@@ -16,6 +16,7 @@ internal class BatteryPart(env: SourceEnv) : Part(env) {
     private val power: PowerManager? = context.getSystemService(PowerManager::class.java)
     private var watch = BatteryWatch()
     private val saver = ChangeWatch<Boolean>()
+    private val traits = ChargeTraits()
     private var info: BatteryInfo? = null
 
     private val receiver = object : BroadcastReceiver() {
@@ -31,6 +32,7 @@ internal class BatteryPart(env: SourceEnv) : Part(env) {
 
     override fun start() {
         watch = BatteryWatch()
+        traits.reset()
         saver.reset()
         saver.update(powerSave())
         // The battery broadcast is sticky: registering hands back the current state, which only seeds the watch.
@@ -57,7 +59,16 @@ internal class BatteryPart(env: SourceEnv) : Part(env) {
             (status == BatteryManager.BATTERY_STATUS_FULL && plugged != 0)
         val plug = plugTypeOf(plugged)
         val toFull = if (charging) safely("charge time") { battery?.computeChargeTimeRemaining() }?.takeIf { it > 0 } else null
-        info = BatteryInfo(level = level, charging = charging, plug = plug, timeToFullMs = toFull, powerSave = powerSave())
+        val reading = traits.update(
+            plugged = plugged != 0, status = status, level = level,
+            maxCurrentUa = intent.getIntExtra(EXTRA_MAX_CURRENT, 0), maxVoltageUv = intent.getIntExtra(EXTRA_MAX_VOLTAGE, 0),
+            currentNow = safely("current") { battery?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) }
+                ?.takeIf { it != Int.MIN_VALUE && it != 0 },
+        )
+        info = BatteryInfo(
+            level = level, charging = charging, plug = plug, timeToFullMs = toFull, powerSave = powerSave(),
+            fast = reading.fast, limit = reading.limit,
+        )
         publish()
         // Plugged counts, not charging: a phone that holds at 80% to spare its battery is still on the charger.
         watch.update(level, plugged != 0).forEach { tell(it, level, plug) }
@@ -110,7 +121,7 @@ internal class BatteryPart(env: SourceEnv) : Part(env) {
     private fun publish() {
         val s = settings ?: return
         val i = info ?: return
-        hub.battery.value = if (s.showCharging) i else i.copy(charging = false, plug = PlugType.NONE, timeToFullMs = null)
+        hub.battery.value = if (s.showCharging) i else i.copy(charging = false, plug = PlugType.NONE, timeToFullMs = null, fast = false, limit = null)
     }
 
     private fun powerSave() = safely("power save") { power?.isPowerSaveMode } ?: false
@@ -120,5 +131,11 @@ internal class BatteryPart(env: SourceEnv) : Part(env) {
         PlugType.WIRELESS -> R.string.src_plug_wireless
         PlugType.DOCK -> R.string.src_plug_dock
         PlugType.AC, PlugType.NONE -> R.string.src_plug_ac
+    }
+
+    private companion object {
+        // Hidden extras of the battery broadcast, the same SystemUI reads for "Charging rapidly".
+        const val EXTRA_MAX_CURRENT = "max_charging_current"
+        const val EXTRA_MAX_VOLTAGE = "max_charging_voltage"
     }
 }

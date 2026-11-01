@@ -8,6 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import nl.markmaaktmedia.drip.data.IslandSettings
 import nl.markmaaktmedia.drip.graph
@@ -165,7 +166,9 @@ class DripListener : NotificationListenerService() {
 
     private fun publishLive() {
         val s = settings ?: return
-        hub.live.value = if (s.showLive) live.values.sortedByDescending { it.firstSeen }.map { it.info } else emptyList()
+        val mine = if (s.showLive) live.values.sortedByDescending { it.firstSeen }.map { it.info } else emptyList()
+        // Drip's own entries (an appointment, an install) live in the same list and are not the listener's to drop.
+        hub.live.update { current -> mine + current.filter { it.key.startsWith(OWN_LIVE_PREFIX) } }
     }
 
     private fun teardown() {
@@ -181,6 +184,6 @@ class DripListener : NotificationListenerService() {
         nowPlaying = null
         hub.nowPlaying.value = null
         hub.call.value = null
-        hub.live.value = emptyList()
+        hub.live.update { current -> current.filter { it.key.startsWith(OWN_LIVE_PREFIX) } }
     }
 }

@@ -33,6 +33,19 @@ object Access {
     fun postAllowed(context: Context): Boolean =
         context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
+    fun granted(context: Context, permission: String): Boolean =
+        context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
+
+    /** The next appointment on the island. */
+    fun calendarAllowed(context: Context) = granted(context, Manifest.permission.READ_CALENDAR)
+
+    /** Nearby devices: the battery of Bluetooth earbuds. */
+    fun bluetoothAllowed(context: Context) = granted(context, Manifest.permission.BLUETOOTH_CONNECT)
+
+    /** The location dot needs precise location; approximate alone is not enough to hear whether GPS runs. */
+    fun preciseLocationAllowed(context: Context) = granted(context, Manifest.permission.ACCESS_FINE_LOCATION)
+    fun approximateLocationAllowed(context: Context) = granted(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+
     /** The Accessibility settings, with Drip's row lit up where the phone supports that. */
     fun openAccessibility(context: Context) {
         val flat = islandComponent(context).flattenToString()
