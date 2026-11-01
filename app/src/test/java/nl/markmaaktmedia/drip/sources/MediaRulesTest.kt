@@ -94,4 +94,33 @@ class MediaRulesTest {
         assertNull(nextInQueue(queue, -1))
         assertNull(nextInQueue(emptyList(), 10))
     }
+
+    @Test fun spotifyHeart() {
+        assertEquals(CustomKind.LIKE, customKindOf("com.spotify.music.ADD_TO_COLLECTION", "Add to Your Library"))
+        assertEquals(CustomKind.LIKE, customKindOf("REMOVE_FROM_COLLECTION", "Remove from Your Library"))
+        assertEquals(CustomKind.LIKE, customKindOf("addToLibrary", "Opslaan in je bibliotheek"))
+        assertEquals(CustomKind.LIKE, customKindOf("x", "Toevoegen aan Leuk gevonden"))
+        assertEquals(CustomKind.LIKE, customKindOf("SAVE", null))
+        assertEquals(CustomKind.LIKE, customKindOf("x", "Add to"))
+        assertNull(customKindOf("ADD_TO_PLAYLIST", "Add to playlist"))
+        assertNull(customKindOf("x", "Toevoegen aan wachtrij"))
+        assertFalse(likedOf("com.spotify.music.ADD_TO_COLLECTION", "Add to Your Library"))
+        assertTrue(likedOf("REMOVE_FROM_COLLECTION", "Remove from Your Library"))
+        assertFalse(likedOf("addToLibrary", "Opslaan in je bibliotheek"))
+        assertTrue(likedOf("x", "Verwijderen uit je bibliotheek"))
+        assertTrue(likedOf("x", "Leuk gevonden"))
+        assertFalse(likedOf("x", "Toevoegen aan Leuk gevonden"))
+        assertEquals(CustomKind.SHUFFLE, customKindOf("com.spotify.music.TOGGLE_SHUFFLE", "Willekeurig afspelen"))
+        assertEquals(CustomKind.REPEAT, customKindOf("TOGGLE_REPEAT", "Herhaling"))
+        assertEquals(CustomKind.REPEAT, customKindOf("x", "Herhalen"))
+    }
+
+    @Test fun heartByRating() {
+        assertTrue(likesByRating(RATING_HEART, 128L or 4L))
+        assertTrue(likesByRating(RATING_THUMB_UP_DOWN, 128L))
+        assertFalse(likesByRating(RATING_HEART, 4L))
+        // Stars or percentages are no heart.
+        assertFalse(likesByRating(3, 128L))
+        assertFalse(likesByRating(0, 128L))
+    }
 }

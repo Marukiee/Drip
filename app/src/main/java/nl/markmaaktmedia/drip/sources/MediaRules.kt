@@ -20,15 +20,23 @@ private fun words(vararg parts: String?): String {
 private fun String.hasWord(vararg w: String) = w.any { contains(" $it ") }
 private fun String.hasPart(vararg w: String) = w.any { contains(it) }
 
-private val likeParts = listOf("like", "favorite", "favourite", "favoriet", "heart", "thumbs up", "thumb up", "leuk")
+// Spotify never says like: its heart is "Add to collection", "Your Library" or "Opslaan in je bibliotheek".
+private val likeParts = listOf(
+    "like", "favorite", "favourite", "favoriet", "heart", "thumbs up", "thumb up", "leuk", "collection", "library",
+    "bibliotheek", "save", "opslaan",
+)
+/** Bare "add to" and "remove from" are the heart too, unless they name a playlist or the queue. */
+private val libraryMoves = listOf(" add to ", " remove from ", " toevoegen ", " verwijderen uit ")
+private val notTheHeart = listOf("playlist", "afspeellijst", "queue", "wachtrij")
 private val dislikeParts = listOf("dislike", "thumbs down", "thumb down", "niet leuk")
 
 internal fun customKindOf(action: String?, name: String?): CustomKind? {
     val t = words(action, name)
     return when {
         t.hasPart("shuffle", "willekeurig") -> CustomKind.SHUFFLE
-        t.hasPart("repeat", "herhaal", "herhalen") || t.hasWord("loop") -> CustomKind.REPEAT
-        likeParts.any { it in t } && dislikeParts.none { it in t } -> CustomKind.LIKE
+        t.hasPart("repeat", "herhaal", "herhal") || t.hasWord("loop") -> CustomKind.REPEAT
+        (likeParts.any { it in t } || libraryMoves.any { it in t }) && dislikeParts.none { it in t } &&
+            notTheHeart.none { it in t } -> CustomKind.LIKE
         else -> null
     }
 }
@@ -56,16 +64,28 @@ internal fun shuffleOnOf(action: String?, name: String?): Boolean {
     }
 }
 
-/** "Remove from liked songs" means the song is liked; "Add to liked songs" means it is not yet. */
+/**
+ * "Remove from liked songs" means the song is liked; "Add to liked songs" means it is not yet. Players offer the one
+ * of the pair that undoes the present state, so which of the two is there says it.
+ */
 internal fun likedOf(action: String?, name: String?): Boolean {
     val t = words(action, name)
     return when {
         t.hasPart("unlike", "remove", "unfavo", "unheart", "unsave", "verwijder", "undo") -> true
         t.hasWord("add", "toevoegen", "save", "opslaan") -> false
-        t.hasWord("liked", "added", "saved", "filled", "favorited", "favourited", "on") -> true
+        t.hasWord("liked", "added", "saved", "filled", "favorited", "favourited", "on") || t.hasPart(" leuk gevonden ") -> true
         else -> false
     }
 }
+
+/** Rating.RATING_HEART, Rating.RATING_THUMB_UP_DOWN and PlaybackState.ACTION_SET_RATING. */
+internal const val RATING_HEART = 1
+internal const val RATING_THUMB_UP_DOWN = 2
+private const val ACTION_SET_RATING = 128L
+
+/** Whether the player takes a heart or a thumb through the session's own rating, which wins over a custom action. */
+internal fun likesByRating(ratingType: Int, actions: Long): Boolean =
+    (ratingType == RATING_HEART || ratingType == RATING_THUMB_UP_DOWN) && actions and ACTION_SET_RATING != 0L
 
 /** What the picker needs to know of one media session. */
 data class SessionView(

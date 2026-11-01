@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.graphics.Bitmap
 import android.media.MediaMetadata
+import android.media.Rating
 import android.media.session.MediaController
 import android.media.session.MediaSession
 import android.media.session.MediaSessionManager
@@ -75,6 +76,7 @@ internal class MediaSource(
         val repeat = find(CustomKind.REPEAT)
         val shuffle = find(CustomKind.SHUFFLE)
         val like = find(CustomKind.LIKE)
+        val rated = likesByRating(s.ratingType, actions)
         val packageName = s.controller.packageName
         return NowPlaying(
             packageName = packageName,
@@ -100,7 +102,7 @@ internal class MediaSource(
             canSeek = duration > 0 && actions and PlaybackState.ACTION_SEEK_TO != 0L,
             repeat = repeat?.let { repeatModeOf(it.action, it.name?.toString()) },
             shuffle = shuffle?.let { shuffleOnOf(it.action, it.name?.toString()) },
-            liked = like?.let { likedOf(it.action, it.name?.toString()) },
+            liked = if (rated) likedByRating(m) else like?.let { likedOf(it.action, it.name?.toString()) },
             next = nextInQueue(s.queue, state?.activeQueueItemId ?: MediaSession.QueueItem.UNKNOWN_ID.toLong()),
             commands = s.commands,
         )
@@ -111,6 +113,8 @@ internal class MediaSource(
         var state: PlaybackState? = null
         var lastPlayingAt = 0L
         var art: Bitmap? = null
+        /** Rating.RATING_NONE and the like. Read with the song, since a podcast in the same app may take no heart. */
+        var ratingType = Rating.RATING_NONE
         /** Kept from the callback: a long queue is a big binder call, too much to ask for on every state change. */
         var queue: List<QueueEntry> = emptyList()
         private var artSource: Bitmap? = null
@@ -121,6 +125,7 @@ internal class MediaSource(
             state = safely("playback state") { controller.playbackState }
             if (isActive(state)) lastPlayingAt = SystemClock.elapsedRealtime()
             readQueue(safely("queue") { controller.queue })
+            readRatingType()
             readArt()
             safely("media callback") { controller.registerCallback(this, handler) }
         }
@@ -135,6 +140,7 @@ internal class MediaSource(
 
         override fun onMetadataChanged(metadata: MediaMetadata?) {
             this.metadata = metadata
+            readRatingType()
             readArt()
             update()
         }
@@ -150,6 +156,10 @@ internal class MediaSource(
         override fun onQueueChanged(queue: MutableList<MediaSession.QueueItem>?) {
             readQueue(queue)
             update()
+        }
+
+        private fun readRatingType() {
+            ratingType = safely("rating type") { controller.ratingType } ?: Rating.RATING_NONE
         }
 
         private fun readQueue(items: List<MediaSession.QueueItem>?) {
@@ -196,7 +206,12 @@ internal class MediaSource(
         override fun seekTo(positionMs: Long) = controls("seek") { it.seekTo(positionMs.coerceAtLeast(0)) }
         override fun cycleRepeat() = custom(CustomKind.REPEAT)
         override fun toggleShuffle() = custom(CustomKind.SHUFFLE)
-        override fun toggleLike() = custom(CustomKind.LIKE)
+        override fun toggleLike() {
+            if (!likesByRating(s.ratingType, s.controller.playbackState?.actions ?: 0L)) return custom(CustomKind.LIKE)
+            val liked = s.controller.metadata?.let(::likedByRating) == true
+            val rating = if (s.ratingType == Rating.RATING_HEART) Rating.newHeartRating(!liked) else Rating.newThumbRating(!liked)
+            controls("rate") { it.setRating(rating) }
+        }
 
         override fun openPlayer() {
             val activity = safely("session activity") { s.controller.sessionActivity }
@@ -229,6 +244,16 @@ internal class MediaSource(
 
         fun MediaMetadata.text(key: String): String? =
             getText(key)?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+
+        /** The heart or thumb the user gave this song, through the session's rating. Unrated is not liked. */
+        fun likedByRating(m: MediaMetadata): Boolean = safely("user rating") {
+            val r = m.getRating(MediaMetadata.METADATA_KEY_USER_RATING) ?: return@safely false
+            when (r.ratingStyle) {
+                Rating.RATING_HEART -> r.hasHeart()
+                Rating.RATING_THUMB_UP_DOWN -> r.isThumbUp
+                else -> false
+            }
+        } == true
 
         fun samePicture(a: Bitmap, b: Bitmap): Boolean =
             a.width == b.width && a.height == b.height && safely("compare art") { a.sameAs(b) } == true
