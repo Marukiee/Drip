@@ -158,7 +158,7 @@ object Demos {
             )
             Demo.UNLOCK -> hub.post(Alert(id = "unlock", kind = AlertKind.UNLOCK, title = context.getString(R.string.demo_unlocked), iconRes = R.drawable.sym_lock_open, durationMs = 1400))
             Demo.PRIVACY -> hub.privacy.value = if (hub.privacy.value.any) PrivacyInfo() else
-                PrivacyInfo(camera = true, microphone = true, location = true, cameraApp = "Camera", microphoneApp = "WhatsApp", locationApp = "Maps")
+                PrivacyInfo(camera = true, microphone = true, cameraApp = "com.android.camera2", microphoneApp = "com.android.camera2")
             else -> Unit
         }
     }

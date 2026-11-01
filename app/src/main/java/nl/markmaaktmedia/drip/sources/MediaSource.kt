@@ -72,7 +72,7 @@ internal class MediaSource(
         val actions = state?.actions ?: 0L
         val duration = m.getLong(MediaMetadata.METADATA_KEY_DURATION).coerceAtLeast(0)
         val custom = state?.customActions.orEmpty()
-        fun find(kind: CustomKind) = custom.firstOrNull { customKindOf(it.action, it.name?.toString()) == kind }
+        fun find(kind: CustomKind) = custom.firstOrNull { kindOf(it) == kind }
         val repeat = find(CustomKind.REPEAT)
         val shuffle = find(CustomKind.SHUFFLE)
         val like = find(CustomKind.LIKE)
@@ -102,13 +102,52 @@ internal class MediaSource(
             canSeek = duration > 0 && actions and PlaybackState.ACTION_SEEK_TO != 0L,
             repeat = repeat?.let { repeatModeOf(it.action, it.name?.toString()) },
             shuffle = shuffle?.let { shuffleOnOf(it.action, it.name?.toString()) },
-            liked = if (rated) likedByRating(m) else like?.let { likedOf(it.action, it.name?.toString()) },
+            liked = likedOf(s, m, rated, like, packageName, title),
             next = nextInQueue(s.queue, state?.activeQueueItemId ?: MediaSession.QueueItem.UNKNOWN_ID.toLong()),
             commands = s.commands,
         )
     }
 
+    /**
+     * Whether the song is liked. The player's own rating says it best; then the heart action, by Media3's icon number,
+     * the name of its icon or its words. A player that tells none of those gets what was last pressed here for this
+     * song, so the heart at least follows the press.
+     */
+    private fun likedOf(s: Session, m: MediaMetadata, rated: Boolean, like: PlaybackState.CustomAction?, packageName: String, title: String): Boolean? {
+        if (rated && m.containsKey(MediaMetadata.METADATA_KEY_USER_RATING)) return likedByRating(m)
+        if (like == null && !rated) return null
+        val pressed = s.pressedLike?.takeIf { it.first == title }
+        val stated = like?.let { likedOfAction(it, packageName) }
+        // Right after a press the player may take a moment to send its new state; show the press until then.
+        if (pressed != null && SystemClock.elapsedRealtime() - s.pressedAt < 1500) return pressed.second
+        return stated ?: pressed?.second ?: false
+    }
+
+    private fun likedOfAction(a: PlaybackState.CustomAction, packageName: String): Boolean? =
+        a.extras?.takeIf { it.containsKey(MEDIA3_ICON_KEY) }?.getInt(MEDIA3_ICON_KEY)?.let(::likedOfMedia3Icon)
+            ?: likedOfIconName(iconName(packageName, a.icon))
+            ?: likedStatedBy(a.action, a.name?.toString())
+
+    private val iconNames = HashMap<Pair<String, Int>, String?>()
+
+    /** The resource name of a player's icon, "ic_favorite_border", read once per icon. */
+    private fun iconName(packageName: String, id: Int): String? {
+        if (id == 0) return null
+        return iconNames.getOrPut(packageName to id) {
+            safely("icon name") { context.packageManager.getResourcesForApplication(packageName).getResourceEntryName(id) }
+        }
+    }
+
+    private fun kindOf(a: PlaybackState.CustomAction): CustomKind? {
+        val media3 = a.extras?.takeIf { it.containsKey(MEDIA3_ICON_KEY) }?.getInt(MEDIA3_ICON_KEY)
+        if (media3 != null && likedOfMedia3Icon(media3) != null) return CustomKind.LIKE
+        return customKindOf(a.action, a.name?.toString())
+    }
+
     private inner class Session(val controller: MediaController) : MediaController.Callback() {
+        /** The song and the state the heart was last pressed to here, for players that never say it themselves. */
+        var pressedLike: Pair<String, Boolean>? = null
+        var pressedAt = 0L
         var metadata: MediaMetadata? = null
         var state: PlaybackState? = null
         var lastPlayingAt = 0L
@@ -207,9 +246,12 @@ internal class MediaSource(
         override fun cycleRepeat() = custom(CustomKind.REPEAT)
         override fun toggleShuffle() = custom(CustomKind.SHUFFLE)
         override fun toggleLike() {
+            val shown = safely("liked") { build(s)?.liked } == true
+            s.title()?.let { s.pressedLike = it to !shown }
+            s.pressedAt = SystemClock.elapsedRealtime()
+            handler.post { update() }
             if (!likesByRating(s.ratingType, s.controller.playbackState?.actions ?: 0L)) return custom(CustomKind.LIKE)
-            val liked = s.controller.metadata?.let(::likedByRating) == true
-            val rating = if (s.ratingType == Rating.RATING_HEART) Rating.newHeartRating(!liked) else Rating.newThumbRating(!liked)
+            val rating = if (s.ratingType == Rating.RATING_HEART) Rating.newHeartRating(!shown) else Rating.newThumbRating(!shown)
             controls("rate") { it.setRating(rating) }
         }
 
@@ -221,7 +263,7 @@ internal class MediaSource(
         // Looked up when pressed: the player swaps the action for its next state after each press.
         private fun custom(kind: CustomKind) = controls("custom action") { c ->
             val action = s.controller.playbackState?.customActions
-                ?.firstOrNull { customKindOf(it.action, it.name?.toString()) == kind } ?: return@controls
+                ?.firstOrNull { kindOf(it) == kind } ?: return@controls
             c.sendCustomAction(action, action.extras)
         }
     }

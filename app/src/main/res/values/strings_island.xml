@@ -59,4 +59,10 @@
     <string name="island_ringer_sound">Sound</string>
     <string name="island_ringer_vibrate">Vibrate</string>
     <string name="island_ringer_silent">Silent</string>
+    <string name="island_privacy_title">In use</string>
+    <string name="island_privacy_camera">Camera</string>
+    <string name="island_privacy_microphone">Microphone</string>
+    <string name="island_privacy_location">Location</string>
+    <string name="island_privacy_unknown_app">An app</string>
+    <string name="island_privacy_none">Nothing is in use any more</string>
 </resources>

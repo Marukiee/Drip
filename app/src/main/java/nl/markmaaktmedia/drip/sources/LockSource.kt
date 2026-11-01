@@ -87,6 +87,6 @@ internal class LocationPart(env: SourceEnv) : Part(env) {
 
     private fun publish() {
         val on = registered && running && settings?.showPrivacy == true
-        hub.privacy.update { it.copy(location = on) }
+        hub.privacy.update { it.copy(location = on, locationApp = if (!on) null else if (it.location) it.locationApp else hub.foregroundApp.value) }
     }
 }

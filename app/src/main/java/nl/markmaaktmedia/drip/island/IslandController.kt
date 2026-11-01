@@ -23,6 +23,8 @@ sealed interface IslandContent {
     data class Charging(val battery: BatteryInfo) : IslandContent { override val key get() = "charging" }
     data class Torch(val torch: TorchInfo) : IslandContent { override val key get() = "torch" }
     data class Notice(val alert: Alert) : IslandContent { override val key get() = "alert:" + alert.id }
+    /** A camera, microphone or location in use: the icon closed, which app it is opened. */
+    data class Privacy(val privacy: PrivacyInfo) : IslandContent { override val key get() = "privacy" }
 }
 
 /** Why the island is out of the way right now. Any one of them hides it. */
@@ -38,7 +40,10 @@ data class IslandUi(
     val content: IslandContent? = null,
     /** The dots for a camera or microphone in use, drawn on whatever stage is showing. */
     val privacy: PrivacyInfo = PrivacyInfo(),
-    /** A second thing going on at the same time, shown as its own small drop next to the closed island. */
+    /**
+     * A second thing going on at the same time, shown as its own small drop next to the closed island. Also set while a
+     * card or an announcement covers the island, when the drop waits pulled up into the edge.
+     */
     val second: IslandContent? = null,
 )
 
@@ -62,6 +67,7 @@ class IslandController(
     private var primary: IslandContent? = null
     private var second: IslandContent? = null
     private var privacy = PrivacyInfo()
+    private var sources: Sources5? = null
 
     private val queue = ArrayDeque<Alert>()
     private var alert: Alert? = null
@@ -92,9 +98,8 @@ class IslandController(
                 Sources5(call, live, music, torch, battery)
             }.collect { s ->
                 val wasRinging = (primary as? IslandContent.Call)?.call?.incoming == true
-                val picked = pick(s)
-                primary = picked.firstOrNull()
-                second = picked.getOrNull(1)
+                sources = s
+                repick()
                 val call = s.call
                 if (call != null && call.incoming && settings.showCalls && dismissedRinging != call.key && !wasRinging) {
                     haptics.play(Haptics.Kind.CALL)
@@ -108,7 +113,11 @@ class IslandController(
             }
         }
         scope.launch {
-            hub.privacy.collect { privacy = it; refresh() }
+            hub.privacy.collect {
+                privacy = it
+                repick()
+                refresh()
+            }
         }
         scope.launch {
             hub.alerts.collect { onAlert(it) }
@@ -117,6 +126,7 @@ class IslandController(
             // Paused music gives way after a while even when nothing else changes.
             while (true) {
                 delay(30_000)
+                repick()
                 refresh()
             }
         }
@@ -130,6 +140,12 @@ class IslandController(
         val battery: BatteryInfo,
     )
 
+    private fun repick() {
+        val picked = pick(sources ?: return)
+        primary = picked.firstOrNull()
+        second = picked.getOrNull(1)
+    }
+
     /** Everything worth showing, most important first. The first is the island, the second its small drop. */
     private fun pick(s: Sources5): List<IslandContent> {
         val now = SystemClock.elapsedRealtime()
@@ -138,6 +154,8 @@ class IslandController(
         if (settings.showCalls && s.call != null) out += IslandContent.Call(s.call)
         if (settings.showLive) s.live.take(2).forEach { out += IslandContent.Live(it) }
         if (settings.showMusic && s.music?.playing == true) out += IslandContent.Music(s.music)
+        // After the music, so during a song or a video call the camera is the small drop beside it.
+        if (privacy.any) out += IslandContent.Privacy(privacy)
         if (settings.showTorch && s.torch.on) out += IslandContent.Torch(s.torch)
         // Held at a limit (Battery Care) the phone is plugged in but not charging: still worth showing, with the limit.
         val plugged = s.battery.charging || (s.battery.limit != null && s.battery.plug != PlugType.NONE)
@@ -226,7 +244,7 @@ class IslandController(
         return true
     }
 
-    fun collapse() {
+    fun collapse(quiet: Boolean = false) {
         if (expandedKey == null) return
         val wasNotice = expandedKey?.startsWith("alert:") == true
         val ringing = (primary as? IslandContent.Call)?.call?.takeIf { it.incoming }
@@ -234,7 +252,7 @@ class IslandController(
         expandedKey = null
         expandedFallback = null
         expandJob?.cancel()
-        haptics.play(Haptics.Kind.COLLAPSE)
+        if (!quiet) haptics.play(Haptics.Kind.COLLAPSE)
         if (wasNotice) {
             alert = null
             showNextAlert()
@@ -263,6 +281,15 @@ class IslandController(
             delay(EXPANDED_IDLE_MS)
             collapse()
         }
+    }
+
+    /**
+     * Another screen came to the front, an app or the screenshot editor: an open card would sit over its top bar, so it
+     * closes by itself. A call stays open, and so does a reply being typed.
+     */
+    fun stepAside() {
+        if (expandedKey == null || typing || _ui.value.content is IslandContent.Call) return
+        collapse(quiet = true)
     }
 
     /** Puts away what is showing: an announcement goes, an opened card closes. For the Dismiss gesture. */
@@ -297,7 +324,7 @@ class IslandController(
 
         val expanded = expandedKey?.let { key ->
             listOfNotNull(primary, second, alert?.let { IslandContent.Notice(it) }).firstOrNull { it.key == key }
-                ?: expandedFallback?.takeIf { it.key == key && it !is IslandContent.Call && it !is IslandContent.Live }
+                ?: expandedFallback?.takeIf { it.key == key && it !is IslandContent.Call && it !is IslandContent.Live && it !is IslandContent.Privacy }
         }
         if (expandedKey != null && expanded == null) {
             // What was open has gone, a call that ended for instance: close quietly.
@@ -307,13 +334,18 @@ class IslandController(
             expandedFallback = expanded
         }
 
+        // The small drop is kept while a card or an announcement covers the island, so it can step aside in place and
+        // come back where it was, instead of melting into the island and swelling out again.
+        val drop = second?.takeIf { settings.showSecond && primary != null }
+        // The small dots only when the camera or microphone is not already showing as the island or its drop.
+        val dots = privacy.takeIf { primary !is IslandContent.Privacy && drop !is IslandContent.Privacy } ?: PrivacyInfo()
         val ui = when {
-            hidden -> IslandUi(Stage.HIDDEN, null, privacy)
-            expanded != null -> IslandUi(Stage.EXPANDED, expanded, privacy)
-            alert != null -> IslandUi(if (alert!!.kind in MINI_KINDS) Stage.MINI else Stage.ALERT, IslandContent.Notice(alert!!), privacy)
-            primary != null -> IslandUi(Stage.COMPACT, primary, privacy, second?.takeIf { settings.showSecond })
-            settings.idleVisible -> IslandUi(Stage.IDLE, null, privacy)
-            else -> IslandUi(Stage.HIDDEN, null, privacy)
+            hidden -> IslandUi(Stage.HIDDEN, null, dots)
+            expanded != null -> IslandUi(Stage.EXPANDED, expanded, dots, drop)
+            alert != null -> IslandUi(if (alert!!.kind in MINI_KINDS) Stage.MINI else Stage.ALERT, IslandContent.Notice(alert!!), dots, drop)
+            primary != null -> IslandUi(Stage.COMPACT, primary, dots, drop)
+            settings.idleVisible -> IslandUi(Stage.IDLE, null, dots)
+            else -> IslandUi(Stage.HIDDEN, null, dots)
         }
         _ui.value = ui
     }

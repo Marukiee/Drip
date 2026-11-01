@@ -97,6 +97,7 @@ fun SceneContent(scene: Scene, privacy: PrivacyInfo, controller: IslandControlle
                 is IslandContent.Charging -> ChargingCard(c.battery)
                 // The live state, not the one from when the card opened: after a tap on the switch it must show off.
                 is IslandContent.Torch -> TorchCard(hub.torch.collectAsState().value, hub)
+                is IslandContent.Privacy -> PrivacyCard(hub.privacy.collectAsState().value) { controller.collapse() }
                 is IslandContent.Notice -> when (c.alert.kind) {
                     // The slim announcements open into the card of what they are about.
                     AlertKind.VOLUME, AlertKind.RINGER -> VolumeCard(hub)
@@ -196,6 +197,7 @@ private fun CompactContent(content: IslandContent?, privacy: PrivacyInfo, height
                     Icon(DripIcons.FlashlightFilled, null, tint = IslandInk.Yellow, modifier = Modifier.size(icon))
                 }
             }
+            is IslandContent.Privacy -> PrivacyCompact(content.privacy, start, endSlot, slot)
             else -> Unit
         }
         if (privacy.camera || privacy.microphone) {
@@ -306,6 +308,7 @@ fun SecondContent(content: IslandContent, slot: Dp) {
             is IslandContent.Charging -> Icon(DripIcons.BoltFilled, null, tint = IslandInk.Green, modifier = Modifier.size(icon))
             is IslandContent.Torch -> Icon(DripIcons.FlashlightFilled, null, tint = IslandInk.Yellow, modifier = Modifier.size(icon))
             is IslandContent.Notice -> Icon(DripIcons.Notifications, null, tint = accent, modifier = Modifier.size(icon))
+            is IslandContent.Privacy -> content.privacy.kinds().firstOrNull()?.let { PrivacyGlyph(it, slot) }
         }
     }
 }

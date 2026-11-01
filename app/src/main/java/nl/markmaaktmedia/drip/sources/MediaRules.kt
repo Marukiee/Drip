@@ -68,14 +68,44 @@ internal fun shuffleOnOf(action: String?, name: String?): Boolean {
  * "Remove from liked songs" means the song is liked; "Add to liked songs" means it is not yet. Players offer the one
  * of the pair that undoes the present state, so which of the two is there says it.
  */
-internal fun likedOf(action: String?, name: String?): Boolean {
+internal fun likedOf(action: String?, name: String?): Boolean = likedStatedBy(action, name) ?: false
+
+/** As [likedOf], but null when the words say nothing either way: "Favorite" in both states, as many players do. */
+internal fun likedStatedBy(action: String?, name: String?): Boolean? {
     val t = words(action, name)
     return when {
         t.hasPart("unlike", "remove", "unfavo", "unheart", "unsave", "verwijder", "undo") -> true
         t.hasWord("add", "toevoegen", "save", "opslaan") -> false
         t.hasWord("liked", "added", "saved", "filled", "favorited", "favourited", "on") || t.hasPart(" leuk gevonden ") -> true
-        else -> false
+        else -> null
     }
+}
+
+/**
+ * The name of the icon resource a player gives its heart, "ic_favorite_border" or "heart_filled". Most players keep the
+ * same action and name in both states and only swap the icon, so this is often the only thing that tells. Null when the
+ * name says nothing.
+ */
+internal fun likedOfIconName(name: String?): Boolean? {
+    val t = words(name ?: return null)
+    return when {
+        t.hasWord("outline", "outlined", "border", "unfilled", "inactive", "off", "empty", "add", "plus", "unchecked", "unselected", "unliked", "unfavorite") -> false
+        t.hasWord("filled", "fill", "active", "on", "selected", "checked", "check", "liked", "saved", "added", "full", "solid", "done") -> true
+        else -> null
+    }
+}
+
+/** The extra in which Media3 players say which of its standard icons a custom action shows. */
+internal const val MEDIA3_ICON_KEY = "androidx.media3.session.EXTRAS_KEY_COMMAND_BUTTON_ICON_COMPAT"
+
+/** Media3's heart, thumb up, star, check circle and bookmark, as Material code points; the filled ones are 0xf0000 more. */
+private val media3Hearts = setOf(0xe87d, 0xe8dc, 0xe838, 0xe86c, 0xe866)
+
+/** Liked or not from Media3's icon number, null when the icon is not one of the heart-like ones. */
+internal fun likedOfMedia3Icon(icon: Int): Boolean? = when {
+    icon in media3Hearts -> false
+    icon - 0xf0000 in media3Hearts -> true
+    else -> null
 }
 
 /** Rating.RATING_HEART, Rating.RATING_THUMB_UP_DOWN and PlaybackState.ACTION_SET_RATING. */

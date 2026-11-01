@@ -44,6 +44,20 @@ class MediaRulesTest {
         assertTrue(likedOf("x", "Unlike"))
         assertFalse(likedOf("x", "Like"))
         assertTrue(likedOf("x", "Added to Liked Songs"))
+        assertNull(likedStatedBy("TOGGLE_FAVORITE", "Favorite"))
+    }
+
+    @Test fun likeStateFromIcons() {
+        assertEquals(true, likedOfMedia3Icon(0xfe87d))
+        assertEquals(false, likedOfMedia3Icon(0xe87d))
+        assertEquals(true, likedOfMedia3Icon(0xfe8dc))
+        assertNull(likedOfMedia3Icon(0xe145))
+        assertEquals(false, likedOfIconName("ic_favorite_border"))
+        assertEquals(false, likedOfIconName("ic_heart_outline_24"))
+        assertEquals(false, likedOfIconName("heartUnfilled"))
+        assertEquals(true, likedOfIconName("ic_heart_filled"))
+        assertEquals(true, likedOfIconName("icon_heart_active"))
+        assertNull(likedOfIconName("ic_favorite"))
     }
 
     @Test fun playingSessionWins() {

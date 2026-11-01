@@ -9,6 +9,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -16,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +53,9 @@ import kotlin.math.abs
  *
  * Under the finger the fill follows it exactly. Let go, it stays where it was left until [value] (what the system
  * reports) catches up or a second and a half has passed, so it never jumps back for a moment.
+ *
+ * The icon and label sit at the start of the filled part. When that is too short to hold them they move to just after
+ * the handle, on the track, as the Material 3 slider does, so the handle never runs through them.
  */
 @Composable
 fun ExpressiveSlider(
@@ -77,6 +82,7 @@ fun ExpressiveSlider(
     LaunchedEffect(hold?.first ?: value, dragging) { if (!dragging) shown.animateTo(hold?.first ?: value, spring(0.9f, 500f)) }
     val handle by animateDpAsState(if (dragging) 2.dp else 4.dp, spring(0.6f, 600f), label = "handle")
     var widthPx by remember { mutableStateOf(1f) }
+    var contentPx by remember { mutableStateOf(0f) }
     var lastStep by remember { mutableStateOf(-1) }
 
     fun set(x: Float, final: Boolean) {
@@ -158,10 +164,22 @@ fun ExpressiveSlider(
         contentAlignment = Alignment.CenterStart,
     ) {
         if (icon != null || label != null) {
-            val roomy = shown.value * widthPx > with(density) { 72.dp.toPx() }
-            val tint = if (roomy) onActive else MaterialTheme.colorScheme.onSurfaceVariant
+            val start = with(density) { 14.dp.toPx() }
+            val gapPx = with(density) { 4.dp.toPx() }
+            // Where the handle is and whether the icon and label fit before it, the same sums as the drawing below.
+            fun handleX(): Float {
+                val hw = with(density) { handle.toPx() }
+                return (shown.value.coerceIn(0f, 1f) * widthPx).coerceIn(hw / 2, (widthPx - hw / 2).coerceAtLeast(hw / 2))
+            }
+            val inside by remember { derivedStateOf { handleX() - with(density) { handle.toPx() } / 2 - gapPx >= start * 2 + contentPx } }
+            val tint = if (inside) onActive else MaterialTheme.colorScheme.onSurfaceVariant
             androidx.compose.foundation.layout.Row(
-                Modifier.padding(start = 14.dp),
+                Modifier
+                    .onSizeChanged { contentPx = it.width.toFloat() }
+                    .offset {
+                        val x = if (inside) start else handleX() + handle.toPx() / 2 + gapPx + start * 0.85f
+                        androidx.compose.ui.unit.IntOffset(x.toInt(), 0)
+                    },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (icon != null) Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp))

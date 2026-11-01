@@ -174,7 +174,9 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
         return when (stage) {
             // Shrinks up into the top edge on a notch phone, into the camera around a hole, or to a point otherwise.
             Stage.HIDDEN -> when {
-                notch -> collapsedShape(idleWidth * 0.7f, 0f, roundness).copy(topCorner = 0f, bottomRadius = 0f)
+                // No height, but shoulders and a round bottom to aim for: on the way up they shrink with the height, so
+                // it goes into the edge as a small notch instead of a flat bar.
+                notch -> collapsedShape(idleWidth * 0.7f, 0f, roundness).copy(topCorner = shoulder, bottomRadius = compactHeight / 2f)
                 cutout != null -> {
                     val size = min(cutout.width(), cutout.height()).toFloat()
                     IslandGeometry(centerX, cutout.exactCenterY() + topNudge - size / 2f, size, size, -size / 2f, size / 2f)
@@ -225,6 +227,20 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
     fun tuckedSecond(main: IslandGeometry): IslandGeometry {
         val h = (main.height * 0.8f).coerceAtLeast(0f)
         return IslandGeometry(main.right - main.height / 2, main.top, h, h, 0f, h / 2)
+    }
+
+    /**
+     * Where the small drop goes while a card or an announcement covers the island: it does not follow the island down
+     * but leaves in place, drawn back up into the top edge it hangs from (a notch) or shrunk to a point (around a
+     * camera). It comes back down from there when the island closes.
+     */
+    fun retractedSecond(): IslandGeometry {
+        val out = secondGeometry(geometry(Stage.COMPACT))
+        return if (notch) {
+            IslandGeometry(out.centerX, out.top, out.width * 0.4f, 0f, 0f, 0f)
+        } else {
+            IslandGeometry(out.centerX, out.top + out.height / 2f, 0f, 0f, 0f, 0f)
+        }
     }
 
     private fun collapsedShape(width: Float, height: Float, roundness: Float): IslandGeometry {

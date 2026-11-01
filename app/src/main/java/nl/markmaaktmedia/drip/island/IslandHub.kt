@@ -22,6 +22,11 @@ class IslandHub {
     val privacy = MutableStateFlow(PrivacyInfo())
     /** Media volume, 0 to 1. */
     val musicVolume = MutableStateFlow(0f)
+    /**
+     * The app in front, not the home screen. Android does not tell other apps which app holds the camera or the
+     * microphone, but it is nearly always the one in front when it starts, so the privacy card names that one.
+     */
+    val foregroundApp = MutableStateFlow<String?>(null)
 
     @Volatile var torchCommands: TorchCommands? = null
     /** Gives the island the keyboard while a reply is typed, and takes it away again. Set by the island service. */

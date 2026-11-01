@@ -146,7 +146,8 @@ internal class AudioPart(env: SourceEnv) : Part(env) {
 
     private fun publishMic() {
         val s = settings ?: return
-        hub.privacy.update { it.copy(microphone = s.showPrivacy && micBusy) }
+        val inUse = s.showPrivacy && micBusy
+        hub.privacy.update { it.copy(microphone = inUse, microphoneApp = if (!inUse) null else if (it.microphone) it.microphoneApp else hub.foregroundApp.value) }
     }
 
     private fun musicLevel(am: AudioManager) = volumeLevel(

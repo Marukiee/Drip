@@ -17,6 +17,13 @@ internal class CameraPart(env: SourceEnv) : Part(env) {
     private var torchOn = false
     private val busy = HashSet<String>()
 
+    /**
+     * Whether the torch really dims. Some phones report strength levels but their flash ignores them, so the first time
+     * the strength is set it is read back; a phone that does not take it never shows the slider again. Null: not tried.
+     */
+    private val device = context.getSharedPreferences("drip_device", android.content.Context.MODE_PRIVATE)
+    private var dims: Boolean? = if (device.contains(KEY_DIMS)) device.getBoolean(KEY_DIMS, false) else null
+
     private val torchCallback = object : CameraManager.TorchCallback() {
         override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
             if (cameraId != torchId) return
@@ -39,6 +46,7 @@ internal class CameraPart(env: SourceEnv) : Part(env) {
         override fun onTorchStrengthLevelChanged(cameraId: String, newStrengthLevel: Int) {
             if (cameraId != torchId) return
             strength = newStrengthLevel
+            if (newStrengthLevel == asked) remember(true)
             publishTorch()
         }
     }
@@ -63,13 +71,26 @@ internal class CameraPart(env: SourceEnv) : Part(env) {
 
         override fun setStrength(level: Int) {
             val id = torchId ?: return
-            safely("torch strength") {
-                if (Build.VERSION.SDK_INT >= 33 && maxStrength > 1) {
-                    cameras?.turnOnTorchWithStrengthLevel(id, level.coerceIn(1, maxStrength))
-                } else {
-                    cameras?.setTorchMode(id, true)
-                }
+            if (Build.VERSION.SDK_INT < 33 || maxStrength <= 1) {
+                safely("torch") { cameras?.setTorchMode(id, true) }
+                return
             }
+            val wanted = level.coerceIn(1, maxStrength)
+            asked = wanted
+            val done = safely("torch strength") { cameras?.turnOnTorchWithStrengthLevel(id, wanted) }
+            if (done == null) {
+                remember(false)
+                publishTorch()
+                return
+            }
+            if (dims != null) return
+            // Read back a moment later: a flash that ignores the level still reports the old one.
+            env.handler.postDelayed({
+                if (dims != null || asked != wanted) return@postDelayed
+                val got = safely("torch strength") { cameras?.getTorchStrengthLevel(id) }
+                remember(got == wanted)
+                publishTorch()
+            }, 500)
         }
     }
 
@@ -123,14 +144,24 @@ internal class CameraPart(env: SourceEnv) : Part(env) {
         safely("torch strength") { cameras?.getTorchStrengthLevel(id) }?.let { strength = it }
     }
 
+    private var asked = 0
+
+    private fun remember(value: Boolean) {
+        if (dims == value) return
+        dims = value
+        device.edit().putBoolean(KEY_DIMS, value).apply()
+    }
+
     private fun publishTorch() {
         val s = settings ?: return
+        // A phone whose flash turned out not to dim gets the plain switch.
+        val levels = if (dims == false) 1 else maxStrength
         hub.torch.value = if (s.showTorch) {
             TorchInfo(
                 available = torchId != null && torchReady,
                 on = torchOn,
-                strength = strength.coerceIn(1, maxStrength),
-                maxStrength = maxStrength,
+                strength = strength.coerceIn(1, levels),
+                maxStrength = levels,
             )
         } else {
             TorchInfo()
@@ -141,6 +172,9 @@ internal class CameraPart(env: SourceEnv) : Part(env) {
     private fun publishCamera() {
         val s = settings ?: return
         val inUse = s.showPrivacy && busy.any { !(torchOn && it == torchId) }
-        hub.privacy.update { it.copy(camera = inUse) }
+        // Which app: the one in front when it started, kept while it lasts.
+        hub.privacy.update { it.copy(camera = inUse, cameraApp = if (!inUse) null else if (it.camera) it.cameraApp else hub.foregroundApp.value) }
     }
 }
+
+private const val KEY_DIMS = "torch_dims"

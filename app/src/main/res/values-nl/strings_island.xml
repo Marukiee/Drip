@@ -59,4 +59,10 @@
     <string name="island_ringer_sound">Geluid</string>
     <string name="island_ringer_vibrate">Trillen</string>
     <string name="island_ringer_silent">Stil</string>
+    <string name="island_privacy_title">In gebruik</string>
+    <string name="island_privacy_camera">Camera</string>
+    <string name="island_privacy_microphone">Microfoon</string>
+    <string name="island_privacy_location">Locatie</string>
+    <string name="island_privacy_unknown_app">Een app</string>
+    <string name="island_privacy_none">Er is niets meer in gebruik</string>
 </resources>

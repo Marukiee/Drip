@@ -92,8 +92,16 @@ class IslandService : AccessibilityService() {
         }
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val pkg = event.packageName?.toString() ?: return
+        val className = event.className?.toString().orEmpty()
+        // A screenshot was taken: its preview and editor have their buttons along the top, right where an open card is.
+        if ("screenshot" in className.lowercase() || "screenshot" in pkg || "markup" in pkg) controller.stepAside()
         // The keyboard and the system's own panels are not the app in front.
-        if (pkg == packageName || pkg == "com.android.systemui" || event.className?.contains("InputMethod") == true) return
+        if (pkg == packageName || pkg == "com.android.systemui" || "InputMethod" in className) return
+        if (pkg != visibility.foregroundPackage) {
+            // Not the first app seen after a start: that is no switch, only the service catching up.
+            if (visibility.foregroundPackage != null) controller.stepAside()
+            graph.hub.foregroundApp.value = pkg.takeIf { it != homePackage() }
+        }
         visibility = visibility.copy(foregroundPackage = pkg)
         controller.setVisibility(visibility)
     }
@@ -103,6 +111,11 @@ class IslandService : AccessibilityService() {
      * place of each window are looked at, never what is in it. An overlay cannot ask this any other way, because the
      * island sits above the status bar and Android does not tell a window about bars that are below it.
      */
+    /** The home screen app, which is never the one using the camera even while it is in front. */
+    private fun homePackage(): String? = runCatching {
+        packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)?.activityInfo?.packageName
+    }.getOrNull()
+
     private fun checkStatusBar() {
         val list = runCatching { windows }.getOrNull() ?: return
         val f = fit.value
@@ -195,7 +208,7 @@ class IslandService : AccessibilityService() {
             is IslandContent.Call -> content.call.open?.invoke()
             is IslandContent.Live -> content.live.open?.invoke()
             is IslandContent.Notice -> content.alert.open?.invoke()
-            is IslandContent.Charging, is IslandContent.Torch, null -> controller.toggle()
+            is IslandContent.Charging, is IslandContent.Torch, is IslandContent.Privacy, null -> controller.toggle()
         }
         controller.collapse()
     }
