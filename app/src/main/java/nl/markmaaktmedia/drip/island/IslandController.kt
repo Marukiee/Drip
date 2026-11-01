@@ -208,7 +208,8 @@ class IslandController(
         if (settings.showTorch && s.torch.on) out += IslandContent.Torch(s.torch)
         // Held at a limit (Battery Care) the phone is plugged in but not charging: still worth showing, with the limit.
         val plugged = s.battery.charging || (s.battery.limit != null && s.battery.plug != PlugType.NONE)
-        if (settings.showCharging && plugged) out += IslandContent.Charging(s.battery)
+        // Plugging in is announced for a moment either way; only when asked does charging stay on the island.
+        if (settings.showCharging && settings.chargingStays && plugged) out += IslandContent.Charging(s.battery)
         if (settings.showMusic && s.music != null && !s.music.playing && now - lastPlayingAt < settings.pausedLingerMs) out += IslandContent.Music(s.music)
         return out
     }

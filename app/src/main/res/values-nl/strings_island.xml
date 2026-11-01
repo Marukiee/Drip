@@ -61,6 +61,7 @@
     <string name="island_ringer_vibrate">Trillen</string>
     <string name="island_ringer_silent">Stil</string>
     <string name="island_now">nu</string>
+    <string name="island_on_battery">Op batterij</string>
     <string name="island_lyrics">Songtekst</string>
     <string name="island_lyrics_looking">Songtekst zoeken</string>
     <string name="island_lyrics_none">Geen songtekst gevonden voor dit nummer</string>

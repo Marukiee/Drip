@@ -146,7 +146,14 @@ fun MusicCard(np: NowPlaying, hub: IslandHub, settings: nl.markmaaktmedia.drip.d
     // The three that matter most joined in the middle, the extras two by two at the sides.
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            SideButton(DripIcons.Shuffle, R.string.island_shuffle, active = np.shuffle, onClick = c::toggleShuffle)
+            Box {
+                SideButton(DripIcons.Shuffle, R.string.island_shuffle, active = np.shuffle, onClick = c::toggleShuffle)
+                // Spotify's third way, smart shuffle: a small spark lands on the shuffle sign.
+                androidx.compose.animation.AnimatedVisibility(
+                    np.smartShuffle, Modifier.align(Alignment.TopEnd).padding(top = 6.dp, end = 6.dp),
+                    enter = scaleIn(spring(0.5f, 500f)) + fadeIn(tween(120)), exit = scaleOut(tween(140)) + fadeOut(tween(120)),
+                ) { Spark(MaterialTheme.colorScheme.primary) }
+            }
             SideButton(
                 if (np.repeat == RepeatMode.ONE) DripIcons.RepeatOne else DripIcons.Repeat, R.string.island_repeat,
                 active = np.repeat?.let { it != RepeatMode.OFF }, onClick = c::cycleRepeat,
@@ -210,6 +217,24 @@ private fun Cover(np: NowPlaying) {
                 Picture(art, 64.dp, MaterialShapes.Cookie9Sided.toShape(), DripIcons.Music)
             }
         }
+    }
+}
+
+/** A four-pointed spark, the sign of smart shuffle. */
+@Composable
+private fun Spark(color: androidx.compose.ui.graphics.Color) {
+    Canvas(Modifier.size(9.dp)) {
+        val c = size.width / 2
+        val inner = c * 0.32f
+        val path = androidx.compose.ui.graphics.Path().apply {
+            moveTo(c, 0f)
+            quadraticTo(c + inner * 0.4f, c - inner * 0.4f, size.width, c)
+            quadraticTo(c + inner * 0.4f, c + inner * 0.4f, c, size.height)
+            quadraticTo(c - inner * 0.4f, c + inner * 0.4f, 0f, c)
+            quadraticTo(c - inner * 0.4f, c - inner * 0.4f, c, 0f)
+            close()
+        }
+        drawPath(path, color)
     }
 }
 

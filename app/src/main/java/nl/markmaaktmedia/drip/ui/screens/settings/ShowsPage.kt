@@ -32,6 +32,7 @@ private val Shown = listOf(
     Toggle(FocusKeys.ShowLive, { DripIcons.Timer }, R.string.show_live, R.string.show_live_sub, true, { it.showLive }, { s, v -> s.copy(showLive = v) }),
     Toggle(FocusKeys.ShowNotifications, { DripIcons.Notifications }, R.string.show_notifications, R.string.show_notifications_sub, true, { it.showNotifications }, { s, v -> s.copy(showNotifications = v) }),
     Toggle(FocusKeys.ShowCharging, { DripIcons.BatteryCharging }, R.string.show_charging, R.string.show_charging_sub, false, { it.showCharging }, { s, v -> s.copy(showCharging = v) }),
+    Toggle(FocusKeys.ChargingStays, { DripIcons.Pin }, R.string.charging_stays, R.string.charging_stays_sub, false, { it.chargingStays }, { s, v -> s.copy(chargingStays = v) }),
     Toggle(FocusKeys.ShowTorch, { DripIcons.Flashlight }, R.string.show_torch, R.string.show_torch_sub, false, { it.showTorch }, { s, v -> s.copy(showTorch = v) }),
     Toggle(FocusKeys.ShowPrivacy, { DripIcons.Mic }, R.string.show_privacy, R.string.show_privacy_sub, false, { it.showPrivacy }, { s, v -> s.copy(showPrivacy = v) }),
 )

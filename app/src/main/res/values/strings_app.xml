@@ -158,6 +158,8 @@
     <string name="show_music_sub">What is playing, with its controls</string>
     <string name="show_charging">Charging</string>
     <string name="show_charging_sub">The battery while it charges</string>
+    <string name="charging_stays">Charging stays</string>
+    <string name="charging_stays_sub">Off: only a few seconds when you plug in</string>
     <string name="show_calls">Calls</string>
     <string name="show_calls_sub">Incoming and ongoing calls</string>
     <string name="show_live">Timers and live updates</string>

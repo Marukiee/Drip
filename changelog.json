@@ -1,5 +1,33 @@
 [
   {
+    "version": "0.1.14",
+    "date": "2026-11-01",
+    "en": {
+      "title": "Follows your player",
+      "better": [
+        "Shuffle and repeat follow the player itself, also when you change them there",
+        "Spotify's three ways of shuffling, smart shuffle with a spark",
+        "Lyrics come from the song's own file first, and only then from online",
+        "Plugging in shows charging for a moment; it can stay if you switch that on"
+      ],
+      "fixed": [
+        "Unplugged, the battery card no longer says it is charging"
+      ]
+    },
+    "nl": {
+      "title": "Volgt je speler",
+      "better": [
+        "Shuffle en herhalen volgen de speler zelf, ook als je ze daar verandert",
+        "Spotify's drie manieren van shuffelen, slimme shuffle met een sterretje",
+        "Songteksten komen eerst uit het muziekbestand zelf, en pas daarna online",
+        "Aansluiten laat het opladen even zien; met een schakelaar blijft het staan"
+      ],
+      "fixed": [
+        "Losgekoppeld zegt de batterijkaart niet meer dat hij oplaadt"
+      ]
+    }
+  },
+  {
     "version": "0.1.13",
     "date": "2026-11-01",
     "en": {

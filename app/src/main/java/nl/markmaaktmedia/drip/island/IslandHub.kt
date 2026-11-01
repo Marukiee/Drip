@@ -33,6 +33,8 @@ class IslandHub {
     val lyrics = MutableStateFlow<LyricsState>(LyricsState.Off)
     /** Tries again after the lyrics could not be fetched. Set by the lyrics source. */
     @Volatile var retryLyrics: (() -> Unit)? = null
+    /** Looks the lyrics up online, also when reading the song's file was on offer. Set by the lyrics source. */
+    @Volatile var lookLyricsOnline: (() -> Unit)? = null
     /** The message whose card should open straight into typing a reply (its reply button in the notch was pressed). */
     val replyTo = MutableStateFlow<String?>(null)
 

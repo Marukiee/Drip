@@ -75,6 +75,7 @@ internal object FocusKeys {
     const val Strength = "motion.strength"
 
     const val ShowMusic = "shows.music"
+    const val ChargingStays = "shows.charging_stays"
     const val ShowCharging = "shows.charging"
     const val ShowCalls = "shows.calls"
     const val ShowLive = "shows.live"
@@ -219,6 +220,7 @@ internal object SettingsCatalog {
         // What the island shows
         page(SettingsCategory.Shows, R.string.settings_kw_shows),
         row("show_music", R.string.show_music, R.string.settings_kw_shows, SettingsCategory.Shows, FocusKeys.ShowMusic, { DripIcons.Music }, R.string.show_music_sub),
+        row("charging_stays", R.string.charging_stays, R.string.settings_kw_shows, SettingsCategory.Shows, FocusKeys.ChargingStays, { DripIcons.Pin }, R.string.charging_stays_sub),
         row("paused_linger", R.string.paused_linger, R.string.settings_kw_shows, SettingsCategory.Shows, FocusKeys.PausedLinger, { DripIcons.Pause }, null),
         row("show_charging", R.string.show_charging, R.string.settings_kw_shows, SettingsCategory.Shows, FocusKeys.ShowCharging, { DripIcons.BatteryCharging }, R.string.show_charging_sub),
         row("show_calls", R.string.show_calls, R.string.settings_kw_shows, SettingsCategory.Shows, FocusKeys.ShowCalls, { DripIcons.Call }, R.string.show_calls_sub),

@@ -61,6 +61,7 @@
     <string name="island_ringer_vibrate">Vibrate</string>
     <string name="island_ringer_silent">Silent</string>
     <string name="island_now">now</string>
+    <string name="island_on_battery">On battery</string>
     <string name="island_lyrics">Lyrics</string>
     <string name="island_lyrics_looking">Looking for the lyrics</string>
     <string name="island_lyrics_none">No lyrics found for this song</string>

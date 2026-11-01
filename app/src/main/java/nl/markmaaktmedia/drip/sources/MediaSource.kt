@@ -12,9 +12,13 @@ import android.media.session.PlaybackState
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.support.v4.media.session.MediaControllerCompat
+import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import nl.markmaaktmedia.drip.island.MediaCommands
 import nl.markmaaktmedia.drip.island.NowPlaying
 import nl.markmaaktmedia.drip.island.RepeatMode
+import nl.markmaaktmedia.drip.island.ShuffleMode
 
 /**
  * Follows every active media session and tells [publish] what the island should show. Each session gets its own
@@ -78,6 +82,36 @@ internal class MediaSource(
         val shuffle = find(CustomKind.SHUFFLE)
         val like = find(CustomKind.LIKE)
         val rated = likesByRating(s.ratingType, actions)
+        // The shuffle and repeat a player keeps as a session (Media3 and MediaSessionCompat players: PixelPlayer,
+        // YouTube Music, Poweramp, Musicolet...) are the truth, changed here or in the player itself. Only players that
+        // offer nothing but a button of their own fall back on reading that button.
+        val standard = s.compat?.takeIf { it.isSessionReady }
+        val customShuffle = shuffle?.let { a ->
+            val stated = shuffleOfAction(a, s.controller.packageName)
+            if (stated == ShuffleMode.SMART) s.threeWayShuffle = true
+            stated
+        }
+        val shuffleMode = when {
+            standard != null && actions and ACTION_SET_SHUFFLE_MODE != 0L && !s.threeWayShuffle -> {
+                val on = standard.shuffleMode == PlaybackStateCompat.SHUFFLE_MODE_ALL || standard.shuffleMode == PlaybackStateCompat.SHUFFLE_MODE_GROUP
+                followPress(if (on) ShuffleMode.ON else ShuffleMode.OFF, s.pressedShuffle, justNow(s.shuffleAt), actionUnchanged = false)
+            }
+            shuffle != null -> followPress(customShuffle, s.pressedShuffle, justNow(s.shuffleAt), signatureOf(shuffle) == s.shuffleSignature) ?: ShuffleMode.OFF
+            else -> null
+        }
+        val repeatMode = when {
+            standard != null && actions and ACTION_SET_REPEAT_MODE != 0L -> {
+                val mode = when (standard.repeatMode) {
+                    PlaybackStateCompat.REPEAT_MODE_ONE -> RepeatMode.ONE
+                    PlaybackStateCompat.REPEAT_MODE_ALL, PlaybackStateCompat.REPEAT_MODE_GROUP -> RepeatMode.ALL
+                    else -> RepeatMode.OFF
+                }
+                followPress(mode, s.pressedRepeat, justNow(s.repeatAt), actionUnchanged = false)
+            }
+            repeat != null -> followPress(repeatOfAction(repeat, s.controller.packageName), s.pressedRepeat, justNow(s.repeatAt), signatureOf(repeat) == s.repeatSignature)
+                ?: RepeatMode.OFF
+            else -> null
+        }
         val packageName = s.controller.packageName
         return NowPlaying(
             packageName = packageName,
@@ -101,14 +135,9 @@ internal class MediaSource(
             canSkipNext = state == null || actions and PlaybackState.ACTION_SKIP_TO_NEXT != 0L,
             canSkipPrevious = state == null || actions and PlaybackState.ACTION_SKIP_TO_PREVIOUS != 0L,
             canSeek = duration > 0 && actions and PlaybackState.ACTION_SEEK_TO != 0L,
-            repeat = repeat?.let { a ->
-                followPress(repeatOfAction(a, packageName), s.pressedRepeat, justNow(s.repeatAt), signatureOf(a) == s.repeatSignature)
-                    ?: RepeatMode.OFF
-            },
-            shuffle = shuffle?.let { a ->
-                followPress(shuffleOfAction(a, packageName), s.pressedShuffle, justNow(s.shuffleAt), signatureOf(a) == s.shuffleSignature)
-                    ?: false
-            },
+            repeat = repeatMode,
+            shuffle = shuffleMode?.let { it != ShuffleMode.OFF },
+            smartShuffle = shuffleMode == ShuffleMode.SMART,
             liked = likedOf(s, m, rated, like, packageName, title),
             next = nextInQueue(s.queue, state?.activeQueueItemId ?: MediaSession.QueueItem.UNKNOWN_ID.toLong()),
             commands = s.commands,
@@ -171,10 +200,10 @@ internal class MediaSource(
         return customKindOf(a.action, a.name?.toString())
     }
 
-    private fun shuffleOfAction(a: PlaybackState.CustomAction, packageName: String): Boolean? =
-        media3Icon(a)?.let(::shuffleOfMedia3Icon)
-            ?: shuffleOfIconName(iconName(packageName, a.icon))
-            ?: shuffleStatedBy(a.action, a.name?.toString())
+    private fun shuffleOfAction(a: PlaybackState.CustomAction, packageName: String): ShuffleMode? =
+        media3Icon(a)?.let(::shuffleModeOfMedia3Icon)
+            ?: shuffleModeOfIconName(iconName(packageName, a.icon))
+            ?: shuffleStatedBy(a.action, a.name?.toString())?.let { if (it) ShuffleMode.ON else ShuffleMode.OFF }
 
     private fun repeatOfAction(a: PlaybackState.CustomAction, packageName: String): RepeatMode? =
         media3Icon(a)?.let(::repeatOfMedia3Icon)
@@ -190,7 +219,9 @@ internal class MediaSource(
         /** The heart action as it was when pressed, to see whether the player changed it afterwards. */
         var pressedSignature: String? = null
         /** The same for shuffle and repeat, which belong to the player rather than to one song. */
-        var pressedShuffle: Boolean? = null
+        var pressedShuffle: ShuffleMode? = null
+        /** Shuffle here has a third way, smart shuffle: Spotify has it, and any player that once showed it. */
+        var threeWayShuffle = controller.packageName.startsWith("com.spotify")
         var shuffleAt = 0L
         var shuffleSignature: String? = null
         var pressedRepeat: RepeatMode? = null
@@ -207,6 +238,14 @@ internal class MediaSource(
         private var artSource: Bitmap? = null
         val commands = Commands(this)
 
+        /** The same session seen through MediaControllerCompat, which also knows its shuffle and repeat modes. */
+        var compat: MediaControllerCompat? = null
+        private val compatCallback = object : MediaControllerCompat.Callback() {
+            override fun onShuffleModeChanged(shuffleMode: Int) = update()
+            override fun onRepeatModeChanged(repeatMode: Int) = update()
+            override fun onSessionReady() = update()
+        }
+
         fun attach() {
             metadata = safely("metadata") { controller.metadata }
             state = safely("playback state") { controller.playbackState }
@@ -215,10 +254,17 @@ internal class MediaSource(
             readRatingType()
             readArt()
             safely("media callback") { controller.registerCallback(this, handler) }
+            compat = safely("compat controller") {
+                MediaControllerCompat(context, MediaSessionCompat.Token.fromToken(controller.sessionToken)).also {
+                    it.registerCallback(compatCallback, handler)
+                }
+            }
         }
 
         fun release() {
             safely("media callback") { controller.unregisterCallback(this) }
+            safely("compat callback") { compat?.unregisterCallback(compatCallback) }
+            compat = null
         }
 
         fun title(): String? = metadata?.let { m ->
@@ -301,16 +347,42 @@ internal class MediaSource(
             s.repeatAt = SystemClock.elapsedRealtime()
             s.repeatSignature = action(CustomKind.REPEAT)?.let(::signatureOf)
             handler.post { update() }
-            custom(CustomKind.REPEAT)
+            val standard = s.compat?.takeIf { it.isSessionReady && actions() and ACTION_SET_REPEAT_MODE != 0L }
+            if (standard != null) {
+                val mode = when (s.pressedRepeat) {
+                    RepeatMode.ONE -> PlaybackStateCompat.REPEAT_MODE_ONE
+                    RepeatMode.ALL -> PlaybackStateCompat.REPEAT_MODE_ALL
+                    else -> PlaybackStateCompat.REPEAT_MODE_NONE
+                }
+                safely("repeat mode") { standard.transportControls.setRepeatMode(mode) }
+            } else {
+                custom(CustomKind.REPEAT)
+            }
         }
 
         override fun toggleShuffle() {
-            s.pressedShuffle = safely("shuffle") { build(s)?.shuffle } != true
+            val shown = safely("shuffle") { build(s) }?.let {
+                when {
+                    it.smartShuffle -> ShuffleMode.SMART
+                    it.shuffle == true -> ShuffleMode.ON
+                    else -> ShuffleMode.OFF
+                }
+            } ?: ShuffleMode.OFF
+            s.pressedShuffle = nextShuffle(shown, s.threeWayShuffle)
             s.shuffleAt = SystemClock.elapsedRealtime()
             s.shuffleSignature = action(CustomKind.SHUFFLE)?.let(::signatureOf)
             handler.post { update() }
-            custom(CustomKind.SHUFFLE)
+            // Spotify's three ways only go round through its own button; the standard mode knows just on and off.
+            val standard = s.compat?.takeIf { it.isSessionReady && actions() and ACTION_SET_SHUFFLE_MODE != 0L && !s.threeWayShuffle }
+            if (standard != null) {
+                val mode = if (s.pressedShuffle == ShuffleMode.OFF) PlaybackStateCompat.SHUFFLE_MODE_NONE else PlaybackStateCompat.SHUFFLE_MODE_ALL
+                safely("shuffle mode") { standard.transportControls.setShuffleMode(mode) }
+            } else {
+                custom(CustomKind.SHUFFLE)
+            }
         }
+
+        private fun actions() = s.controller.playbackState?.actions ?: 0L
 
         private fun action(kind: CustomKind) = s.controller.playbackState?.customActions?.firstOrNull { kindOf(it) == kind }
         override fun toggleLike() {
@@ -339,6 +411,9 @@ internal class MediaSource(
 
     private companion object {
         const val ART_MAX_PX = 512
+        /** PlaybackStateCompat's actions for the shuffle and repeat modes, which reach the framework state as bits. */
+        const val ACTION_SET_SHUFFLE_MODE = PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE
+        const val ACTION_SET_REPEAT_MODE = PlaybackStateCompat.ACTION_SET_REPEAT_MODE
 
         fun isActive(state: PlaybackState?) = when (state?.state) {
             PlaybackState.STATE_PLAYING, PlaybackState.STATE_BUFFERING, PlaybackState.STATE_CONNECTING,

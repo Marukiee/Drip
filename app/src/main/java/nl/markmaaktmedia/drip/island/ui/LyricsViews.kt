@@ -246,9 +246,7 @@ private fun Ask(files: Boolean) {
         )
         androidx.compose.foundation.layout.Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (files) PillButton(stringResource(R.string.island_lyrics_files), { askFiles(context) })
-            PillButton(stringResource(R.string.island_lyrics_online), {
-                context.graph.scope.launch { context.graph.prefs.editIsland { it.copy(lyricsOnline = true) } }
-            }, quiet = files)
+            PillButton(stringResource(R.string.island_lyrics_online), { context.graph.hub.lookLyricsOnline?.invoke() }, quiet = files)
         }
     }
 }

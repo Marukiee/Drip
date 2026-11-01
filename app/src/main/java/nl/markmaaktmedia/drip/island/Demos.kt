@@ -197,7 +197,14 @@ object Demos {
                 hub.nowPlaying.value = hub.nowPlaying.value?.let { it.copy(repeat = RepeatMode.entries[((it.repeat?.ordinal ?: 0) + 1) % 3]) }
             }
             override fun toggleShuffle() {
-                hub.nowPlaying.value = hub.nowPlaying.value?.let { it.copy(shuffle = it.shuffle != true) }
+                // Round through off, on and smart, as Spotify does.
+                hub.nowPlaying.value = hub.nowPlaying.value?.let {
+                    when {
+                        it.smartShuffle -> it.copy(shuffle = false, smartShuffle = false)
+                        it.shuffle == true -> it.copy(smartShuffle = true)
+                        else -> it.copy(shuffle = true)
+                    }
+                }
             }
             override fun toggleLike() {
                 hub.nowPlaying.value = hub.nowPlaying.value?.let { it.copy(liked = it.liked != true) }

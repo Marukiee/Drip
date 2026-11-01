@@ -158,6 +158,8 @@
     <string name="show_music_sub">Wat er speelt, met de knoppen erbij</string>
     <string name="show_charging">Opladen</string>
     <string name="show_charging_sub">De batterij terwijl hij laadt</string>
+    <string name="charging_stays">Opladen blijft staan</string>
+    <string name="charging_stays_sub">Uit: alleen een paar seconden als je hem aansluit</string>
     <string name="show_calls">Gesprekken</string>
     <string name="show_calls_sub">Binnenkomende en lopende gesprekken</string>
     <string name="show_live">Timers en live updates</string>

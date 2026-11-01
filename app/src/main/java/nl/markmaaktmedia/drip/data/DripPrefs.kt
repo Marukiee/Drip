@@ -139,6 +139,8 @@ data class IslandSettings(
     // What the island shows.
     val showMusic: Boolean = true,
     val showCharging: Boolean = true,
+    /** Charging stays on the island for as long as the phone charges. Off it shows for a few seconds when plugged in. */
+    val chargingStays: Boolean = false,
     val showCalls: Boolean = true,
     val showLive: Boolean = true,
     val showTorch: Boolean = true,
@@ -360,6 +362,7 @@ class DripPrefs(private val context: Context) {
             accentSource = AccentSource.entries.firstOrNull { it.name == s("accent_source") } ?: d.accentSource,
             showMusic = b("show_music", d.showMusic),
             showCharging = b("show_charging", d.showCharging),
+            chargingStays = b("charging_stays", d.chargingStays),
             showCalls = b("show_calls", d.showCalls),
             showLive = b("show_live", d.showLive),
             showTorch = b("show_torch", d.showTorch),
@@ -464,6 +467,7 @@ class DripPrefs(private val context: Context) {
         s("accent_source", v.accentSource.name, d.accentSource.name)
         b("show_music", v.showMusic, d.showMusic)
         b("show_charging", v.showCharging, d.showCharging)
+        b("charging_stays", v.chargingStays, d.chargingStays)
         b("show_calls", v.showCalls, d.showCalls)
         b("show_live", v.showLive, d.showLive)
         b("show_torch", v.showTorch, d.showTorch)

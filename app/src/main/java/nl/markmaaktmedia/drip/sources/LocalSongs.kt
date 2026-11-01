@@ -25,6 +25,7 @@ internal object LocalSongs {
     private val streaming = listOf(
         "com.spotify", "com.google.android.apps.youtube", "com.deezer", "com.aspiro.tidal", "com.apple.android.music",
         "com.soundcloud", "com.amazon.mp3", "com.qobuz", "com.pandora", "com.audible", "com.google.android.youtube",
+        "au.com.shiftyjelly.pocketcasts", "com.bbc.sounds", "com.google.android.apps.podcasts", "com.anghami", "com.napster",
     )
 
     /** Whether the song may well be a file on the phone: the player says where it is, or it is not a streaming app. */

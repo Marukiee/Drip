@@ -62,6 +62,8 @@ import nl.markmaaktmedia.drip.island.LiveKind
 import nl.markmaaktmedia.drip.island.PlugType
 import nl.markmaaktmedia.drip.island.TorchInfo
 import nl.markmaaktmedia.drip.ui.theme.DripIcons
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.animateColorAsState
 
 /** A call, as the screenshot of a phone call on an island should look: who, how long, and the buttons along the bottom. */
 @Composable
@@ -172,17 +174,28 @@ private fun LiveBody(live: LiveInfo, accent: Color) {
 /** Charging: a battery that fills, the level, how long it still needs, and the level again as a bar along the bottom. */
 @Composable
 fun ChargingCard(battery: BatteryInfo) {
-    val green = IslandInk.Green
+    // What the battery does now, not what it did when the card was asked for: unplugged is grey and says so.
+    val plugged = battery.charging || battery.plug != PlugType.NONE
+    val green by animateColorAsState(
+        when {
+            plugged -> IslandInk.Green
+            battery.level <= 15 -> IslandInk.Red
+            else -> IslandInk.Secondary
+        },
+        tween(300), label = "batteryInk",
+    )
     val level by animateFloatAsState(battery.level / 100f, spring(0.8f, 200f), label = "level")
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         BatteryGlyph(level, green, battery.charging)
         Column(Modifier.weight(1f)) {
             RollingText("${battery.level}%", IslandInk.Primary, 34.sp, fontWeight = FontWeight.Bold)
-            val how = when (battery.plug) {
-                PlugType.WIRELESS -> stringResource(R.string.island_charging_wireless)
+            val how = when {
+                !plugged -> stringResource(R.string.island_on_battery)
+                battery.plug == PlugType.WIRELESS -> stringResource(R.string.island_charging_wireless)
                 else -> stringResource(R.string.island_charging)
             }
-            Subtitle(battery.timeToFullMs?.let { how + " · " + stringResource(R.string.island_full_in, formatSpan(it)) } ?: how)
+            val full = battery.timeToFullMs?.takeIf { battery.charging }
+            Subtitle(full?.let { how + " · " + stringResource(R.string.island_full_in, formatSpan(it)) } ?: how)
         }
     }
     Spacer(Modifier.height(16.dp))

@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import nl.markmaaktmedia.drip.BuildConfig
+import nl.markmaaktmedia.drip.graph
 import nl.markmaaktmedia.drip.island.LyricsState
 import nl.markmaaktmedia.drip.island.NowPlaying
 
@@ -24,6 +25,8 @@ internal class LyricsPart(env: SourceEnv) : Part(env) {
     private var scope: CoroutineScope? = null
     private val wanted = MutableStateFlow(Wanted(show = false, online = false, files = false))
     private val retry = MutableStateFlow(0)
+    /** The person chose to look online instead of giving access to their music; asked again only after a restart. */
+    @Volatile private var skipFiles = false
     private val lrclib = LrcLib("Drip/${BuildConfig.VERSION_NAME} (https://github.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO})")
     private val cache = object : LinkedHashMap<String, LyricsState>(16, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, LyricsState>?) = size > 40
@@ -41,6 +44,11 @@ internal class LyricsPart(env: SourceEnv) : Part(env) {
         val s = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         scope = s
         hub.retryLyrics = { retry.value++ }
+        hub.lookLyricsOnline = {
+            skipFiles = true
+            s.launch { context.graph.prefs.editIsland { it.copy(lyricsOnline = true) } }
+            retry.value++
+        }
         s.launch {
             val song = hub.nowPlaying.map { it?.let(::songOf) }.distinctUntilChanged()
             combine(song, hub.lyricsOpen, wanted, retry) { np, open, w, _ -> Triple(np, open, w) }
@@ -52,6 +60,7 @@ internal class LyricsPart(env: SourceEnv) : Part(env) {
         scope?.cancel()
         scope = null
         hub.retryLyrics = null
+        hub.lookLyricsOnline = null
         hub.lyrics.value = LyricsState.Off
     }
 
@@ -85,7 +94,7 @@ internal class LyricsPart(env: SourceEnv) : Part(env) {
             hub.lyrics.value = it
             return
         }
-        val askFiles = !w.files && LocalSongs.mayBeLocal(song.packageName, song.mediaId, song.mediaUri)
+        val askFiles = !w.files && !skipFiles && LocalSongs.mayBeLocal(song.packageName, song.mediaId, song.mediaUri)
         if (w.files) {
             hub.lyrics.value = LyricsState.Loading(key)
             val text = withContext(Dispatchers.IO) {
@@ -99,7 +108,9 @@ internal class LyricsPart(env: SourceEnv) : Part(env) {
                 return
             }
         }
-        if (!w.online) {
+        // The song's own file comes before the internet: a player of your own music has the right lyrics in it, an
+        // online lookup may find another version. So when the file might hold them, Drip asks for access first.
+        if (askFiles || !w.online) {
             hub.lyrics.value = LyricsState.Ask(key, files = askFiles, online = true)
             return
         }

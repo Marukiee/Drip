@@ -1,6 +1,7 @@
 package nl.markmaaktmedia.drip.sources
 
 import nl.markmaaktmedia.drip.island.RepeatMode
+import nl.markmaaktmedia.drip.island.ShuffleMode
 
 /**
  * The framework MediaController has no repeat, shuffle or like of its own. Players that offer them do so as custom
@@ -68,10 +69,28 @@ internal fun shuffleStatedBy(action: String?, name: String?): Boolean? {
 }
 
 /** Shuffle from Media3's icon number: shuffle and shuffle with a star are on, the crossed-out one is off. */
-internal fun shuffleOfMedia3Icon(icon: Int): Boolean? = when (icon) {
-    0xe043, 0xfe043 -> true
-    0xfe044 -> false
+internal fun shuffleOfMedia3Icon(icon: Int): Boolean? = shuffleModeOfMedia3Icon(icon)?.let { it != ShuffleMode.OFF }
+
+/** The same, telling the star apart: smart shuffle. */
+internal fun shuffleModeOfMedia3Icon(icon: Int): ShuffleMode? = when (icon) {
+    0xe043 -> ShuffleMode.ON
+    0xfe043 -> ShuffleMode.SMART
+    0xfe044 -> ShuffleMode.OFF
     else -> null
+}
+
+/** Smart shuffle from the name of the player's icon, "shuffle_smart" or one with a star or sparkle in it. */
+internal fun shuffleModeOfIconName(name: String?): ShuffleMode? {
+    val t = words(name ?: return null)
+    if (t.hasPart("smart", "star", "sparkle", "enhance")) return ShuffleMode.SMART
+    return shuffleOfIconName(name)?.let { if (it) ShuffleMode.ON else ShuffleMode.OFF }
+}
+
+/** What a press on shuffle turns it into: on, then off, or on, smart and off for a player with three ways. */
+internal fun nextShuffle(now: ShuffleMode, threeWays: Boolean): ShuffleMode = when (now) {
+    ShuffleMode.OFF -> ShuffleMode.ON
+    ShuffleMode.ON -> if (threeWays) ShuffleMode.SMART else ShuffleMode.OFF
+    ShuffleMode.SMART -> ShuffleMode.OFF
 }
 
 /** Repeat from Media3's icon number. */
