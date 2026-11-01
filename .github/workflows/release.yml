@@ -34,7 +34,7 @@ jobs:
       # signed by anything else would strand every installed copy.
       EXPECTED_SHA256: 6a2a43ffced55fdc67062c9b69aebf0457cc995b0c73b3ca13266eb60d0c14da
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - id: v
         env:
@@ -62,14 +62,18 @@ jobs:
             echo "publish=$publish"
           } >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
 
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
 
-      - uses: actions/cache@v4
+      # Explicit --sdk_root: hosted runners already ship an SDK, and the packages must land in the one Gradle uses.
+      - name: Install SDK packages
+        run: sdkmanager --sdk_root="$ANDROID_HOME" --install "platforms;android-36" "build-tools;36.0.0" >/dev/null
+
+      - uses: actions/cache@v6
         with:
           path: |
             ~/.gradle/caches
@@ -122,14 +126,14 @@ jobs:
           (cd dist && sha256sum Drip.apk > Drip.apk.sha256)
           python3 scripts/release-notes.py "$VERSION" > notes.md
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: android
           path: dist/*
           if-no-files-found: error
 
       # The app looks for Drip.apk and Drip.apk.sha256 in releases/latest.
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         if: ${{ steps.v.outputs.publish == 'true' }}
         with:
           tag_name: ${{ steps.v.outputs.tag }}
