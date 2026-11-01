@@ -78,6 +78,7 @@ class IslandService : AccessibilityService() {
         checkStatusBar()
         scope.launch { graph.hub.demos.collect { Demos.play(applicationContext, it, controller) } }
         graph.hub.islandRunning.value = true
+        graph.hub.openOutput = { openOutputSwitcher(graph.hub.nowPlaying.value?.packageName) }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -211,6 +212,7 @@ class IslandService : AccessibilityService() {
         if (tornDown || !::controller.isInitialized) return
         tornDown = true
         applicationContext.graph.hub.islandRunning.value = false
+        applicationContext.graph.hub.openOutput = null
         runCatching { unregisterReceiver(screenReceiver) }
         sources.stop()
         window.hide()

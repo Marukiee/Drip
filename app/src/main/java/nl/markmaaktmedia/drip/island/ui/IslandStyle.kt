@@ -53,9 +53,24 @@ object IslandInk {
 /** A dark Material scheme around [seed], for the buttons and bars of the island. */
 fun islandScheme(seed: Color): ColorScheme = appearanceScheme(seed, PaletteStyle.TONAL_SPOT, dark = true, pureBlack = true)
 
+/**
+ * The island's colours around [seed]. A new seed (another song, another kind of thing) does not jump: the whole scheme
+ * slides from the old colours to the new ones, the buttons and the wave with it.
+ */
 @Composable
 fun IslandTheme(seed: Color, metrics: CardMetrics, content: @Composable () -> Unit) {
-    val scheme = remember(seed) { islandScheme(seed) }
+    val target = remember(seed) { islandScheme(seed) }
+    var from by remember { mutableStateOf(target) }
+    var to by remember { mutableStateOf(target) }
+    val progress = remember { androidx.compose.animation.core.Animatable(1f) }
+    LaunchedEffect(target) {
+        if (target == to) return@LaunchedEffect
+        from = nl.markmaaktmedia.drip.ui.theme.blendSchemes(from, to, progress.value)
+        to = target
+        progress.snapTo(0f)
+        progress.animateTo(1f, androidx.compose.animation.core.tween(600))
+    }
+    val scheme = if (progress.value >= 1f) to else nl.markmaaktmedia.drip.ui.theme.blendSchemes(from, to, progress.value)
     CompositionLocalProvider(LocalCardMetrics provides metrics) {
         MaterialTheme(colorScheme = scheme, typography = DripTypography, content = content)
     }

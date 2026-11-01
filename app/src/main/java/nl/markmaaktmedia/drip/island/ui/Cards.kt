@@ -74,7 +74,7 @@ fun CallCard(call: CallInfo) {
         val start = call.startedAt
         if (start != null) {
             val now = rememberNow()
-            Text(formatClock(now - start), color = IslandInk.Primary, fontSize = 30.sp, fontWeight = FontWeight.Bold)
+            RollingText(formatClock(now - start), IslandInk.Primary, 30.sp, fontWeight = FontWeight.Bold)
         }
     }
     Spacer(Modifier.height(16.dp))
@@ -154,9 +154,9 @@ private fun LiveBody(live: LiveInfo, accent: Color) {
     val base = live.chronometerBase
     if (base != null) {
         val now = rememberNow()
-        Text(
-            formatClock(if (live.countDown) base - now else now - base),
-            color = accent, fontSize = 44.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp),
+        RollingText(
+            formatClock(if (live.countDown) base - now else now - base), accent, 44.sp,
+            Modifier.padding(top = 4.dp), FontWeight.Bold, countingDown = live.countDown,
         )
     }
     val progress = live.progress
@@ -174,7 +174,7 @@ fun ChargingCard(battery: BatteryInfo) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         BatteryGlyph(level, green, battery.charging)
         Column(Modifier.weight(1f)) {
-            Text("${battery.level}%", color = IslandInk.Primary, fontSize = 34.sp, fontWeight = FontWeight.Bold)
+            RollingText("${battery.level}%", IslandInk.Primary, 34.sp, fontWeight = FontWeight.Bold)
             val how = when (battery.plug) {
                 PlugType.WIRELESS -> stringResource(R.string.island_charging_wireless)
                 PlugType.USB -> stringResource(R.string.island_charging_usb)

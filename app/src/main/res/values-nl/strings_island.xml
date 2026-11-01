@@ -42,4 +42,6 @@
     <string name="demo_download_text">17 MB van 40 MB</string>
     <string name="demo_cancel">Annuleren</string>
     <string name="island_downloading">Downloaden</string>
+    <string name="island_next_up">Hierna: %1$s</string>
+    <string name="island_output">Waar geluid speelt</string>
 </resources>

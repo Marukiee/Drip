@@ -1,5 +1,33 @@
 [
   {
+    "version": "0.1.3",
+    "date": "2026-11-01",
+    "en": {
+      "title": "A livelier music card",
+      "new": [
+        "Previous, play and next joined in the middle, with shuffle, repeat, where sound plays and like at the sides",
+        "What plays next, when the player tells"
+      ],
+      "better": [
+        "The progress line of Tandem: two lines and a handle, a wave that eases flat on pause",
+        "Covers drop in, titles roll, the cover turns while playing and shrinks on pause",
+        "Clocks and timers stand still while their digits roll"
+      ]
+    },
+    "nl": {
+      "title": "Een levendigere muziekkaart",
+      "new": [
+        "Vorige, afspelen en volgende aan elkaar in het midden, met shuffle, herhalen, uitvoer en hartje aan de zijkanten",
+        "Wat hierna komt, als de speler het vertelt"
+      ],
+      "better": [
+        "De voortgangslijn van Tandem: twee lijnen en een staafje, een golf die bij pauze rustig vlak wordt",
+        "Hoezen vallen erin, titels rollen, de hoes draait tijdens het spelen en krimpt bij pauze",
+        "Klokken en timers staan stil terwijl de cijfers rollen"
+      ]
+    }
+  },
+  {
     "version": "0.1.2",
     "date": "2026-11-01",
     "en": {

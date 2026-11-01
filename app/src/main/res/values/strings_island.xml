@@ -42,4 +42,6 @@
     <string name="demo_download_text">17 MB of 40 MB</string>
     <string name="demo_cancel">Cancel</string>
     <string name="island_downloading">Downloading</string>
+    <string name="island_next_up">Next: %1$s</string>
+    <string name="island_output">Where sound plays</string>
 </resources>

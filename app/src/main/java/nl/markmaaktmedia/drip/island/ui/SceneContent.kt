@@ -1,6 +1,14 @@
 package nl.markmaaktmedia.drip.island.ui
 
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -113,10 +121,20 @@ private fun CompactContent(content: IslandContent?, privacy: PrivacyInfo, height
         val icon = slot * 0.72f
         when (content) {
             is IslandContent.Music -> {
-                Picture(content.playing.art, slot, CircleShape, DripIcons.Music, start)
+                val playing = content.playing.playing
+                val shrink by animateFloatAsState(if (playing) 1f else 0.82f, spring(0.55f, 420f), label = "compactCover")
+                AnimatedContent(
+                    targetState = content.playing.art, modifier = start,
+                    transitionSpec = {
+                        (scaleIn(spring(0.6f, 450f), initialScale = 0.5f) + fadeIn(tween(160)))
+                            .togetherWith(scaleOut(tween(180), targetScale = 1.2f) + fadeOut(tween(160)))
+                    },
+                    label = "compactArt",
+                ) { art ->
+                    Picture(art, slot, CircleShape, DripIcons.Music, Modifier.graphicsLayer { scaleX = shrink; scaleY = shrink })
+                }
                 Box(endSlot, contentAlignment = Alignment.Center) {
-                    if (content.playing.playing) Equalizer(accent, Modifier.size(slot * 0.62f, slot * 0.5f))
-                    else Icon(DripIcons.PauseFilled, null, tint = IslandInk.Secondary, modifier = Modifier.size(icon * 0.8f))
+                    Equalizer(accent, playing, Modifier.size(slot * 0.62f, slot * 0.5f))
                 }
             }
             is IslandContent.Call -> {
@@ -179,9 +197,12 @@ private fun CompactContent(content: IslandContent?, privacy: PrivacyInfo, height
     }
 }
 
+/** A clock, a percentage or a word at the end of the closed island. Numbers roll when they change. */
 @Composable
-private fun SlotText(text: String, color: Color, modifier: Modifier) =
-    Text(text, modifier = modifier, color = color, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+private fun SlotText(text: String, color: Color, modifier: Modifier) {
+    if (text.length <= 9 && text.any(Char::isDigit)) RollingText(text, color, 14.sp, modifier)
+    else Text(text, modifier = modifier, color = color, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+}
 
 /**
  * A state or a level in the closed island: the symbol in the round end on the left, a slim bar or a word on the right.
@@ -266,20 +287,27 @@ fun LevelBar(level: Float, color: Color, modifier: Modifier) {
     }
 }
 
-/** Four bars that bob like a level meter while music plays. */
+/**
+ * Four bars that bob like a level meter while music plays. On pause they sink, one after the other, into four calm dots;
+ * when the music comes back they spring up again.
+ */
 @Composable
-private fun Equalizer(color: Color, modifier: Modifier) {
+private fun Equalizer(color: Color, playing: Boolean, modifier: Modifier) {
     val t = rememberInfiniteTransition(label = "eq")
     val phases = listOf(0, 180, 90, 270).mapIndexed { i, offset ->
-        t.animateFloat(0.25f, 1f, infiniteRepeatable(tween(420 + i * 70, delayMillis = 0), RepeatMode.Reverse, initialStartOffset = androidx.compose.animation.core.StartOffset(offset)), label = "bar$i")
+        t.animateFloat(0.25f, 1f, infiniteRepeatable(tween(420 + i * 70), RepeatMode.Reverse, initialStartOffset = androidx.compose.animation.core.StartOffset(offset)), label = "bar$i")
     }
+    val lift = (0 until 4).map { i ->
+        animateFloatAsState(if (playing) 1f else 0f, spring(0.6f, 260f - i * 30f), label = "lift$i")
+    }
+    val tint by animateColorAsState(if (playing) color else IslandInk.Secondary, tween(300), label = "eqTint")
     Canvas(modifier) {
         val bars = phases.size
         val gap = size.width * 0.12f
         val w = (size.width - gap * (bars - 1)) / bars
         phases.forEachIndexed { i, p ->
-            val h = size.height * p.value
-            drawRoundRect(color, Offset(i * (w + gap), (size.height - h) / 2), Size(w, h), CornerRadius(w / 2, w / 2))
+            val h = w + (size.height * p.value - w) * lift[i].value
+            drawRoundRect(tint, Offset(i * (w + gap), (size.height - h) / 2), Size(w, h), CornerRadius(w / 2, w / 2))
         }
     }
 }
