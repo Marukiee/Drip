@@ -49,4 +49,4 @@ class IslandHub {
 }
 
 /** What the island can act out without a real song, call or charger. */
-enum class Demo { MUSIC, CALL, INCOMING, CHARGING, TIMER, ALERT, VOLUME, TORCH, EXPAND, COLLAPSE, CLEAR }
+enum class Demo { MUSIC, CALL, INCOMING, CHARGING, TIMER, NAVIGATION, DOWNLOAD, ALERT, VOLUME, TORCH, EXPAND, COLLAPSE, CLEAR }

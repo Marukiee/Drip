@@ -38,4 +38,8 @@
     <string name="demo_phone">Telefoon</string>
     <string name="demo_incoming">Inkomend gesprek</string>
     <string name="demo_ongoing">Lopend gesprek</string>
+    <string name="demo_route_text">Sla rechtsaf de Stationsweg op</string>
+    <string name="demo_download_text">17 MB van 40 MB</string>
+    <string name="demo_cancel">Annuleren</string>
+    <string name="island_downloading">Downloaden</string>
 </resources>

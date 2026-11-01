@@ -52,6 +52,7 @@ import nl.markmaaktmedia.drip.island.IslandLayout
 import nl.markmaaktmedia.drip.island.LiveKind
 import nl.markmaaktmedia.drip.island.PrivacyInfo
 import nl.markmaaktmedia.drip.island.Stage
+import androidx.compose.ui.graphics.asImageBitmap
 import nl.markmaaktmedia.drip.ui.theme.DripIcons
 
 /** Draws what belongs in the island for one [Scene]. */
@@ -127,13 +128,21 @@ private fun CompactContent(content: IslandContent?, privacy: PrivacyInfo, height
             is IslandContent.Live -> {
                 val live = content.live
                 val color = live.accent?.let { Color(it) } ?: accent
-                if (live.appIcon != null) {
-                    Picture(live.appIcon, slot, CircleShape, null, start)
-                } else {
-                    Box(start, contentAlignment = Alignment.Center) { Icon(liveIcon(live.kind), null, tint = color, modifier = Modifier.size(icon)) }
+                when {
+                    // A route shows its turn arrow, a download its own symbol: what it is about, not which app.
+                    live.kind == LiveKind.NAVIGATION && live.picture != null ->
+                        androidx.compose.foundation.Image(
+                            remember(live.picture) { live.picture.asImageBitmap() }, null,
+                            modifier = start.padding(slot * 0.08f),
+                        )
+                    live.kind == LiveKind.DOWNLOAD || live.kind == LiveKind.NAVIGATION ->
+                        Box(start, contentAlignment = Alignment.Center) { Icon(liveIcon(live.kind), null, tint = color, modifier = Modifier.size(icon)) }
+                    live.appIcon != null -> Picture(live.appIcon, slot, CircleShape, null, start)
+                    else -> Box(start, contentAlignment = Alignment.Center) { Icon(liveIcon(live.kind), null, tint = color, modifier = Modifier.size(icon)) }
                 }
                 val base = live.chronometerBase
                 when {
+                    live.kind == LiveKind.NAVIGATION -> (live.shortText ?: live.title).let { SlotText(it, IslandInk.Primary, endText) }
                     base != null -> {
                         val now = rememberNow()
                         SlotText(formatClock(if (live.countDown) base - now else now - base), color, endText)

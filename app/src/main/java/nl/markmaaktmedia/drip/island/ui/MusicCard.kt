@@ -216,7 +216,7 @@ private fun SeekBar(np: NowPlaying) {
                 trackColor = IslandInk.SurfaceHigh,
                 stroke = Stroke(width = line, cap = StrokeCap.Round),
                 trackStroke = Stroke(width = line, cap = StrokeCap.Round),
-                gapSize = 8.dp,
+                gapSize = 3.dp,
                 amplitude = { amplitude },
             )
             // The handle: an upright bar in the gap between the wave and the track, as on a Material 3 Expressive
@@ -226,7 +226,8 @@ private fun SeekBar(np: NowPlaying) {
             Canvas(Modifier.fillMaxWidth().height(28.dp)) {
                 val w = 4.dp.toPx()
                 val h = handle.toPx()
-                val x = (progress().coerceIn(0f, 1f) * size.width + 4.dp.toPx()).coerceIn(w / 2, size.width - w / 2)
+                // In the middle of the gap the indicator leaves, so the space on either side of it is the same.
+                val x = (progress().coerceIn(0f, 1f) * size.width + 2.2.dp.toPx()).coerceIn(w / 2, size.width - w / 2)
                 drawRoundRect(handleColor, Offset(x - w / 2, (size.height - h) / 2), Size(w, h), CornerRadius(w / 2))
             }
         }

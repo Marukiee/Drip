@@ -35,6 +35,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -54,6 +55,7 @@ import nl.markmaaktmedia.drip.island.IslandAction
 import nl.markmaaktmedia.drip.island.IslandController
 import nl.markmaaktmedia.drip.island.IslandHub
 import nl.markmaaktmedia.drip.island.LiveInfo
+import nl.markmaaktmedia.drip.island.LiveKind
 import nl.markmaaktmedia.drip.island.PlugType
 import nl.markmaaktmedia.drip.island.TorchInfo
 import nl.markmaaktmedia.drip.ui.theme.DripIcons
@@ -95,6 +97,58 @@ fun LiveCard(live: LiveInfo) {
     val accent = live.accent?.let { Color(it) } ?: MaterialTheme.colorScheme.primary
     CardHeader(live.appIcon, live.packageName, live.appLabel, liveIcon(live.kind))
     Spacer(Modifier.height(12.dp))
+    when (live.kind) {
+        LiveKind.NAVIGATION -> RouteBody(live, accent)
+        LiveKind.DOWNLOAD -> DownloadBody(live, accent)
+        else -> LiveBody(live, accent)
+    }
+    Spacer(Modifier.height(16.dp))
+    val open = stringResource(R.string.island_open)
+    val buttons = live.actions.take(2).map { RowButton(it.title, null, IslandInk.Surface, IslandInk.Primary, 1f, it.run) } +
+        listOfNotNull(live.open?.let { RowButton(open, DripIcons.OpenInNew, accent, Color.Black, 1f, it) })
+    if (buttons.isNotEmpty()) ConcentricButtonRow(buttons)
+}
+
+/** A route: the turn arrow big on the left, the distance to it and the street it goes into. */
+@Composable
+private fun RouteBody(live: LiveInfo, accent: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Box(Modifier.size(64.dp).clip(RoundedCornerShape(20.dp)).background(accent), contentAlignment = Alignment.Center) {
+            if (live.picture != null) {
+                androidx.compose.foundation.Image(remember(live.picture) { live.picture.asImageBitmap() }, null, Modifier.size(44.dp))
+            } else {
+                Icon(DripIcons.Navigation, null, tint = Color.Black, modifier = Modifier.size(34.dp))
+            }
+        }
+        Column(Modifier.weight(1f)) {
+            Text(live.shortText ?: live.title, color = IslandInk.Primary, fontSize = 30.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            (live.text ?: live.title.takeIf { live.shortText != null && it != live.shortText })?.let { Subtitle(it, lines = 2) }
+        }
+    }
+}
+
+/** A download: what it is, how far along, and the wave of the progress. */
+@Composable
+private fun DownloadBody(live: LiveInfo, accent: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Box(Modifier.size(48.dp).clip(CircleShape).background(accent.copy(alpha = 0.22f)), contentAlignment = Alignment.Center) {
+            Icon(DripIcons.Download, null, tint = accent, modifier = Modifier.size(26.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Title(live.title, size = 18)
+            Subtitle(live.text ?: stringResource(R.string.island_downloading))
+        }
+        live.progress?.let {
+            Text("${(it * 100).toInt()}%", color = accent, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+    Spacer(Modifier.height(14.dp))
+    val shown by animateFloatAsState(live.progress ?: 0f, spring(1f, 300f), label = "download")
+    nl.markmaaktmedia.drip.ui.components.WavyProgress(shown, accent, IslandInk.SurfaceHigh)
+}
+
+@Composable
+private fun LiveBody(live: LiveInfo, accent: Color) {
     Title(live.title, size = 20)
     live.text?.let { Subtitle(it, lines = 2) }
     val base = live.chronometerBase
@@ -110,11 +164,6 @@ fun LiveCard(live: LiveInfo) {
         Spacer(Modifier.height(12.dp))
         nl.markmaaktmedia.drip.ui.components.WavyProgress(progress, accent, IslandInk.SurfaceHigh)
     }
-    Spacer(Modifier.height(16.dp))
-    val open = stringResource(R.string.island_open)
-    val buttons = live.actions.take(2).map { RowButton(it.title, null, IslandInk.Surface, IslandInk.Primary, 1f, it.run) } +
-        listOfNotNull(live.open?.let { RowButton(open, DripIcons.OpenInNew, accent, Color.Black, 1f, it) })
-    if (buttons.isNotEmpty()) ConcentricButtonRow(buttons)
 }
 
 /** Charging: a battery that fills, the level, how long it still needs, and the level again as a bar along the bottom. */

@@ -126,6 +126,7 @@ internal class NotificationReader(
             packageName = sbn.packageName,
             appLabel = label,
             appIcon = apps.icon(sbn.packageName),
+            picture = n.getLargeIcon()?.toBitmapWithin(context, PHOTO_PX),
             accent = n.color.takeIf { it != Notification.COLOR_DEFAULT },
             kind = liveKindFor(f),
             title = f.title ?: label,

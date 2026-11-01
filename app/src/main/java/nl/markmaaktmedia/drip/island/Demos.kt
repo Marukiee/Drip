@@ -43,6 +43,22 @@ object Demos {
                     actions = listOf(IslandAction(context.getString(R.string.demo_stop), ActionKind.OTHER) { hub.live.value = emptyList() }),
                 ),
             )
+            Demo.NAVIGATION -> hub.live.value = listOf(
+                LiveInfo(
+                    key = "demo-route", packageName = "com.google.android.apps.maps", appLabel = "Maps",
+                    picture = turnArrow(160), kind = LiveKind.NAVIGATION, title = "200 m",
+                    text = context.getString(R.string.demo_route_text), shortText = "200 m", accent = 0xFF34A853.toInt(),
+                    actions = listOf(IslandAction(context.getString(R.string.demo_stop), ActionKind.OTHER) { hub.live.value = emptyList() }),
+                ),
+            )
+            Demo.DOWNLOAD -> hub.live.value = listOf(
+                LiveInfo(
+                    key = "demo-download", packageName = "com.android.chrome", appLabel = "Chrome", kind = LiveKind.DOWNLOAD,
+                    title = "Rushes-v0.4.2.dmg", text = context.getString(R.string.demo_download_text), progress = 0.42f,
+                    shortText = "42%",
+                    actions = listOf(IslandAction(context.getString(R.string.demo_cancel), ActionKind.OTHER) { hub.live.value = emptyList() }),
+                ),
+            )
             Demo.ALERT -> hub.post(
                 Alert(
                     id = "demo-alert-" + SystemClock.elapsedRealtime(), kind = AlertKind.NOTIFICATION,
@@ -132,6 +148,31 @@ object Demos {
             caller = "Teun", status = context.getString(if (incoming) R.string.demo_incoming else R.string.demo_ongoing),
             incoming = incoming, startedAt = if (incoming) null else System.currentTimeMillis() - 34_000L, actions = actions,
         )
+    }
+
+    /** A white arrow that turns right, like the one a route app puts in its notification. */
+    private fun turnArrow(size: Int): Bitmap {
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val s = size / 24f
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFFFFFFFF.toInt()
+            style = Paint.Style.STROKE
+            strokeWidth = 2.6f * s
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+        }
+        val path = android.graphics.Path().apply {
+            moveTo(7f * s, 21f * s)
+            lineTo(7f * s, 12f * s)
+            quadTo(7f * s, 8f * s, 11f * s, 8f * s)
+            lineTo(18f * s, 8f * s)
+            moveTo(14.5f * s, 4.5f * s)
+            lineTo(18f * s, 8f * s)
+            lineTo(14.5f * s, 11.5f * s)
+        }
+        canvas.drawPath(path, paint)
+        return bitmap
     }
 
     /** A soft two colour picture, standing in for album art or a contact photo. */

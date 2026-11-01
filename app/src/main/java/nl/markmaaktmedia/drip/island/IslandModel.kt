@@ -97,6 +97,8 @@ data class LiveInfo(
     val packageName: String,
     val appLabel: String,
     val appIcon: Bitmap? = null,
+    /** The large picture of the notification: the turn arrow of a route, the thumbnail of a download. */
+    val picture: Bitmap? = null,
     /** The colour the app gave its notification, if any. */
     val accent: Int? = null,
     val kind: LiveKind = LiveKind.GENERIC,
