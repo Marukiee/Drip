@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared -->
+    <string name="action_back">Back</string>
+    <string name="action_allow">Allow</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="access_allowed">Allowed</string>
+    <string name="value_auto">Auto</string>
+    <string name="value_dp">%1$d dp</string>
+    <string name="value_percent">%1$d%%</string>
+    <string name="value_speed">%1$sx</string>
+    <string name="value_seconds">%1$s s</string>
+
+    <!-- Settings: overview, pages and search -->
+    <string name="settings_search_hint">Search settings</string>
+    <string name="settings_search_clear">Clear search</string>
+    <string name="settings_search_none_title">Nothing found</string>
+    <string name="settings_search_none_body">No setting matches \"%1$s\". Try another word.</string>
+    <plurals name="settings_search_results">
+        <item quantity="one">%d result</item>
+        <item quantity="other">%d results</item>
+    </plurals>
+    <string name="settings_sum_on_of">%1$d of %2$d on</string>
+    <string name="settings_sum_all_on">All on</string>
+    <string name="settings_sum_all_off">All off</string>
+    <string name="settings_sum_version">Version %1$s</string>
+    <string name="settings_sum_up_to_date">Version %1$s, up to date</string>
+    <string name="settings_sum_sizes_auto">sizes automatic</string>
+    <string name="settings_sum_sizes_custom">sizes set by hand</string>
+    <string name="settings_sum_motion">Bounce %1$s, speed %2$s</string>
+    <string name="settings_sum_haptics_off">no haptics</string>
+    <string name="settings_sum_needs_listener">Needs notification access</string>
+    <string name="settings_sum_keep_on">Switches the island back on</string>
+    <string name="settings_sum_keep_off">Optional, not set up</string>
+    <string name="settings_sum_never">Never</string>
+
+    <string name="settings_cat_shape">Shape and fit</string>
+    <string name="settings_cat_motion">Motion and feel</string>
+    <string name="settings_cat_shows">What the island shows</string>
+    <string name="settings_cat_notifications">Notifications</string>
+    <string name="settings_cat_gestures">Gestures</string>
+    <string name="settings_cat_hide">When to step aside</string>
+    <string name="settings_look">Look and language</string>
+    <string name="settings_cat_keep">Keep the island on</string>
+    <string name="settings_cat_updates">Updates and backup</string>
+    <string name="settings_cat_about">About</string>
+
+    <!-- Home -->
+    <string name="home_island_on">The island is on</string>
+    <string name="home_island_off">The island is off</string>
+    <string name="home_island_on_sub">Music, calls and more at the top of the screen</string>
+    <string name="home_island_off_sub">Switch it on to see it at the top</string>
+    <string name="home_island_needs">On, and waiting for you to allow it below</string>
+    <string name="home_todo">Still to allow</string>
+    <string name="home_try">Try it</string>
+    <string name="home_try_blocked">Allow the island first, then try it</string>
+    <string name="home_settings">Settings</string>
+    <string name="try_music">Music</string>
+    <string name="try_call">Call</string>
+    <string name="try_charging">Charging</string>
+    <string name="try_notification">Notification</string>
+    <string name="try_timer">Timer</string>
+    <string name="try_expand">Open</string>
+
+    <!-- Permissions -->
+    <string name="perm_island">The island</string>
+    <string name="perm_island_why">Switch Drip on under Accessibility. It only draws the island and does your gestures, and never reads what is on your screen.</string>
+    <string name="perm_listener">Notification access</string>
+    <string name="perm_listener_why">So the island can show music, calls, timers and notifications. Nothing leaves your phone.</string>
+    <string name="perm_post">Update notices</string>
+    <string name="perm_post_why">Only to tell you when a new version is ready to install.</string>
+    <string name="perm_restricted">Is the switch grey in Android? Open App info, tap the menu at the top right and choose Allow restricted settings.</string>
+    <string name="perm_app_info">App info</string>
+    <string name="perm_partly">Partly</string>
+    <string name="perm_open_settings">Open settings</string>
+
+    <!-- First run -->
+    <string name="onb_title">Hi, this is Drip</string>
+    <string name="onb_body">An island at the top of your screen for music, calls, timers and more. Two small steps and it is there.</string>
+    <string name="onb_step">Step %1$d of %2$d</string>
+    <string name="onb_island_title">Let the island in</string>
+    <string name="onb_island_body">Android keeps drawing over other apps behind the Accessibility settings. Find Drip there, sometimes under Downloaded apps, and switch it on.</string>
+    <string name="onb_notif_title">Let it see what is going on</string>
+    <string name="onb_notif_body">With notification access the island knows what is playing, who is calling and when a timer runs.</string>
+    <string name="onb_continue">Continue</string>
+    <string name="onb_done">Done</string>
+    <string name="onb_later">Later</string>
+    <string name="onboarding_page">Page %1$d of %2$d</string>
+
+    <!-- Shape and fit -->
+    <string name="shape_preview">Preview</string>
+    <string name="shape_closed">Closed</string>
+    <string name="shape_opened">Opened</string>
+    <string name="shape_fit">How it sits</string>
+    <string name="fit_auto">Auto</string>
+    <string name="fit_notch">Notch</string>
+    <string name="fit_cutout">Camera</string>
+    <string name="fit_auto_note">Auto makes a notch on a phone without a camera hole and a ring around the camera on one with it.</string>
+    <string name="shape_section_closed">Closed island</string>
+    <string name="shape_section_opened">Opened island</string>
+    <string name="shape_section_place">Position</string>
+    <string name="shape_idle_visible">Show while idle</string>
+    <string name="shape_idle_visible_sub">The small notch or ring stays while nothing is going on</string>
+    <string name="shape_idle_width">Width</string>
+    <string name="shape_idle_height">Height</string>
+    <string name="shape_size_auto">Auto fits the camera and the status bar</string>
+    <string name="shape_compact_width">Width with something on both sides</string>
+    <string name="shape_compact_width_sub">Like a song or a charger</string>
+    <string name="shape_shoulder">Shoulder</string>
+    <string name="shape_shoulder_sub">The curve where a notch meets the top edge</string>
+    <string name="shape_roundness">Roundness</string>
+    <string name="shape_roundness_sub">Of the bottom corners, from square to fully round</string>
+    <string name="shape_margin">Room to the edges</string>
+    <string name="shape_margin_sub">Between the opened island and the sides of the screen</string>
+    <string name="shape_top_corners">Top corners</string>
+    <string name="shape_top_corners_auto">Auto runs side by side with the screen corners</string>
+    <string name="shape_bottom_corners">Bottom corners</string>
+    <string name="shape_bottom_corners_sub">May be rounder than the top</string>
+    <string name="shape_button_outer">Outer button corners</string>
+    <string name="shape_button_outer_auto">Auto stays concentric with the island</string>
+    <string name="shape_button_inner">Inner button corners</string>
+    <string name="shape_button_inner_sub">Where a button faces another one</string>
+    <string name="shape_attached">Stay on the top edge</string>
+    <string name="shape_attached_sub">With a notch, the opened island hangs from the edge instead of floating</string>
+    <string name="shape_nudge_x">Nudge sideways</string>
+    <string name="shape_nudge_y">Nudge up or down</string>
+    <string name="shape_nudge_sub">For a camera hole the automatic fit does not quite hug</string>
+    <string name="shape_cutout_padding">Room around the camera</string>
+    <string name="shape_cutout_padding_sub">Only around a camera hole</string>
+    <string name="shape_reset">Reset the shape</string>
+    <string name="shape_reset_sub">Every size, corner and nudge back to automatic</string>
+
+    <!-- Motion and feel -->
+    <string name="motion_section">Movement</string>
+    <string name="motion_bounce">Bounce</string>
+    <string name="motion_bounce_sub">From calm to lively</string>
+    <string name="motion_speed">Speed</string>
+    <string name="motion_speed_sub">How fast it opens and closes</string>
+    <string name="motion_try">Open the island</string>
+    <string name="motion_try_sub">See the bounce and the speed</string>
+    <string name="motion_section_haptics">Haptics</string>
+    <string name="motion_haptics">Haptics</string>
+    <string name="motion_haptics_sub">A small tap when it opens, closes and announces</string>
+    <string name="motion_strength">Strength</string>
+    <string name="motion_strength_sub">How firm the taps are</string>
+    <string name="motion_feel">Feel it</string>
+    <string name="motion_feel_sub">Plays the opening tap</string>
+    <string name="motion_haptics_off">Switch haptics on first</string>
+
+    <!-- What the island shows -->
+    <string name="shows_section">On the island</string>
+    <string name="show_music">Music</string>
+    <string name="show_music_sub">What is playing, with its controls</string>
+    <string name="show_charging">Charging</string>
+    <string name="show_charging_sub">The battery while it charges</string>
+    <string name="show_calls">Calls</string>
+    <string name="show_calls_sub">Incoming and ongoing calls</string>
+    <string name="show_live">Timers and live updates</string>
+    <string name="show_live_sub">Timers, stopwatches, rides and deliveries</string>
+    <string name="show_torch">Torch</string>
+    <string name="show_torch_sub">While the torch is on</string>
+    <string name="show_notifications">Notifications</string>
+    <string name="show_notifications_sub">A short look at a new notification</string>
+    <string name="show_privacy">Camera and microphone</string>
+    <string name="show_privacy_sub">A green or orange dot while one is in use</string>
+    <string name="shows_section_alerts">Announcements</string>
+    <string name="alert_battery_low">Battery low</string>
+    <string name="alert_battery_full">Battery full</string>
+    <string name="alert_battery_saver">Battery saver</string>
+    <string name="alert_dnd">Do not disturb</string>
+    <string name="alert_rotation">Rotation lock</string>
+    <string name="alert_ringer">Ring, vibrate or silent</string>
+    <string name="alert_volume">Volume</string>
+    <string name="alert_brightness">Brightness</string>
+    <string name="alert_headphones">Headphones</string>
+    <string name="alert_duration">How long they stay</string>
+    <string name="alert_duration_sub">Before the island closes again</string>
+    <string name="needs_listener">Needs notification access, tap to allow it</string>
+
+    <!-- Notifications -->
+    <string name="notif_section">Notifications</string>
+    <string name="notif_on">Show notifications</string>
+    <string name="notif_on_sub">A new notification opens the island for a moment</string>
+    <string name="notif_which">From which apps</string>
+    <string name="notif_all">All apps</string>
+    <string name="notif_chosen">Chosen apps</string>
+    <string name="notif_apps">Choose the apps</string>
+    <plurals name="apps_count">
+        <item quantity="one">%d app</item>
+        <item quantity="other">%d apps</item>
+    </plurals>
+    <string name="apps_none">None yet</string>
+    <string name="notif_text">Show the text</string>
+    <string name="notif_text_sub">Off keeps it to the app and the title</string>
+
+    <!-- Gestures -->
+    <string name="gestures_section">On the island</string>
+    <string name="gesture_tap">Tap</string>
+    <string name="gesture_hold">Hold</string>
+    <string name="gesture_swipe_down">Swipe down</string>
+    <string name="gesture_swipe_left">Swipe left</string>
+    <string name="gesture_swipe_right">Swipe right</string>
+    <string name="gesture_none">Nothing</string>
+    <string name="gesture_expand">Open the island</string>
+    <string name="gesture_open_app">Open the app it shows</string>
+    <string name="gesture_play_pause">Play or pause</string>
+    <string name="gesture_next">Next track</string>
+    <string name="gesture_previous">Previous track</string>
+    <string name="gesture_back">Back</string>
+    <string name="gesture_home">Home screen</string>
+    <string name="gesture_recents">Recent apps</string>
+    <string name="gesture_notifications">Notification shade</string>
+    <string name="gesture_quick_settings">Quick Settings</string>
+    <string name="gesture_lock">Lock the screen</string>
+    <string name="gesture_screenshot">Screenshot</string>
+    <string name="gesture_torch">Torch on or off</string>
+    <string name="gesture_open_drip">Open Drip</string>
+
+    <!-- When to step aside -->
+    <string name="hide_section">The island steps aside</string>
+    <string name="hide_fullscreen">In full screen apps</string>
+    <string name="hide_fullscreen_sub">Videos and games keep the whole screen</string>
+    <string name="hide_landscape">In landscape</string>
+    <string name="hide_landscape_sub">While the phone lies on its side</string>
+    <string name="hide_lock">On the lock screen</string>
+    <string name="hide_lock_sub">Until the phone is unlocked</string>
+    <string name="hide_apps">In chosen apps</string>
+
+    <!-- Look -->
+    <string name="look_island">The island</string>
+    <string name="look_card">Opened island</string>
+    <string name="look_card_sub">Always black, or a dark tint of the accent</string>
+    <string name="card_black">Black</string>
+    <string name="card_tinted">Tinted</string>
+    <string name="look_accent">Accent of the music</string>
+    <string name="look_accent_sub">From the album art or from the app theme</string>
+    <string name="accent_album">Album art</string>
+    <string name="accent_theme">Theme</string>
+    <string name="appearance_theme">App theme</string>
+    <string name="appearance_mode">Light or dark</string>
+    <string name="appearance_light">Light</string>
+    <string name="appearance_dark">Dark</string>
+    <string name="appearance_black">Pure black</string>
+    <string name="appearance_black_sub">Saves battery on an OLED screen</string>
+    <string name="appearance_colour">Colour</string>
+    <string name="appearance_accent">Accent</string>
+    <string name="appearance_style">Palette style</string>
+    <string name="settings_appearance">Colours</string>
+    <string name="settings_appearance_sub">Wallpaper colours or a palette, and its style</string>
+    <string name="settings_language">Language</string>
+    <string name="language_system">System</string>
+    <string name="language_en">English</string>
+    <string name="language_nl">Nederlands</string>
+    <string name="colours_seed_wallpaper">Wallpaper</string>
+    <string name="colours_seed_indigo">Indigo</string>
+    <string name="colours_seed_ocean">Ocean</string>
+    <string name="colours_seed_forest">Forest</string>
+    <string name="colours_seed_amber">Amber</string>
+    <string name="colours_seed_rose">Rose</string>
+    <string name="colours_seed_plum">Plum</string>
+    <string name="colours_seed_slate">Slate</string>
+    <string name="colours_wallpaper_note">Follows your wallpaper, the same as the rest of your phone.</string>
+    <string name="colours_mono_note">Monochrome ignores the accent colour.</string>
+    <string name="colours_style_tonal_spot">Tonal Spot</string>
+    <string name="colours_style_vibrant">Vibrant</string>
+    <string name="colours_style_expressive">Expressive</string>
+    <string name="colours_style_fruit_salad">Fruit Salad</string>
+    <string name="colours_style_fidelity">Fidelity</string>
+    <string name="colours_style_monochrome">Monochrome</string>
+    <string name="colours_style_tonal_spot_desc">The Android default. Calm colours that stay close to the accent.</string>
+    <string name="colours_style_vibrant_desc">Stronger, more saturated colours.</string>
+    <string name="colours_style_expressive_desc">Playful. The other colours drift away from the accent.</string>
+    <string name="colours_style_fruit_salad_desc">A bold, mixed palette with the hue shifted.</string>
+    <string name="colours_style_fidelity_desc">Stays as true to the accent colour as it can.</string>
+    <string name="colours_style_monochrome_desc">No colour at all, only shades of grey.</string>
+
+    <!-- Keep the island on -->
+    <string name="keep_intro">Android sometimes switches accessibility services off, after an update or to save battery, and the island is gone until you switch it on again. With one permission Drip may switch it back on by itself. This is optional.</string>
+    <string name="keep_section_state">Status</string>
+    <string name="keep_state_on">Drip can switch the island back on</string>
+    <string name="keep_state_on_sub">It checks each time you open Drip or use the tile</string>
+    <string name="keep_state_off">Not allowed yet</string>
+    <string name="keep_state_off_sub">Give the permission with Shizuku or with one command from a computer</string>
+    <string name="keep_section_shizuku">With Shizuku</string>
+    <string name="shizuku_not_installed">Shizuku is not installed</string>
+    <string name="shizuku_not_installed_sub">Tap to get Shizuku</string>
+    <string name="shizuku_not_running">Shizuku is not running</string>
+    <string name="shizuku_not_running_sub">Open Shizuku and start it, then come back</string>
+    <string name="shizuku_needs_permission">Allow Drip in Shizuku</string>
+    <string name="shizuku_needs_permission_sub">Tap and choose Allow</string>
+    <string name="shizuku_denied">Shizuku said no</string>
+    <string name="shizuku_denied_sub">Allow Drip in the Shizuku app</string>
+    <string name="shizuku_too_old">Shizuku is too old</string>
+    <string name="shizuku_too_old_sub">Update Shizuku to version 11 or newer</string>
+    <string name="shizuku_ready">Shizuku is ready</string>
+    <string name="shizuku_ready_sub">Drip can ask it for the permission</string>
+    <string name="keep_grant">Give the permission</string>
+    <string name="keep_grant_sub">Shizuku runs the command for you, once</string>
+    <string name="keep_grant_wait">Allow Drip in Shizuku first</string>
+    <string name="keep_grant_failed">That did not work: %1$s</string>
+    <string name="keep_section_adb">With a computer</string>
+    <string name="keep_adb_body">Switch on USB debugging, connect the phone and run this once:</string>
+    <string name="keep_adb_copy">Copy the command</string>
+    <string name="keep_copied">Command copied</string>
+
+    <!-- About -->
+    <string name="settings_about">About</string>
+    <string name="about_github">Source code</string>
+    <string name="about_github_sub" translatable="false">github.com/Marukiee/Drip</string>
+    <string name="about_privacy">Nothing leaves your phone</string>
+    <string name="about_privacy_body">No account, no analytics, no ads. Drip only goes online to look for an update.</string>
+    <string name="about_reset">Reset the island</string>
+    <string name="about_reset_sub">Every island setting back to how it came</string>
+    <string name="about_reset_body">Shape, motion, gestures and what the island shows go back to how they came. The app theme and updates stay as they are.</string>
+    <string name="about_reset_confirm">Reset</string>
+    <string name="about_tour">Show the first steps again</string>
+    <string name="about_tour_sub">The two steps you saw when Drip was new</string>
+
+    <!-- App picker -->
+    <string name="picker_notify_title">Apps that may show</string>
+    <string name="picker_hide_title">Apps to step aside in</string>
+    <string name="picker_search">Search apps</string>
+    <string name="picker_none">No app matches \"%1$s\"</string>
+
+    <!-- Quick Settings tile -->
+    <string name="tile_needs">Allow it first</string>
+
+    <!-- Search words, separated by commas -->
+    <string name="settings_kw_shape">notch, cutout, camera, hole, size, corners, pill, fit</string>
+    <string name="settings_kw_fit">notch, cutout, camera hole, punch hole, pill, ring, auto</string>
+    <string name="settings_kw_sizes">size, wide, narrow, tall, small, big</string>
+    <string name="settings_kw_corners">radius, round, rounded, corner, curve</string>
+    <string name="settings_kw_nudge">offset, move, position, align, shift</string>
+    <string name="settings_kw_motion">animation, spring, bounce, speed, fast, slow, vibration, haptic</string>
+    <string name="settings_kw_haptics">vibration, vibrate, buzz, haptic, feedback</string>
+    <string name="settings_kw_shows">music, media, call, charging, battery, timer, torch, flashlight, privacy</string>
+    <string name="settings_kw_alerts">announcement, popup, alert, battery, volume, brightness, silent, vibrate, headphones, bluetooth</string>
+    <string name="settings_kw_notifications">notification, message, app, banner, text, preview</string>
+    <string name="settings_kw_gestures">tap, hold, long press, swipe, gesture, action, shortcut</string>
+    <string name="settings_kw_hide">hide, full screen, video, game, landscape, lock screen, apps</string>
+    <string name="settings_kw_look">appearance, theme, colour, color, dark, light, black, language</string>
+    <string name="settings_kw_appearance">theme, colour, color, palette, material you, wallpaper, style</string>
+    <string name="settings_kw_language">taal, english, dutch, nederlands, translate</string>
+    <string name="settings_kw_keep">shizuku, adb, accessibility, off, permission, secure settings, keep alive</string>
+    <string name="settings_kw_updates">update, upgrade, version, backup, restore, export, import, changelog</string>
+    <string name="settings_kw_about">about, github, source, privacy, reset, licence, license</string>
+</resources>
