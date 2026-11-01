@@ -1,0 +1,200 @@
+package nl.markmaaktmedia.drip.island
+
+import android.content.Context
+import android.hardware.display.DisplayManager
+import android.view.Display
+import android.view.RoundedCorner
+import android.view.WindowInsets
+import android.view.WindowManager
+import nl.markmaaktmedia.drip.data.FitMode
+import nl.markmaaktmedia.drip.data.IslandSettings
+import kotlin.math.max
+import kotlin.math.min
+
+/**
+ * What this phone looks like at the top, in pixels: read from the system, never typed in. The island is worked out from
+ * these, which is how it hugs the camera of a Pixel and hangs as a notch on an Xperia without anyone measuring either.
+ */
+data class DeviceFit(
+    val screenWidth: Int,
+    val screenHeight: Int,
+    val density: Float,
+    val statusBarHeight: Int,
+    /** The camera hole in the top edge, or null on a phone without one (or with it in another edge). */
+    val cutout: Hole?,
+    /** Radius of the top screen corners, or null when the phone does not say. */
+    val screenCornerRadius: Int?,
+    val landscape: Boolean,
+) {
+    fun dp(value: Float) = value * density
+
+    companion object {
+        /** A phone shaped like an Xperia 1 VI, for previews and tests before the real one is known. */
+        val Placeholder = DeviceFit(1080, 2340, 2.625f, 76, null, 92, false)
+
+        /** Reads the top of the screen from the system: the camera hole, the corners and the status bar. */
+        fun read(context: Context): DeviceFit {
+            val wm = context.getSystemService(WindowManager::class.java)
+            val metrics = wm.maximumWindowMetrics
+            val bounds = metrics.bounds
+            val insets = metrics.windowInsets
+            val display = context.getSystemService(DisplayManager::class.java).getDisplay(Display.DEFAULT_DISPLAY)
+            val density = context.resources.displayMetrics.density
+            val statusBar = insets.getInsetsIgnoringVisibility(WindowInsets.Type.statusBars()).top
+            val cutout = (insets.displayCutout ?: display?.cutout)?.boundingRectTop?.takeIf { !it.isEmpty }
+            val corner = insets.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)?.radius
+                ?: display?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)?.radius
+            return DeviceFit(
+                screenWidth = bounds.width(),
+                screenHeight = bounds.height(),
+                density = density,
+                statusBarHeight = statusBar.takeIf { it > 0 } ?: (24 * density).toInt(),
+                cutout = cutout?.let { Hole(it.left, it.top, it.right, it.bottom) },
+                screenCornerRadius = corner?.takeIf { it > 0 },
+                landscape = bounds.width() > bounds.height(),
+            )
+        }
+    }
+}
+
+/** A camera hole, in screen pixels. Its own small class so the arithmetic runs in tests without Android. */
+data class Hole(val left: Int, val top: Int, val right: Int, val bottom: Int) {
+    fun width() = right - left
+    fun height() = bottom - top
+    fun exactCenterX() = (left + right) / 2f
+    fun exactCenterY() = (top + bottom) / 2f
+}
+
+/** The stages of the island, from nothing at all to the opened card. */
+enum class Stage { HIDDEN, IDLE, COMPACT, ALERT, EXPANDED }
+
+/**
+ * Turns the settings and the phone into the shape for each [Stage]. Pure arithmetic, so it is tested without a phone.
+ */
+class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
+
+    /** Notch or pill: what the setting asks, with Auto deciding by whether there is a camera hole on top. */
+    val notch: Boolean = when (settings.fitMode) {
+        FitMode.NOTCH -> true
+        FitMode.CUTOUT -> false
+        FitMode.AUTO -> fit.cutout == null
+    }
+
+    private fun dp(v: Float) = fit.dp(v)
+
+    private val cutout: Hole? = if (notch) null else fit.cutout
+
+    /** The centre line of the island: the middle of the screen for a notch, the camera for a pill. */
+    val centerX: Float = (cutout?.exactCenterX() ?: (fit.screenWidth / 2f)) + dp(settings.offsetXDp)
+
+    private val topNudge = dp(settings.offsetYDp)
+
+    /** Height of the closed island. On a notch phone it fills most of the status bar, around a camera it hugs the hole. */
+    val idleHeight: Float = settings.idleHeightDp?.let(::dp) ?: if (cutout != null) {
+        cutout.height() + 2 * dp(settings.cutoutPaddingDp)
+    } else {
+        max(fit.statusBarHeight - dp(6f), dp(18f))
+    }
+
+    val idleWidth: Float = settings.idleWidthDp?.let(::dp) ?: if (cutout != null) {
+        max(cutout.width() + 2 * dp(settings.cutoutPaddingDp), idleHeight)
+    } else {
+        dp(88f)
+    }
+
+    /** Tall enough for a line of text and an icon, and at least as tall as the closed island. */
+    val compactHeight: Float = max(
+        idleHeight,
+        if (cutout != null) max(cutout.height() + 2 * dp(settings.cutoutPaddingDp), dp(30f)) else max(fit.statusBarHeight + dp(4f), dp(30f)),
+    )
+
+    val compactWidth: Float = settings.compactWidthDp?.let(::dp)
+        ?: min(fit.screenWidth * 0.62f, dp(250f)).coerceAtLeast(idleWidth + dp(80f))
+
+    val margin: Float = dp(settings.expandedMarginDp)
+
+    /** The widest the island gets: the screen less the margin on both sides. */
+    val fullWidth: Float = fit.screenWidth - 2 * margin
+
+    /**
+     * Top corners of the opened island. Automatic means concentric with the screen corner: the screen radius less the
+     * margin, so the gap between the island and the edge of the screen keeps one width all the way round the curve.
+     */
+    val expandedTopRadius: Float = settings.expandedTopRadiusDp?.let(::dp)
+        ?: max((fit.screenCornerRadius?.toFloat() ?: dp(DEFAULT_SCREEN_CORNER_DP)) - margin, dp(8f))
+
+    val expandedBottomRadius: Float = dp(settings.expandedBottomRadiusDp)
+
+    /** Inner padding of an opened card, the same on every side. */
+    val cardPadding: Float = dp(16f)
+
+    /** Outer bottom corners of buttons on the bottom row: concentric with the island unless set by hand. */
+    val buttonOuterRadius: Float = settings.buttonOuterRadiusDp?.let(::dp)
+        ?: max(expandedBottomRadius - cardPadding, dp(8f))
+
+    val buttonInnerRadius: Float = dp(settings.buttonInnerRadiusDp)
+
+    private val shoulder = dp(settings.shoulderDp)
+
+    /** Room the content of an opened card leaves at the top, so a notch phone's status bar stays readable above it. */
+    val cardTopInset: Float get() = if (notch && settings.expandedAttached) fit.statusBarHeight.toFloat() else 0f
+
+    /**
+     * Where a pill centres itself: the middle of the camera hole, or the middle of the status bar when pill is chosen on a
+     * phone without one.
+     */
+    private val cutoutMiddle: Float? = if (notch) null else (cutout?.exactCenterY() ?: (fit.statusBarHeight / 2f)) + topNudge
+
+    fun geometry(stage: Stage, contentHeight: Float = dp(160f)): IslandGeometry {
+        val roundness = settings.collapsedRoundness.coerceIn(0f, 1f)
+        return when (stage) {
+            // Shrinks up into the top edge on a notch phone, into the camera around a hole, or to a point otherwise.
+            Stage.HIDDEN -> when {
+                notch -> collapsedShape(idleWidth * 0.7f, 0f, roundness).copy(topCorner = 0f, bottomRadius = 0f)
+                cutout != null -> {
+                    val size = min(cutout.width(), cutout.height()).toFloat()
+                    IslandGeometry(centerX, cutout.exactCenterY() + topNudge - size / 2f, size, size, -size / 2f, size / 2f)
+                }
+                else -> IslandGeometry(centerX, (cutoutMiddle ?: 0f), 0f, 0f, 0f, 0f)
+            }
+            Stage.IDLE -> collapsedShape(idleWidth, idleHeight, roundness)
+            Stage.COMPACT -> collapsedShape(compactWidth, compactHeight, roundness)
+            Stage.ALERT -> {
+                val h = (if (notch) fit.statusBarHeight.toFloat() else 0f) + dp(64f)
+                val w = min(fullWidth, dp(400f))
+                if (notch) {
+                    IslandGeometry(centerX, 0f, w, h, shoulder, min(expandedBottomRadius, h / 2f))
+                } else {
+                    IslandGeometry(centerX, margin, w, h, -min(expandedTopRadius, h / 2f), min(expandedBottomRadius, h / 2f))
+                }
+            }
+            Stage.EXPANDED -> {
+                val attached = notch && settings.expandedAttached
+                val h = contentHeight + cardTopInset
+                if (attached) {
+                    IslandGeometry(fit.screenWidth / 2f + dp(settings.offsetXDp), 0f, fullWidth, h, shoulder, expandedBottomRadius)
+                } else {
+                    // An opened island is centred on the screen even when the camera is not, so the margin is even.
+                    IslandGeometry(fit.screenWidth / 2f, margin, fullWidth, h, -expandedTopRadius, expandedBottomRadius)
+                }
+            }
+        }.clamped()
+    }
+
+    private fun collapsedShape(width: Float, height: Float, roundness: Float): IslandGeometry {
+        val middle = cutoutMiddle
+        return if (notch || middle == null) {
+            // Hangs from the top edge: the shoulders curve into the edge, the bottom is as round as the setting says.
+            val bottom = (height - shoulder).coerceAtLeast(0f).coerceAtMost(height / 2f) * roundness
+            IslandGeometry(centerX, topNudge.coerceAtLeast(0f), width, height, shoulder, bottom)
+        } else {
+            // Floats around the camera, centred on it, with round ends.
+            IslandGeometry(centerX, middle - height / 2f, width, height, -(height / 2f) * roundness, (height / 2f) * roundness)
+        }
+    }
+
+    companion object {
+        /** What most phones without a reported corner come close to. */
+        const val DEFAULT_SCREEN_CORNER_DP = 32f
+    }
+}
