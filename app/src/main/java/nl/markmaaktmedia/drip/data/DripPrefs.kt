@@ -27,12 +27,18 @@ private val Context.dataStore by preferencesDataStore(name = "drip")
 /** What a tap, a hold or a swipe on the island does. */
 enum class GestureAction {
     NONE, EXPAND, OPEN_APP, PLAY_PAUSE, NEXT_TRACK, PREVIOUS_TRACK, BACK, HOME, RECENTS,
-    NOTIFICATIONS, QUICK_SETTINGS, LOCK_SCREEN, SCREENSHOT, TORCH, OPEN_DRIP;
+    NOTIFICATIONS, QUICK_SETTINGS, LOCK_SCREEN, SCREENSHOT, TORCH, OPEN_DRIP, OUTPUT, DISMISS;
 
     companion object {
         fun from(value: String?, fallback: GestureAction) = entries.firstOrNull { it.name == value } ?: fallback
     }
 }
+
+/** What a set of gestures belongs to: the default, or one kind of thing on the island. */
+enum class GestureScope { DEFAULT, MUSIC, CALL, TIMER, ROUTE, CHARGING, NOTICE }
+
+/** The five gestures a scope can set, plus the double tap. */
+enum class Gesture { TAP, DOUBLE_TAP, LONG_PRESS, SWIPE_DOWN, SWIPE_LEFT, SWIPE_RIGHT }
 
 /** How the island sits on this phone. Auto picks notch without a camera hole and a pill around one with it. */
 enum class FitMode { AUTO, NOTCH, CUTOUT }
@@ -118,16 +124,74 @@ data class IslandSettings(
     // Gestures on the island.
     val gestureTap: GestureAction = GestureAction.EXPAND,
     val gestureLongPress: GestureAction = GestureAction.OPEN_APP,
-    val gestureSwipeDown: GestureAction = GestureAction.EXPAND,
+    /** Pulling down from the island opens the shade, as from anywhere else along the top. */
+    val gestureSwipeDown: GestureAction = GestureAction.NOTIFICATIONS,
     val gestureSwipeLeft: GestureAction = GestureAction.NEXT_TRACK,
     val gestureSwipeRight: GestureAction = GestureAction.PREVIOUS_TRACK,
+    val gestureDoubleTap: GestureAction = GestureAction.NONE,
+    /**
+     * Gestures set for one kind of thing, over the defaults above, written "SCOPE:GESTURE=ACTION", like
+     * "TIMER:SWIPE_LEFT=DISMISS". Read through [actionFor].
+     */
+    val gestureOverrides: Set<String> = emptySet(),
 
     // When the island steps aside.
     val hideFullscreen: Boolean = true,
     val hideLandscape: Boolean = true,
     val hideOnLockscreen: Boolean = false,
     val hiddenApps: Set<String> = emptySet(),
-)
+
+    // The second round.
+    /** A second thing at once gets its own small drop next to the island (or a bubble next to a pill). */
+    val showSecond: Boolean = true,
+    /** Synced lyrics on the music card when the player gives them. */
+    val showLyrics: Boolean = true,
+    /** Looks lyrics up at lrclib.net when the player has none. Sends the title and artist there, so off by default. */
+    val lyricsOnline: Boolean = false,
+    val showUnlock: Boolean = true,
+    val showCalendar: Boolean = true,
+    /** Minutes before an appointment that its countdown appears. */
+    val calendarLeadMinutes: Int = 10,
+    val showInstalls: Boolean = true,
+    /** Lets other apps, like Tasker, put their own things on the island through an intent. */
+    val allowAutomation: Boolean = false,
+    /** Shows Tandem's transfers, clipboard and connected computer. */
+    val showTandem: Boolean = true,
+) {
+    /** What [gesture] does on [scope]: an override for that kind of thing if there is one, else the default. */
+    fun actionFor(scope: GestureScope, gesture: Gesture): GestureAction {
+        if (scope != GestureScope.DEFAULT) {
+            val prefix = "${scope.name}:${gesture.name}="
+            gestureOverrides.firstOrNull { it.startsWith(prefix) }?.let { return GestureAction.from(it.removePrefix(prefix), GestureAction.NONE) }
+        }
+        return when (gesture) {
+            Gesture.TAP -> gestureTap
+            Gesture.DOUBLE_TAP -> gestureDoubleTap
+            Gesture.LONG_PRESS -> gestureLongPress
+            Gesture.SWIPE_DOWN -> gestureSwipeDown
+            Gesture.SWIPE_LEFT -> gestureSwipeLeft
+            Gesture.SWIPE_RIGHT -> gestureSwipeRight
+        }
+    }
+
+    /** These settings with [gesture] on [scope] set to [action], or back to the default when [action] is null. */
+    fun withGesture(scope: GestureScope, gesture: Gesture, action: GestureAction?): IslandSettings {
+        if (scope == GestureScope.DEFAULT) {
+            val a = action ?: IslandSettings().actionFor(GestureScope.DEFAULT, gesture)
+            return when (gesture) {
+                Gesture.TAP -> copy(gestureTap = a)
+                Gesture.DOUBLE_TAP -> copy(gestureDoubleTap = a)
+                Gesture.LONG_PRESS -> copy(gestureLongPress = a)
+                Gesture.SWIPE_DOWN -> copy(gestureSwipeDown = a)
+                Gesture.SWIPE_LEFT -> copy(gestureSwipeLeft = a)
+                Gesture.SWIPE_RIGHT -> copy(gestureSwipeRight = a)
+            }
+        }
+        val prefix = "${scope.name}:${gesture.name}="
+        val kept = gestureOverrides.filterNot { it.startsWith(prefix) }.toSet()
+        return copy(gestureOverrides = if (action == null) kept else kept + (prefix + action.name))
+    }
+}
 
 class DripPrefs(private val context: Context) {
 
@@ -269,6 +333,17 @@ class DripPrefs(private val context: Context) {
             hideLandscape = b("hide_landscape", d.hideLandscape),
             hideOnLockscreen = b("hide_on_lockscreen", d.hideOnLockscreen),
             hiddenApps = set("hidden_apps"),
+            gestureDoubleTap = GestureAction.from(s("gesture_double_tap"), d.gestureDoubleTap),
+            gestureOverrides = set("gesture_overrides"),
+            showSecond = b("show_second", d.showSecond),
+            showLyrics = b("show_lyrics", d.showLyrics),
+            lyricsOnline = b("lyrics_online", d.lyricsOnline),
+            showUnlock = b("show_unlock", d.showUnlock),
+            showCalendar = b("show_calendar", d.showCalendar),
+            calendarLeadMinutes = this[intPreferencesKey("calendar_lead")] ?: d.calendarLeadMinutes,
+            showInstalls = b("show_installs", d.showInstalls),
+            allowAutomation = b("allow_automation", d.allowAutomation),
+            showTandem = b("show_tandem", d.showTandem),
         )
     }
 
@@ -349,6 +424,17 @@ class DripPrefs(private val context: Context) {
         b("hide_landscape", v.hideLandscape, d.hideLandscape)
         b("hide_on_lockscreen", v.hideOnLockscreen, d.hideOnLockscreen)
         set("hidden_apps", v.hiddenApps)
+        s("gesture_double_tap", v.gestureDoubleTap.name, d.gestureDoubleTap.name)
+        set("gesture_overrides", v.gestureOverrides)
+        b("show_second", v.showSecond, d.showSecond)
+        b("show_lyrics", v.showLyrics, d.showLyrics)
+        b("lyrics_online", v.lyricsOnline, d.lyricsOnline)
+        b("show_unlock", v.showUnlock, d.showUnlock)
+        b("show_calendar", v.showCalendar, d.showCalendar)
+        intPreferencesKey("calendar_lead").let { if (v.calendarLeadMinutes == d.calendarLeadMinutes) remove(it) else this[it] = v.calendarLeadMinutes }
+        b("show_installs", v.showInstalls, d.showInstalls)
+        b("allow_automation", v.allowAutomation, d.allowAutomation)
+        b("show_tandem", v.showTandem, d.showTandem)
     }
 
     /** Every setting a person made, as JSON, for the backup file. Typed so a restore puts back the same kinds. */

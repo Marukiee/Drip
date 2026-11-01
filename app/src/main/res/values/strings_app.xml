@@ -217,6 +217,8 @@
     <string name="gesture_screenshot">Screenshot</string>
     <string name="gesture_torch">Torch on or off</string>
     <string name="gesture_open_drip">Open Drip</string>
+    <string name="gesture_output">Choose where sound plays</string>
+    <string name="gesture_dismiss">Put away</string>
 
     <!-- When to step aside -->
     <string name="hide_section">The island steps aside</string>

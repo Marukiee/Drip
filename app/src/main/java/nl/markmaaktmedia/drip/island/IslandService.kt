@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
+import android.os.Build
 import android.view.WindowInsets
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityWindowInfo
@@ -157,9 +158,29 @@ class IslandService : AccessibilityService() {
                 performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT)
             }
             GestureAction.TORCH -> graph.hub.torchCommands?.setOn(!graph.hub.torch.value.on)
+            GestureAction.OUTPUT -> openOutputSwitcher(music?.packageName)
+            GestureAction.DISMISS -> controller.dismiss()
             GestureAction.OPEN_DRIP -> startActivity(
                 Intent(this, nl.markmaaktmedia.drip.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             )
+        }
+    }
+
+    /**
+     * Android's own panel to choose where sound plays. Android 14 opens it for any app; before that the panel of
+     * Settings for media output is the nearest thing.
+     */
+    private fun openOutputSwitcher(playerPackage: String?) {
+        controller.collapse()
+        val opened = Build.VERSION.SDK_INT >= 34 && runCatching {
+            android.media.MediaRouter2.getInstance(this).showSystemOutputSwitcher()
+        }.getOrDefault(false)
+        if (opened) return
+        val intent = Intent("com.android.settings.panel.action.MEDIA_OUTPUT")
+            .putExtra("com.android.settings.panel.extra.PACKAGE_NAME", playerPackage ?: packageName)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { startActivity(intent) }.onFailure {
+            runCatching { startActivity(Intent(android.provider.Settings.Panel.ACTION_VOLUME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         }
     }
 

@@ -43,6 +43,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import nl.markmaaktmedia.drip.island.Alert
 import nl.markmaaktmedia.drip.island.AlertKind
 import nl.markmaaktmedia.drip.island.IslandContent
@@ -69,10 +71,14 @@ fun SceneContent(scene: Scene, privacy: PrivacyInfo, controller: IslandControlle
             val height = with(density) { layout.compactHeight.toDp() }
             CompactContent(scene.content, privacy, height, Modifier.fillMaxSize())
         }
+        Stage.MINI -> {
+            val alert = (scene.content as? IslandContent.Notice)?.alert
+            val height = with(density) { layout.compactHeight.toDp() }
+            if (alert != null) MiniContent(alert, height, Modifier.fillMaxSize())
+        }
         Stage.ALERT -> {
             val alert = (scene.content as? IslandContent.Notice)?.alert
-            val top = with(density) { (if (layout.notch) layout.fit.statusBarHeight.toFloat() else 0f).toDp() }
-            if (alert != null) AlertContent(alert, Modifier.fillMaxSize().padding(top = top).padding(horizontal = 14.dp, vertical = 8.dp))
+            if (alert != null) AlertContent(alert, Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp))
         }
         Stage.EXPANDED -> Column(Modifier.fillMaxWidth().padding(top = m.topInset).padding(m.padding)) {
             when (val c = scene.content) {
@@ -177,6 +183,37 @@ private fun CompactContent(content: IslandContent?, privacy: PrivacyInfo, height
 private fun SlotText(text: String, color: Color, modifier: Modifier) =
     Text(text, modifier = modifier, color = color, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
 
+/**
+ * A state or a level in the closed island: the symbol in the round end on the left, a slim bar or a word on the right.
+ * Moving the volume on and on only moves the bar.
+ */
+@Composable
+private fun MiniContent(alert: Alert, height: Dp, modifier: Modifier) {
+    val accent = alertAccent(alert)
+    val gap = (height * 0.15f).coerceIn(3.dp, 6.dp)
+    val slot = height - gap * 2
+    Box(modifier) {
+        Box(Modifier.align(Alignment.CenterStart).padding(start = gap).size(slot), contentAlignment = Alignment.Center) {
+            when {
+                alert.image != null -> Picture(alert.image, slot, CircleShape)
+                alert.iconRes != null -> Icon(painterResource(alert.iconRes), null, tint = accent, modifier = Modifier.size(slot * 0.72f))
+            }
+        }
+        val level = alert.level
+        val end = Modifier.align(Alignment.CenterEnd).padding(end = height / 2 - 2.dp)
+        if (level != null && alert.kind != AlertKind.CHARGING && alert.kind != AlertKind.BATTERY_FULL) {
+            val shown by animateFloatAsState(level, spring(1f, 700f), label = "level")
+            LevelBar(shown, accent, end.size(72.dp, 5.dp))
+        } else {
+            val words = when (alert.kind) {
+                AlertKind.CHARGING, AlertKind.BATTERY_FULL -> alert.text ?: alert.level?.let { "${(it * 100).toInt()}%" } ?: alert.title
+                else -> alert.title
+            }
+            Text(words, end, color = accent, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
 /** A short announcement: what it is about on the left, the words in the middle, a bar for a level. */
 @Composable
 private fun AlertContent(alert: Alert, modifier: Modifier) {
@@ -275,5 +312,8 @@ fun liveIcon(kind: LiveKind) = when (kind) {
     LiveKind.RIDE -> DripIcons.Car
     LiveKind.RECORDING -> DripIcons.Mic
     LiveKind.DOWNLOAD -> DripIcons.Download
+    LiveKind.INSTALL -> DripIcons.InstallMobile
+    LiveKind.CALENDAR -> DripIcons.Calendar
+    LiveKind.SPORTS -> DripIcons.Sports
     LiveKind.GENERIC -> DripIcons.Notifications
 }

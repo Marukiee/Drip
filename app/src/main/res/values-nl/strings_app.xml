@@ -217,6 +217,8 @@
     <string name="gesture_screenshot">Schermafbeelding</string>
     <string name="gesture_torch">Zaklamp aan of uit</string>
     <string name="gesture_open_drip">Drip openen</string>
+    <string name="gesture_output">Kiezen waar geluid speelt</string>
+    <string name="gesture_dismiss">Wegzetten</string>
 
     <!-- Wanneer het opzij gaat -->
     <string name="hide_section">Het eiland gaat opzij</string>

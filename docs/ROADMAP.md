@@ -6,9 +6,6 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 
 - Hoogte van de notch tegen de statusbalk, de hoeken van 16 dp, het volume-signaal (de emulator heeft geen audio).
 - Gedrag als Sony de toegankelijkheidsdienst uitzet na een update (IslandKeeper met Shizuku).
-- Batterij: de equalizer in het dichte eiland beweegt zolang er muziek speelt en houdt het scherm zo op hoge verversing.
-  Rustiger laten bewegen of de framerate omlaag als het eiland een tijd dicht is.
-- Echte muziekapps, echte gesprekken en het installeren via de browser (beperkte instellingen) op het toestel doorlopen.
 
 ## Muziek
 
@@ -53,16 +50,16 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 
 - ★ Antwoorden vanuit de notch (inline, met toetsenbord), voor apps die het toestaan.
 - Meerdere meldingen gestapeld, met kleine bolletjes van de apps die wachten.
-- Een tweede activiteit als bolletje naast het eiland (muziek en een timer tegelijk).
+- ★Een tweede activiteit als bolletje naast het eiland (muziek en een timer tegelijk).
 - Per app een eigen haptiek en kleur.
 
 ## Bediening en uitbreiden
 
-- ★ Een widget van je startscherm in de geopende notch (agenda, weer, notities), zoals Shima dat kan.
+- Een widget van je startscherm in de geopende notch (agenda, weer, notities), zoals Shima dat kan.
 - ★ Tasker en automatisering: een open intent waarmee elke app of taak eigen inhoud in de notch zet.
 - ★ Tandem-koppeling: overdrachten, het klembord en de verbonden computer van Tandem in de notch.
 - Een mini-bedieningspaneel bij een lege notch (vegen langs de bovenrand): zaklamp, wifi, bluetooth, draaien, niet storen.
-- Dubbeltikken als extra gebaar, en gebaren per soort inhoud (anders bij muziek dan bij een timer).
+- ★Dubbeltikken als extra gebaar, en gebaren per soort inhoud (anders bij muziek dan bij een timer). (zorg dus dat je gebaren kan instellen, zoals het swipen over de notch/island vor volgend nummer ofz. aanpasbaar)
 
 ## Uiterlijk
 

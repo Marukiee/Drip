@@ -70,4 +70,6 @@ internal fun gestureLabel(action: GestureAction): Int = when (action) {
     GestureAction.SCREENSHOT -> R.string.gesture_screenshot
     GestureAction.TORCH -> R.string.gesture_torch
     GestureAction.OPEN_DRIP -> R.string.gesture_open_drip
+    GestureAction.OUTPUT -> R.string.gesture_output
+    GestureAction.DISMISS -> R.string.gesture_dismiss
 }

@@ -90,8 +90,12 @@ object Demos {
                 hub.torch.value = TorchInfo()
                 hub.battery.value = BatteryInfo()
             }
+            else -> extra(context, demo, controller)
         }
     }
+
+    /** The demos of the second round; filled in with the features themselves. */
+    private fun extra(context: Context, demo: Demo, controller: IslandController) = Unit
 
     private fun music(context: Context): NowPlaying {
         val hub = context.graph.hub

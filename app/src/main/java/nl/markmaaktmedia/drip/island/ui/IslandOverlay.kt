@@ -62,7 +62,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import nl.markmaaktmedia.drip.data.CardStyle
+import nl.markmaaktmedia.drip.data.Gesture
 import nl.markmaaktmedia.drip.data.GestureAction
+import nl.markmaaktmedia.drip.data.GestureScope
 import nl.markmaaktmedia.drip.data.IslandSettings
 import nl.markmaaktmedia.drip.graph
 import nl.markmaaktmedia.drip.island.DeviceFit
@@ -161,48 +163,88 @@ fun IslandOverlay(
         Modifier
             .fillMaxSize()
             .pointerInput(Unit) {
+                // One handler for every touch on the island, so a tap, a double tap, a hold and the swipes never fight.
+                // Buttons inside an opened card consume their own touches first; what they leave comes here.
+                var lastTapAt = 0L
+                var pendingTap: kotlinx.coroutines.Job? = null
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Main)
                     val o = window.originNow()
-                    val g = shape.value.bounds
-                    val inside = g.contains(Offset(down.position.x + o.x, down.position.y + o.y))
+                    val at = Offset(down.position.x + o.x, down.position.y + o.y)
+                    val inside = shape.value.bounds.contains(at)
                     if (!inside) {
                         // A touch beside an opened card closes it, the way a tap outside a sheet does.
                         if (stage == Stage.EXPANDED) controller.collapse()
                         return@awaitEachGesture
                     }
+                    val s = gestures
+                    val scopeOf = gestureScope(current)
                     if (stage == Stage.EXPANDED) controller.poke()
                     if (stage != Stage.EXPANDED) scope.launch { press.animateTo(1f, spring(0.6f, 900f)) }
                     var travel = Offset.Zero
-                    var handledByChild = down.isConsumed
+                    var handled = down.isConsumed
                     var longPressed = false
                     val longPress = viewConfig.longPressTimeoutMillis
                     val swipe = 24.dp.toPx()
+                    // Pulling the shade down must feel as if the island were not there: it opens as soon as the finger
+                    // heads down, not when it lets go.
+                    val pull = 10.dp.toPx()
                     val start = down.uptimeMillis
                     while (true) {
-                        val event = withTimeoutOrNull(if (longPressed || handledByChild) Long.MAX_VALUE else max(1L, longPress - (currentTime() - start))) {
+                        val event = withTimeoutOrNull(if (longPressed || handled) Long.MAX_VALUE else max(1L, longPress - (currentTime() - start))) {
                             awaitPointerEvent(PointerEventPass.Main)
                         }
                         if (event == null) {
-                            // Held still long enough: a long press, unless the finger already moved off.
-                            if (!handledByChild && travel.getDistance() < swipe && stage != Stage.EXPANDED) {
+                            if (!handled && travel.getDistance() < swipe && stage != Stage.EXPANDED) {
                                 longPressed = true
                                 context.graph.haptics.play(Haptics.Kind.LONG_PRESS)
-                                onGesture(gestures.gestureLongPress, current)
+                                onGesture(s.actionFor(scopeOf, Gesture.LONG_PRESS), current)
                             }
                             continue
                         }
                         val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                        if (change.isConsumed) handledByChild = true
+                        if (change.isConsumed) handled = true
                         travel += change.positionChange()
+                        val downAction = s.actionFor(scopeOf, Gesture.SWIPE_DOWN)
+                        if (!handled && !longPressed && stage != Stage.EXPANDED && downAction == GestureAction.NOTIFICATIONS &&
+                            travel.y > pull && travel.y > abs(travel.x)
+                        ) {
+                            handled = true
+                            onGesture(GestureAction.NOTIFICATIONS, current)
+                        }
                         if (!change.pressed) {
-                            if (!handledByChild && !longPressed) {
+                            if (!handled && !longPressed) {
                                 when {
-                                    travel.getDistance() < swipe -> if (stage == Stage.EXPANDED) Unit else tap(gestures, current, onGesture, controller, press, scope)
-                                    abs(travel.y) > abs(travel.x) && travel.y > 0 -> if (stage != Stage.EXPANDED) swipeAction(gestures.gestureSwipeDown, current, onGesture, context)
+                                    travel.getDistance() < swipe -> when (stage) {
+                                        // Tapping where the closed island sits closes the opened one again.
+                                        Stage.EXPANDED -> if (layout.geometry(Stage.COMPACT).bounds.inflate(8.dp.toPx()).contains(at)) controller.collapse()
+                                        // A volume bar or a state has nothing more to show: a tap puts it away.
+                                        Stage.MINI -> controller.dismissAlert()
+                                        else -> {
+                                            val double = s.actionFor(scopeOf, Gesture.DOUBLE_TAP)
+                                            val now = currentTime()
+                                            if (double != GestureAction.NONE && now - lastTapAt < viewConfig.doubleTapTimeoutMillis) {
+                                                pendingTap?.cancel()
+                                                lastTapAt = 0L
+                                                context.graph.haptics.play(Haptics.Kind.TAP)
+                                                onGesture(double, current)
+                                            } else if (double != GestureAction.NONE) {
+                                                // Wait a moment to see whether a second tap follows.
+                                                lastTapAt = now
+                                                val content = current
+                                                pendingTap = scope.launch {
+                                                    kotlinx.coroutines.delay(viewConfig.doubleTapTimeoutMillis)
+                                                    tap(s.actionFor(scopeOf, Gesture.TAP), content, onGesture, press, scope)
+                                                }
+                                            } else {
+                                                tap(s.actionFor(scopeOf, Gesture.TAP), current, onGesture, press, scope)
+                                            }
+                                        }
+                                    }
+                                    abs(travel.y) > abs(travel.x) && travel.y > 0 -> if (stage != Stage.EXPANDED) swipeAction(downAction, current, onGesture, context)
                                     abs(travel.y) > abs(travel.x) -> if (stage == Stage.EXPANDED) controller.collapse() else Unit
-                                    travel.x < 0 -> swipeAction(gestures.gestureSwipeLeft, current, onGesture, context)
-                                    else -> swipeAction(gestures.gestureSwipeRight, current, onGesture, context)
+                                    travel.x < 0 -> swipeAction(s.actionFor(scopeOf, Gesture.SWIPE_LEFT), current, onGesture, context)
+                                    else -> swipeAction(s.actionFor(scopeOf, Gesture.SWIPE_RIGHT), current, onGesture, context)
                                 }
                             }
                             break
@@ -275,14 +317,13 @@ data class Scene(val stage: Stage, val content: IslandContent?)
 private fun currentTime() = android.os.SystemClock.uptimeMillis()
 
 private fun tap(
-    s: IslandSettings,
+    action: GestureAction,
     content: IslandContent?,
     onGesture: (GestureAction, IslandContent?) -> Unit,
-    controller: IslandController,
     press: Animatable<Float, AnimationVector1D>,
     scope: kotlinx.coroutines.CoroutineScope,
 ) {
-    if (s.gestureTap == GestureAction.EXPAND && content == null) {
+    if (action == GestureAction.EXPAND && content == null) {
         // Nothing to open: the island gives a little bounce so the tap is not lost.
         scope.launch {
             press.animateTo(1.6f, spring(0.4f, 1200f))
@@ -290,7 +331,21 @@ private fun tap(
         }
         return
     }
-    onGesture(s.gestureTap, content)
+    onGesture(action, content)
+}
+
+/** Which set of gestures applies to what is showing. */
+private fun gestureScope(content: IslandContent?): GestureScope = when (content) {
+    is IslandContent.Music -> GestureScope.MUSIC
+    is IslandContent.Call -> GestureScope.CALL
+    is IslandContent.Live -> when (content.live.kind) {
+        nl.markmaaktmedia.drip.island.LiveKind.TIMER, nl.markmaaktmedia.drip.island.LiveKind.STOPWATCH -> GestureScope.TIMER
+        nl.markmaaktmedia.drip.island.LiveKind.NAVIGATION -> GestureScope.ROUTE
+        else -> GestureScope.DEFAULT
+    }
+    is IslandContent.Charging -> GestureScope.CHARGING
+    is IslandContent.Notice -> GestureScope.NOTICE
+    else -> GestureScope.DEFAULT
 }
 
 private fun swipeAction(action: GestureAction, content: IslandContent?, onGesture: (GestureAction, IslandContent?) -> Unit, context: android.content.Context) {
@@ -333,7 +388,8 @@ private fun touchRect(a: androidx.compose.ui.geometry.Rect, b: androidx.compose.
     val slack = if (opened) 0f else layout.fit.dp(8f)
     val left = (min(a.left, b.left) - slack).coerceAtLeast(0f)
     val right = (max(a.right, b.right) + slack).coerceAtMost(layout.fit.screenWidth.toFloat())
-    val top = (min(a.top, b.top) - slack).coerceAtLeast(0f)
+    // No slack above: the strip along the top edge belongs to the status bar and its shade.
+    val top = min(a.top, b.top).coerceAtLeast(0f)
     val bottom = max(a.bottom, b.bottom) + slack
     return Rect(left.roundToInt(), top.roundToInt(), right.roundToInt(), bottom.roundToInt().coerceAtLeast(top.roundToInt() + 1))
 }

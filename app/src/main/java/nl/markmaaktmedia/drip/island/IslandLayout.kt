@@ -86,7 +86,11 @@ data class Hole(val left: Int, val top: Int, val right: Int, val bottom: Int) {
 }
 
 /** The stages of the island, from nothing at all to the opened card. */
-enum class Stage { HIDDEN, IDLE, COMPACT, ALERT, EXPANDED }
+/**
+ * The stages of the island, from nothing at all to the opened card. MINI is a short announcement that only widens the
+ * closed island a little (volume, ringer, charging); ALERT is one with words to read (a message).
+ */
+enum class Stage { HIDDEN, IDLE, COMPACT, MINI, ALERT, EXPANDED }
 
 /**
  * Turns the settings and the phone into the shape for each [Stage]. Pure arithmetic, so it is tested without a phone.
@@ -179,9 +183,11 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
             }
             Stage.IDLE -> collapsedShape(idleWidth, idleHeight, roundness)
             Stage.COMPACT -> collapsedShape(compactWidth, compactHeight, roundness)
+            Stage.MINI -> collapsedShape(min(compactWidth + dp(56f), fullWidth), compactHeight, roundness)
             Stage.ALERT -> {
-                val h = (if (notch) fit.statusBarHeight.toFloat() else 0f) + dp(64f)
-                val w = min(fullWidth, dp(400f))
+                // Only as tall as the words need: the status bar is covered anyway, no room is kept free for it.
+                val h = dp(60f)
+                val w = min(fullWidth, dp(360f))
                 if (notch) {
                     IslandGeometry(centerX, 0f, w, h, shoulder, min(expandedBottomRadius, h / 2f))
                 } else {

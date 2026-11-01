@@ -16,6 +16,8 @@ data class IslandAction(
     val kind: ActionKind = ActionKind.OTHER,
     /** An icon of the app's own, used when [kind] has no icon of Drip's. */
     val icon: Bitmap? = null,
+    /** For an action that takes typed text (a reply): sends it. [run] then does nothing. */
+    val reply: ((CharSequence) -> Unit)? = null,
     val run: () -> Unit,
 ) {
     // Two actions are the same when they look the same: the lambda is new every time a notification is read again.
@@ -60,6 +62,8 @@ data class NowPlaying(
     val repeat: RepeatMode? = null,
     val shuffle: Boolean? = null,
     val liked: Boolean? = null,
+    /** The title of what plays next, when the player tells. */
+    val next: String? = null,
     val commands: MediaCommands,
 ) {
     override fun equals(other: Any?): Boolean = other is NowPlaying && packageName == other.packageName &&
@@ -89,7 +93,13 @@ data class CallInfo(
     val open: (() -> Unit)? = null,
 )
 
-enum class LiveKind { TIMER, STOPWATCH, NAVIGATION, DELIVERY, RIDE, RECORDING, DOWNLOAD, GENERIC }
+enum class LiveKind { TIMER, STOPWATCH, NAVIGATION, DELIVERY, RIDE, RECORDING, DOWNLOAD, INSTALL, CALENDAR, SPORTS, GENERIC }
+
+/** A stretch of a Live Update progress bar (Android 16 ProgressStyle): its share of the bar and its colour. */
+data class ProgressSegment(val length: Float, val color: Int? = null)
+
+/** A marked spot on such a bar, like a stop on a route, from 0 to 1. */
+data class ProgressPoint(val position: Float, val color: Int? = null)
 
 /** A notification that keeps going: a timer, a ride, a delivery, a download. */
 data class LiveInfo(
@@ -112,6 +122,13 @@ data class LiveInfo(
     val countDown: Boolean = false,
     /** A short text for the closed island when there is no clock, like "3 min" or "12%". */
     val shortText: String? = null,
+    /** The stretches of the bar, when the app split it up (a route, a delivery). Lengths add up to 1. */
+    val segments: List<ProgressSegment> = emptyList(),
+    val points: List<ProgressPoint> = emptyList(),
+    /** The little picture that rides along the bar (the courier, the car). */
+    val tracker: Bitmap? = null,
+    /** Arrival time of a route, or another second line for the opened card, like "Aankomst 14:32". */
+    val detail: String? = null,
     val actions: List<IslandAction> = emptyList(),
     val open: (() -> Unit)? = null,
 )
@@ -125,6 +142,10 @@ data class BatteryInfo(
     /** Android's own estimate, when it has one. */
     val timeToFullMs: Long? = null,
     val powerSave: Boolean = false,
+    /** Faster than plain charging, as far as Android lets it be read. */
+    val fast: Boolean = false,
+    /** Charging held at a limit to spare the battery (Battery Care on an Xperia), in percent. */
+    val limit: Int? = null,
 )
 
 data class TorchInfo(
@@ -141,11 +162,21 @@ interface TorchCommands {
 }
 
 /** The green and orange dots: a camera or a microphone in use by any app. */
-data class PrivacyInfo(val camera: Boolean = false, val microphone: Boolean = false)
+/** The dots for a camera, a microphone or location in use, and, when it can be found out, which app uses it. */
+data class PrivacyInfo(
+    val camera: Boolean = false,
+    val microphone: Boolean = false,
+    val location: Boolean = false,
+    val cameraApp: String? = null,
+    val microphoneApp: String? = null,
+    val locationApp: String? = null,
+) {
+    val any get() = camera || microphone || location
+}
 
 enum class AlertKind {
     NOTIFICATION, CHARGING, UNPLUGGED, BATTERY_LOW, BATTERY_FULL, BATTERY_SAVER, DND, ROTATION, RINGER, VOLUME,
-    BRIGHTNESS, HEADPHONES, ALARM, OTHER,
+    BRIGHTNESS, HEADPHONES, ALARM, UNLOCK, OTHER,
 }
 
 /**

@@ -164,7 +164,7 @@ class IslandController(
         val next = queue.removeFirstOrNull()
         alert = next
         if (next != null) {
-            if (expandedKey == null) haptics.play(Haptics.Kind.ALERT)
+            if (expandedKey == null) haptics.play(if (next.kind in MINI_KINDS) Haptics.Kind.TICK else Haptics.Kind.ALERT)
             restartAlertTimer(next)
         }
         refresh()
@@ -227,6 +227,14 @@ class IslandController(
         }
     }
 
+    /** Puts away what is showing: an announcement goes, an opened card closes. For the Dismiss gesture. */
+    fun dismiss() {
+        when {
+            expandedKey != null -> collapse()
+            alert != null -> dismissAlert()
+        }
+    }
+
     /** Takes an announcement away early, for its buttons. */
     fun dismissAlert() {
         if (expandedKey?.startsWith("alert:") == true) {
@@ -262,7 +270,7 @@ class IslandController(
         val ui = when {
             hidden -> IslandUi(Stage.HIDDEN, null, privacy)
             expanded != null -> IslandUi(Stage.EXPANDED, expanded, privacy)
-            alert != null -> IslandUi(Stage.ALERT, IslandContent.Notice(alert!!), privacy)
+            alert != null -> IslandUi(if (alert!!.kind in MINI_KINDS) Stage.MINI else Stage.ALERT, IslandContent.Notice(alert!!), privacy)
             primary != null -> IslandUi(Stage.COMPACT, primary, privacy)
             settings.idleVisible -> IslandUi(Stage.IDLE, null, privacy)
             else -> IslandUi(Stage.HIDDEN, null, privacy)
@@ -271,6 +279,11 @@ class IslandController(
     }
 
     companion object {
+        /** Announcements that only say a state or a level: they widen the closed island instead of opening a card. */
+        val MINI_KINDS = setOf(
+            AlertKind.VOLUME, AlertKind.BRIGHTNESS, AlertKind.RINGER, AlertKind.DND, AlertKind.ROTATION, AlertKind.BATTERY_SAVER,
+            AlertKind.CHARGING, AlertKind.UNPLUGGED, AlertKind.BATTERY_FULL, AlertKind.UNLOCK, AlertKind.HEADPHONES,
+        )
         const val PAUSED_LINGER_MS = 3 * 60_000L
         const val EXPANDED_IDLE_MS = 9_000L
         const val MAX_QUEUE = 4

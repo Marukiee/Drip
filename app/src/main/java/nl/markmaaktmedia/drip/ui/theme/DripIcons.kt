@@ -201,4 +201,17 @@ object DripIcons {
     val Straighten: Painter @Composable get() = painterResource(R.drawable.sym_straighten)
     val Speed: Painter @Composable get() = painterResource(R.drawable.sym_speed)
     val InstantMix: Painter @Composable get() = painterResource(R.drawable.sym_instant_mix)
+
+    // The second round
+    val Calendar: Painter @Composable get() = painterResource(R.drawable.sym_calendar_month)
+    val EventAvailable: Painter @Composable get() = painterResource(R.drawable.sym_event_available)
+    val Sports: Painter @Composable get() = painterResource(R.drawable.sym_sports_soccer)
+    val Earbuds: Painter @Composable get() = painterResource(R.drawable.sym_earbuds)
+    val Location: Painter @Composable get() = painterResource(R.drawable.sym_location_on)
+    val Reply: Painter @Composable get() = painterResource(R.drawable.sym_reply)
+    val Speaker: Painter @Composable get() = painterResource(R.drawable.sym_speaker)
+    val SpeakerGroup: Painter @Composable get() = painterResource(R.drawable.sym_speaker_group)
+    val InstallMobile: Painter @Composable get() = painterResource(R.drawable.sym_install_mobile)
+    val BluetoothConnected: Painter @Composable get() = painterResource(R.drawable.sym_bluetooth_connected)
+    val OpenWith: Painter @Composable get() = painterResource(R.drawable.sym_open_with)
 }
