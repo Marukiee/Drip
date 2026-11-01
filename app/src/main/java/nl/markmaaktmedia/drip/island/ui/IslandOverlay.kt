@@ -345,7 +345,10 @@ private fun contentAccent(content: IslandContent?, seed: Color, s: IslandSetting
     return when (content) {
         is IslandContent.Music -> fromArt
         is IslandContent.Live -> content.live.accent?.let { Color(it) } ?: seed
-        is IslandContent.Notice -> content.alert.accent?.let { Color(it) } ?: seed
+        is IslandContent.Notice -> when (content.alert.kind) {
+            nl.markmaaktmedia.drip.island.AlertKind.CHARGING, nl.markmaaktmedia.drip.island.AlertKind.BATTERY_FULL -> IslandInk.Green
+            else -> content.alert.accent?.let { Color(it) } ?: seed
+        }
         is IslandContent.Call -> IslandInk.Green
         is IslandContent.Charging -> IslandInk.Green
         is IslandContent.Torch -> IslandInk.Yellow

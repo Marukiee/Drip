@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import nl.markmaaktmedia.drip.island.Alert
+import nl.markmaaktmedia.drip.island.AlertKind
 import nl.markmaaktmedia.drip.island.IslandContent
 import nl.markmaaktmedia.drip.island.IslandController
 import nl.markmaaktmedia.drip.island.IslandHub
@@ -151,7 +152,7 @@ private fun SlotText(text: String, color: Color) =
 /** A short announcement: what it is about on the left, the words in the middle, a bar for a level. */
 @Composable
 private fun AlertContent(alert: Alert, modifier: Modifier) {
-    val accent = alert.accent?.let { Color(it) } ?: MaterialTheme.colorScheme.primary
+    val accent = alertAccent(alert)
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         when {
             alert.image != null -> Picture(alert.image, 40.dp, CircleShape)
@@ -175,6 +176,19 @@ private fun AlertContent(alert: Alert, modifier: Modifier) {
         }
         if (alert.image != null && alert.packageName != null) AppIcon(null, alert.packageName, 18.dp)
     }
+}
+
+/**
+ * The colour of an announcement: what the app gave it, else the colour Android itself uses for that kind of thing
+ * (green for charging, red for a battery that runs out, orange for battery saver), else the island's accent.
+ */
+@Composable
+fun alertAccent(alert: Alert): Color = alert.accent?.let { Color(it) } ?: when (alert.kind) {
+    AlertKind.CHARGING, AlertKind.BATTERY_FULL -> IslandInk.Green
+    AlertKind.BATTERY_LOW, AlertKind.UNPLUGGED -> if (alert.kind == AlertKind.BATTERY_LOW) IslandInk.Red else IslandInk.Secondary
+    AlertKind.BATTERY_SAVER -> IslandInk.Orange
+    AlertKind.ALARM -> IslandInk.Orange
+    else -> MaterialTheme.colorScheme.primary
 }
 
 /** A filled bar for a level, round at the ends. */

@@ -224,7 +224,7 @@ fun TorchCard(torch: TorchInfo, hub: IslandHub) {
 /** An opened announcement: the whole message and its buttons. */
 @Composable
 fun NoticeCard(alert: Alert, controller: IslandController) {
-    val accent = alert.accent?.let { Color(it) } ?: MaterialTheme.colorScheme.primary
+    val accent = alertAccent(alert)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         when {
             alert.image != null -> Picture(alert.image, 48.dp, CircleShape)

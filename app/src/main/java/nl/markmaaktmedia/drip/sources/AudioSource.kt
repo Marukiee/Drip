@@ -31,6 +31,14 @@ internal class AudioPart(env: SourceEnv) : Part(env) {
         }
     }
 
+    // Recent Android versions no longer hand the volume broadcast to apps, so the stored volume is watched as well. The
+    // system writes it to Settings.System (volume_music_speaker and friends) a moment after every change.
+    private val volumeSetting = object : android.database.ContentObserver(env.handler) {
+        override fun onChange(selfChange: Boolean, uri: android.net.Uri?) {
+            if (uri?.lastPathSegment?.startsWith("volume_music") == true) safely("volume setting") { onVolume() }
+        }
+    }
+
     private val devices = object : AudioDeviceCallback() {
         // Called at once with every device already there; those are in [known] and stay quiet.
         override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
@@ -71,6 +79,9 @@ internal class AudioPart(env: SourceEnv) : Part(env) {
         safely("audio devices") { am.getDevices(AudioManager.GET_DEVICES_INPUTS or AudioManager.GET_DEVICES_OUTPUTS).forEach { known += it.id } }
         // Exported because the volume action is hidden; anything that arrives is checked against AudioManager anyway.
         safely("audio receiver") { context.listen(receiver, true, VOLUME_CHANGED, AudioManager.RINGER_MODE_CHANGED_ACTION) }
+        safely("volume setting") {
+            context.contentResolver.registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, volumeSetting)
+        }
         safely("device callback") { am.registerAudioDeviceCallback(devices, env.handler) }
         safely("recording callback") {
             am.registerAudioRecordingCallback(recording, env.handler)
@@ -81,6 +92,7 @@ internal class AudioPart(env: SourceEnv) : Part(env) {
 
     override fun stop() {
         context.unlisten(receiver)
+        safely("volume setting") { context.contentResolver.unregisterContentObserver(volumeSetting) }
         safely("device callback") { audio?.unregisterAudioDeviceCallback(devices) }
         safely("recording callback") { audio?.unregisterAudioRecordingCallback(recording) }
         if (hub.setMusicVolume === setVolume) hub.setMusicVolume = null
@@ -91,10 +103,15 @@ internal class AudioPart(env: SourceEnv) : Part(env) {
 
     override fun onSettings() = publishMic()
 
+    private var lastLevel: Float? = null
+
     private fun onVolume() {
         val am = audio ?: return
         val level = musicLevel(am)
         hub.musicVolume.value = level
+        // The broadcast and the stored setting can both report one change.
+        if (level == lastLevel) return
+        lastLevel = level
         // Drip's own slider moved it: the card already shows the bar.
         if (echo.isEcho(SystemClock.elapsedRealtime())) return
         if (settings?.alertVolume != true) return
