@@ -68,10 +68,10 @@ internal fun ShapePage(onBack: () -> Unit) {
         showOpened = false
     }
 
-    SettingsPageFrame(stringResource(R.string.settings_cat_shape), onBack) {
-        Spacer(Modifier.height(16.dp))
+    // The preview stays in view while the rows scroll, so every slider can be watched at work.
+    SettingsPageFrame(stringResource(R.string.settings_cat_shape), onBack, pinned = {
         Column(
-            Modifier.fillMaxWidth().clip(CardSquircle).background(MaterialTheme.colorScheme.surfaceContainer).padding(16.dp),
+            Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp).clip(CardSquircle).background(MaterialTheme.colorScheme.surfaceContainer).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             IslandPreview(island, Modifier.clip(CardSquircle), expanded = showOpened)
@@ -86,8 +86,8 @@ internal fun ShapePage(onBack: () -> Unit) {
                 equalWidth = true,
             )
         }
-
-        SectionHeader(stringResource(R.string.shape_section_fit), top = 20.dp)
+    }) {
+        SectionHeader(stringResource(R.string.shape_section_fit), top = 8.dp)
         SettingsGroup {
             SettingsTarget(FocusKeys.ShapeFit, 0, 2) {
                 SegmentedRow(

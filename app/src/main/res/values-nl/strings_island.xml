@@ -44,4 +44,13 @@
     <string name="island_downloading">Downloaden</string>
     <string name="island_next_up">Hierna: %1$s</string>
     <string name="island_output">Waar geluid speelt</string>
+    <string name="demo_delivery_title">Je pakket</string>
+    <string name="demo_delivery_text">Nog 3 stops voor jou</string>
+    <string name="demo_calendar_app">Agenda</string>
+    <string name="demo_calendar_title">Ontwerpoverleg</string>
+    <string name="demo_join">Deelnemen</string>
+    <string name="demo_install_text">Installeren</string>
+    <string name="demo_reply_action">Antwoorden</string>
+    <string name="demo_sent">Verstuurd</string>
+    <string name="demo_unlocked">Ontgrendeld</string>
 </resources>

@@ -277,6 +277,32 @@ fun alertAccent(alert: Alert): Color = alert.accent?.let { Color(it) } ?: when (
     else -> MaterialTheme.colorScheme.primary
 }
 
+/** What the small drop of a second thing shows: one picture or symbol, the most telling one. */
+@Composable
+fun SecondContent(content: IslandContent, slot: Dp) {
+    val accent = MaterialTheme.colorScheme.primary
+    val icon = slot * 0.8f
+    Box(Modifier.size(slot), contentAlignment = Alignment.Center) {
+        when (content) {
+            is IslandContent.Music -> Picture(content.playing.art, slot, CircleShape, DripIcons.Music)
+            is IslandContent.Call -> Icon(DripIcons.PhoneInTalkFilled, null, tint = IslandInk.Green, modifier = Modifier.size(icon))
+            is IslandContent.Live -> {
+                val live = content.live
+                val color = live.accent?.let { Color(it) } ?: accent
+                when {
+                    live.kind == LiveKind.NAVIGATION && live.picture != null ->
+                        androidx.compose.foundation.Image(remember(live.picture) { live.picture.asImageBitmap() }, null, Modifier.size(icon))
+                    live.progress != null -> ProgressRing(live.progress, color, Modifier.size(slot * 0.9f))
+                    else -> Icon(liveIcon(live.kind), null, tint = color, modifier = Modifier.size(icon))
+                }
+            }
+            is IslandContent.Charging -> Icon(DripIcons.BoltFilled, null, tint = IslandInk.Green, modifier = Modifier.size(icon))
+            is IslandContent.Torch -> Icon(DripIcons.FlashlightFilled, null, tint = IslandInk.Yellow, modifier = Modifier.size(icon))
+            is IslandContent.Notice -> Icon(DripIcons.Notifications, null, tint = accent, modifier = Modifier.size(icon))
+        }
+    }
+}
+
 /** A filled bar for a level, round at the ends. */
 @Composable
 fun LevelBar(level: Float, color: Color, modifier: Modifier) {

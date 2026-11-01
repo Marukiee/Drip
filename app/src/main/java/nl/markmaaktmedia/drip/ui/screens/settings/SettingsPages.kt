@@ -46,15 +46,37 @@ fun SettingsPageScreen(page: SettingsPageId, onBack: () -> Unit, onOpen: (Route)
  * search result can always find its row, which a lazy list would not have composed yet.
  */
 @Composable
-internal fun SettingsPageFrame(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-    ) {
-        Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            DripIconButton(DripIcons.Back, stringResource(R.string.action_back), onBack)
+internal fun SettingsPageFrame(
+    title: String,
+    onBack: () -> Unit,
+    /** Something that stays in view above the rows while they scroll, like the preview of the island's shape. */
+    pinned: (@Composable () -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    if (pinned == null) {
+        Column(
+            Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+        ) {
+            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                DripIconButton(DripIcons.Back, stringResource(R.string.action_back), onBack)
+            }
+            Text(title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(horizontal = 8.dp))
+            content()
+            Spacer(Modifier.height(24.dp))
         }
-        Text(title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(horizontal = 8.dp))
-        content()
-        Spacer(Modifier.height(24.dp))
+        return
+    }
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+        Column(Modifier.padding(horizontal = 16.dp)) {
+            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                DripIconButton(DripIcons.Back, stringResource(R.string.action_back), onBack)
+                Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 8.dp))
+            }
+            pinned()
+        }
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
+            content()
+            Spacer(Modifier.height(24.dp))
+        }
     }
 }

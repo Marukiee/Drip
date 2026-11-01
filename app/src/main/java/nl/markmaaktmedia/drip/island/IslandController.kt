@@ -38,6 +38,8 @@ data class IslandUi(
     val content: IslandContent? = null,
     /** The dots for a camera or microphone in use, drawn on whatever stage is showing. */
     val privacy: PrivacyInfo = PrivacyInfo(),
+    /** A second thing going on at the same time, shown as its own small drop next to the closed island. */
+    val second: IslandContent? = null,
 )
 
 /**
@@ -58,6 +60,7 @@ class IslandController(
     private var settings = IslandSettings()
     private var visibility = Visibility()
     private var primary: IslandContent? = null
+    private var second: IslandContent? = null
     private var privacy = PrivacyInfo()
 
     private val queue = ArrayDeque<Alert>()
@@ -89,7 +92,9 @@ class IslandController(
                 Sources5(call, live, music, torch, battery)
             }.collect { s ->
                 val wasRinging = (primary as? IslandContent.Call)?.call?.incoming == true
-                primary = pickPrimary(s)
+                val picked = pick(s)
+                primary = picked.firstOrNull()
+                second = picked.getOrNull(1)
                 val call = s.call
                 if (call != null && call.incoming && settings.showCalls && dismissedRinging != call.key && !wasRinging) {
                     haptics.play(Haptics.Kind.CALL)
@@ -125,18 +130,18 @@ class IslandController(
         val battery: BatteryInfo,
     )
 
-    private fun pickPrimary(s: Sources5): IslandContent? {
+    /** Everything worth showing, most important first. The first is the island, the second its small drop. */
+    private fun pick(s: Sources5): List<IslandContent> {
         val now = SystemClock.elapsedRealtime()
         if (s.music?.playing == true) lastPlayingAt = now
-        return when {
-            settings.showCalls && s.call != null -> IslandContent.Call(s.call)
-            settings.showLive && s.live.isNotEmpty() -> IslandContent.Live(s.live.first())
-            settings.showMusic && s.music?.playing == true -> IslandContent.Music(s.music)
-            settings.showTorch && s.torch.on -> IslandContent.Torch(s.torch)
-            settings.showCharging && s.battery.charging -> IslandContent.Charging(s.battery)
-            settings.showMusic && s.music != null && now - lastPlayingAt < PAUSED_LINGER_MS -> IslandContent.Music(s.music)
-            else -> null
-        }
+        val out = mutableListOf<IslandContent>()
+        if (settings.showCalls && s.call != null) out += IslandContent.Call(s.call)
+        if (settings.showLive) s.live.take(2).forEach { out += IslandContent.Live(it) }
+        if (settings.showMusic && s.music?.playing == true) out += IslandContent.Music(s.music)
+        if (settings.showTorch && s.torch.on) out += IslandContent.Torch(s.torch)
+        if (settings.showCharging && s.battery.charging) out += IslandContent.Charging(s.battery)
+        if (settings.showMusic && s.music != null && !s.music.playing && now - lastPlayingAt < PAUSED_LINGER_MS) out += IslandContent.Music(s.music)
+        return out
     }
 
     fun setVisibility(value: Visibility) {
@@ -179,6 +184,17 @@ class IslandController(
             if (queue.isNotEmpty()) delay(180)
             showNextAlert()
         }
+    }
+
+    /** Opens the card of the second thing, the small drop next to the island. */
+    fun expandSecond(): Boolean {
+        val content = second ?: return false
+        expandedKey = content.key
+        expandedFallback = content
+        haptics.play(Haptics.Kind.EXPAND)
+        poke()
+        refresh()
+        return true
     }
 
     /** Opens the card of what is showing. Returns false when there is nothing to open. */
@@ -256,7 +272,7 @@ class IslandController(
             ))
 
         val expanded = expandedKey?.let { key ->
-            listOfNotNull(primary, alert?.let { IslandContent.Notice(it) }).firstOrNull { it.key == key }
+            listOfNotNull(primary, second, alert?.let { IslandContent.Notice(it) }).firstOrNull { it.key == key }
                 ?: expandedFallback?.takeIf { it.key == key && it !is IslandContent.Call && it !is IslandContent.Live }
         }
         if (expandedKey != null && expanded == null) {
@@ -271,7 +287,7 @@ class IslandController(
             hidden -> IslandUi(Stage.HIDDEN, null, privacy)
             expanded != null -> IslandUi(Stage.EXPANDED, expanded, privacy)
             alert != null -> IslandUi(if (alert!!.kind in MINI_KINDS) Stage.MINI else Stage.ALERT, IslandContent.Notice(alert!!), privacy)
-            primary != null -> IslandUi(Stage.COMPACT, primary, privacy)
+            primary != null -> IslandUi(Stage.COMPACT, primary, privacy, second?.takeIf { settings.showSecond })
             settings.idleVisible -> IslandUi(Stage.IDLE, null, privacy)
             else -> IslandUi(Stage.HIDDEN, null, privacy)
         }

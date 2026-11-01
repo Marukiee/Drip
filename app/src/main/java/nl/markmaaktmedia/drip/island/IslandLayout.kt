@@ -207,6 +207,26 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
         }.clamped()
     }
 
+    /**
+     * The small drop of a second thing, next to [main]. On a notch phone it is a little notch of its own that hangs from
+     * the top edge, its shoulder just touching the island's, so the two meet in a liquid neck along the edge. Around a
+     * camera it is a round bubble beside the pill.
+     */
+    fun secondGeometry(main: IslandGeometry): IslandGeometry {
+        val h = compactHeight
+        return if (notch) {
+            IslandGeometry(main.right + shoulder * 2 + dp(2f) + h / 2, main.top, h, h, shoulder, h / 2)
+        } else {
+            IslandGeometry(main.right + dp(6f) + h / 2, main.top, h, h, -h / 2, h / 2)
+        }
+    }
+
+    /** Where the small drop waits while there is no second thing: tucked inside the right end of [main], out of sight. */
+    fun tuckedSecond(main: IslandGeometry): IslandGeometry {
+        val h = (main.height * 0.8f).coerceAtLeast(0f)
+        return IslandGeometry(main.right - main.height / 2, main.top, h, h, 0f, h / 2)
+    }
+
     private fun collapsedShape(width: Float, height: Float, roundness: Float): IslandGeometry {
         val middle = cutoutMiddle
         return if (notch || middle == null) {

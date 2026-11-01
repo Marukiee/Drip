@@ -1,5 +1,31 @@
 [
   {
+    "version": "0.1.4",
+    "date": "2026-11-01",
+    "en": {
+      "title": "Two at once",
+      "new": [
+        "A second thing gets its own small drop next to the notch, swelling out of it and melting back in"
+      ],
+      "better": [
+        "A message opens into its card without a blank moment",
+        "Held down, the content swells with the island",
+        "The shape preview stays in view while you scroll"
+      ]
+    },
+    "nl": {
+      "title": "Twee tegelijk",
+      "new": [
+        "Een tweede ding krijgt een eigen druppeltje naast de notch, dat eruit zwelt en er weer in smelt"
+      ],
+      "better": [
+        "Een melding opent zonder leeg moment in zijn kaart",
+        "Ingedrukt zwelt de inhoud mee met het eiland",
+        "Het voorbeeld van de vorm blijft in beeld terwijl je scrolt"
+      ]
+    }
+  },
+  {
     "version": "0.1.3",
     "date": "2026-11-01",
     "en": {

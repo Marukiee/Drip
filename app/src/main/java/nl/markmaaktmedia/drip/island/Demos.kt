@@ -9,6 +9,7 @@ import android.graphics.RadialGradient
 import android.graphics.Shader
 import android.os.SystemClock
 import nl.markmaaktmedia.drip.R
+import kotlinx.coroutines.launch
 import nl.markmaaktmedia.drip.graph
 
 /**
@@ -94,8 +95,73 @@ object Demos {
         }
     }
 
-    /** The demos of the second round; filled in with the features themselves. */
-    private fun extra(context: Context, demo: Demo, controller: IslandController) = Unit
+    /** The demos of the second round. */
+    private fun extra(context: Context, demo: Demo, controller: IslandController) {
+        val hub = context.graph.hub
+        fun live(info: LiveInfo) {
+            hub.live.value = listOf(info) + hub.live.value.filterNot { it.key == info.key }
+        }
+        when (demo) {
+            Demo.SECOND -> {
+                // Music first, then a download arrives as a second thing: the drop swells out of the island.
+                hub.call.value = null
+                hub.live.value = emptyList()
+                hub.nowPlaying.value = music(context)
+                kotlinx.coroutines.MainScope().launch {
+                    kotlinx.coroutines.delay(1200)
+                    live(
+                        LiveInfo(
+                            key = "demo-download", packageName = "com.android.chrome", appLabel = "Chrome", kind = LiveKind.DOWNLOAD,
+                            title = "Rushes-v0.4.2.dmg", text = context.getString(R.string.demo_download_text), progress = 0.42f, shortText = "42%",
+                        ),
+                    )
+                }
+            }
+            Demo.DELIVERY -> live(
+                LiveInfo(
+                    key = "demo-delivery", packageName = context.packageName, appLabel = "PostNL", kind = LiveKind.DELIVERY,
+                    title = context.getString(R.string.demo_delivery_title), text = context.getString(R.string.demo_delivery_text),
+                    progress = 0.62f, shortText = "14:20", detail = "14:10 - 14:30", accent = 0xFFFF9F0A.toInt(),
+                    segments = listOf(ProgressSegment(0.25f, 0xFF30D158.toInt()), ProgressSegment(0.5f, 0xFFFF9F0A.toInt()), ProgressSegment(0.25f, 0xFF5F5E5A.toInt())),
+                    points = listOf(ProgressPoint(0.25f), ProgressPoint(0.75f)),
+                ),
+            )
+            Demo.CALENDAR -> live(
+                LiveInfo(
+                    key = "demo-calendar", packageName = context.packageName, appLabel = context.getString(R.string.demo_calendar_app),
+                    kind = LiveKind.CALENDAR, title = context.getString(R.string.demo_calendar_title), detail = "15:00 · Meet",
+                    chronometerBase = System.currentTimeMillis() + 8 * 60_000L, countDown = true, accent = 0xFF4285F4.toInt(),
+                    actions = listOf(IslandAction(context.getString(R.string.demo_join), ActionKind.OPEN) { hub.live.value = emptyList() }),
+                ),
+            )
+            Demo.INSTALL -> live(
+                LiveInfo(
+                    key = "demo-install", packageName = "com.android.vending", appLabel = "Play Store", kind = LiveKind.INSTALL,
+                    title = "Tandem", text = context.getString(R.string.demo_install_text), progress = 0.7f, shortText = "70%",
+                ),
+            )
+            Demo.REPLY -> hub.post(
+                Alert(
+                    id = "demo-reply-" + SystemClock.elapsedRealtime(), kind = AlertKind.NOTIFICATION,
+                    title = context.getString(R.string.demo_alert_title), text = context.getString(R.string.demo_alert_text),
+                    image = art(context, 0xFF7A79EE.toInt(), 0xFFFFB0CB.toInt(), 160), packageName = context.packageName, accent = 0xFF7A79EE.toInt(),
+                    actions = listOf(
+                        IslandAction(context.getString(R.string.demo_reply_action), ActionKind.REPLY, reply = { text ->
+                            hub.post(Alert(id = "demo-sent", kind = AlertKind.OTHER, title = context.getString(R.string.demo_sent), text = text.toString(), iconRes = R.drawable.sym_send))
+                        }) {},
+                        IslandAction(context.getString(R.string.demo_reply), ActionKind.MARK_READ) { controller.dismissAlert() },
+                    ),
+                ),
+            )
+            Demo.EARBUDS -> hub.post(
+                Alert(id = "headphones", kind = AlertKind.HEADPHONES, title = "Pixel Buds Pro", text = "80%", iconRes = R.drawable.sym_earbuds, level = 0.8f),
+            )
+            Demo.UNLOCK -> hub.post(Alert(id = "unlock", kind = AlertKind.UNLOCK, title = context.getString(R.string.demo_unlocked), iconRes = R.drawable.sym_lock_open, durationMs = 1400))
+            Demo.PRIVACY -> hub.privacy.value = if (hub.privacy.value.any) PrivacyInfo() else
+                PrivacyInfo(camera = true, microphone = true, location = true, cameraApp = "Camera", microphoneApp = "WhatsApp", locationApp = "Maps")
+            else -> Unit
+        }
+    }
 
     private fun music(context: Context): NowPlaying {
         val hub = context.graph.hub
