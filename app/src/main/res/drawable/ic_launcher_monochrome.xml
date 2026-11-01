@@ -5,5 +5,5 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <!-- Themed icons are one colour: the drop with its light catch cut out. -->
-    <path android:fillColor="#000000" android:fillType="evenOdd" android:pathData="M33,0H75C69.48,0 65,4.48 65,10C65,35.3 74.8,36.24 74.8,56A20.8,20.8 0 0 1 33.2,56C33.2,36.24 43,35.3 43,10C43,4.48 38.52,0 33,0ZM45.35,70.98A17.3,17.3 0 0 1 39.02,47.35A2.3,2.3 0 0 1 43,49.65A12.7,12.7 0 0 0 47.65,67A2.3,2.3 0 0 1 45.35,70.98Z" />
+    <path android:fillColor="#000000" android:fillType="evenOdd" android:pathData="M33,0H75C69.48,0 65,4.48 65,10C65,35.3 74.8,36.24 74.8,56A20.8,20.8 0 0 1 33.2,56C33.2,36.24 43,35.3 43,10C43,4.48 38.52,0 33,0ZM41.56,68.02A17.3,17.3 0 0 1 41.98,43.56A2.3,2.3 0 0 1 45.18,46.86A12.7,12.7 0 0 0 44.86,64.82A2.3,2.3 0 0 1 41.56,68.02Z" />
 </vector>

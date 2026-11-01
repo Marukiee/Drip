@@ -19,5 +19,5 @@
         </aapt:attr>
     </path>
     <!-- The light catch follows the curve of the bulb, on the lower left, where the light falls through. -->
-    <path android:fillColor="#FFFFFF" android:fillAlpha="0.85" android:pathData="M45.35,70.98A17.3,17.3 0 0 1 39.02,47.35A2.3,2.3 0 0 1 43,49.65A12.7,12.7 0 0 0 47.65,67A2.3,2.3 0 0 1 45.35,70.98Z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.85" android:pathData="M41.56,68.02A17.3,17.3 0 0 1 41.98,43.56A2.3,2.3 0 0 1 45.18,46.86A12.7,12.7 0 0 0 44.86,64.82A2.3,2.3 0 0 1 41.56,68.02Z" />
 </vector>
