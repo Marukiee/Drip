@@ -320,9 +320,11 @@ class IslandController(
     /** Someone touched the opened card: it stays open a while longer. */
     fun poke() {
         expandJob?.cancel()
-        // Lyrics are read along with the song: the card stays until it is closed by hand.
+        // Lyrics are read along with the song, and an opened message may be kept to read or answer later: those cards
+        // stay until they are closed by hand. The slim ones (volume, charging) still close by themselves.
         val reading = expandedKey == IslandContent.Music.KEY && settings.showLyrics && hub.lyricsOpen.value
-        if (expandedKey == null || typing || reading) return
+        val message = (expandedFallback as? IslandContent.Notice)?.alert?.kind?.let { it !in MINI_KINDS } == true
+        if (expandedKey == null || typing || reading || message) return
         expandJob = scope.launch {
             delay(EXPANDED_IDLE_MS)
             collapse()
