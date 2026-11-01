@@ -1,0 +1,76 @@
+package nl.markmaaktmedia.drip.ui.components
+
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.material3.ripple
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.semantics.Role
+import nl.markmaaktmedia.drip.ui.theme.DripMotion
+
+/**
+ * A tap that answers back.
+ *
+ * The element dips under the finger and springs out again with a touch of overshoot,
+ * which is what makes a flat rectangle feel like something that was actually pressed.
+ * The scale runs on a spring rather than a tween on purpose: a spring keeps its
+ * momentum when the finger lifts mid-animation, so a quick tap and a slow press both
+ * look right instead of only the one that was designed for.
+ *
+ * The ripple stays. It is what tells you where the touch landed, and losing it for
+ * the sake of the scale would trade information for polish. It covers the element at its
+ * full size while the content dips, so a row in a slab is lit edge to edge.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+fun Modifier.bouncyClickable(
+    enabled: Boolean = true,
+    pressedScale: Float = DripMotion.PressedScale,
+    withHaptics: Boolean = false,
+    role: Role? = Role.Button,
+    onClickLabel: String? = null,
+    /** Something that happens on a long press, with a buzz. */
+    onLongClick: (() -> Unit)? = null,
+    onClick: () -> Unit,
+): Modifier = composed {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val haptics = LocalHapticFeedback.current
+
+    val scale by animateFloatAsState(
+        targetValue = if (pressed && enabled) pressedScale else 1f,
+        animationSpec = DripMotion.bouncy(),
+        label = "pressScale",
+    )
+
+    // The press feedback comes first and the dip after it. The other way round, the highlight dipped with the
+    // content and stopped short of the edges of the row it sat in, and the part of the row that was pressed
+    // shrank under the finger.
+    combinedClickable(
+        interactionSource = interactionSource,
+        indication = ripple(),
+        enabled = enabled,
+        role = role,
+        onClickLabel = onClickLabel,
+        onLongClick = onLongClick?.let { long ->
+            {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                long()
+            }
+        },
+        onClick = {
+            if (withHaptics) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            onClick()
+        },
+    ).graphicsLayer {
+        scaleX = scale
+        scaleY = scale
+    }
+}
