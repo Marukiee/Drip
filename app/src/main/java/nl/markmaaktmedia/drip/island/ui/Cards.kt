@@ -228,36 +228,16 @@ fun TorchCard(torch: TorchInfo, hub: IslandHub) {
     }
     Spacer(Modifier.height(16.dp))
     if (torch.maxStrength > 1) {
-        val m = LocalCardMetrics.current
-        var local by remember { mutableStateOf<Float?>(null) }
-        val fraction = local ?: (torch.strength.toFloat() / torch.maxStrength)
-        val shown by animateFloatAsState(fraction, spring(1f, 900f), label = "strength")
-        fun set(f: Float) {
-            val level = (f.coerceIn(0f, 1f) * torch.maxStrength).toInt().coerceIn(1, torch.maxStrength)
-            local = level.toFloat() / torch.maxStrength
-            if (level != torch.strength) {
-                context.graph.haptics.play(Haptics.Kind.TICK)
-                hub.torchCommands?.setStrength(level)
-            }
-        }
-        val shape = RoundedCornerShape(topStart = m.buttonInnerRadius, topEnd = m.buttonInnerRadius, bottomStart = m.buttonOuterRadius, bottomEnd = m.buttonOuterRadius)
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .clip(shape)
-                .background(IslandInk.Surface)
-                .pointerInput(torch.maxStrength) { detectTapGestures { set(it.x / size.width) } }
-                .pointerInput(torch.maxStrength) {
-                    detectHorizontalDragGestures(onDragEnd = { local = null }, onDragCancel = { local = null }) { change, _ ->
-                        change.consume()
-                        set(change.position.x / size.width)
-                    }
-                },
-        ) {
-            Box(Modifier.fillMaxHeight().fillMaxWidth(shown.coerceIn(0.001f, 1f)).background(yellow))
-            Icon(DripIcons.Brightness, null, tint = Color.Black.copy(alpha = 0.7f), modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp).size(22.dp))
-        }
+        val steps = torch.maxStrength - 1
+        ExpressiveSlider(
+            value = (torch.strength - 1).toFloat() / steps.coerceAtLeast(1),
+            onChange = { f, _ ->
+                val level = 1 + Math.round(f * steps)
+                if (level != torch.strength) hub.torchCommands?.setStrength(level)
+            },
+            icon = DripIcons.Brightness, concentric = true, steps = steps,
+            activeColor = yellow, onActive = Color.Black,
+        )
     } else {
         ConcentricButtonRow(
             listOf(

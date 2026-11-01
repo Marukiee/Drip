@@ -126,61 +126,25 @@ private fun RingerGroup(mode: Int, onPick: (Int) -> Unit) {
 }
 
 /**
- * One stream as a thick bar that follows the finger. The last one has its bottom corners concentric with the island.
- * Set off the main thread and only on a real step, like the volume bar of the music card.
+ * One stream as a Material 3 Expressive slider. The last one has its bottom corners concentric with the island. The
+ * volume is set off the main thread and only on a real step.
  */
 @Composable
 private fun StreamBar(audio: AudioManager, stream: Int, icon: Painter, label: String, tick: Int, last: Boolean) {
-    val m = LocalCardMetrics.current
-    val scheme = MaterialTheme.colorScheme
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val max = remember(stream) { runCatching { audio.getStreamMaxVolume(stream) }.getOrDefault(15).coerceAtLeast(1) }
     val min = remember(stream) { runCatching { audio.getStreamMinVolume(stream) }.getOrDefault(0) }
     val actual = remember(tick) { runCatching { audio.getStreamVolume(stream) }.getOrDefault(0) }
-    var dragging by remember { mutableStateOf(false) }
-    val level = remember { Animatable((actual - min).toFloat() / (max - min).coerceAtLeast(1)) }
-    LaunchedEffect(actual, dragging) {
-        if (!dragging) level.animateTo((actual - min).toFloat() / (max - min).coerceAtLeast(1), spring(0.9f, 500f))
-    }
     var lastIndex by remember { mutableIntStateOf(actual) }
-    fun set(fraction: Float) {
-        val f = fraction.coerceIn(0f, 1f)
-        scope.launch { level.snapTo(f) }
-        val index = min + Math.round(f * (max - min))
-        if (index != lastIndex) {
-            lastIndex = index
-            context.graph.haptics.play(Haptics.Kind.TICK)
-            scope.launch(Dispatchers.Default) { runCatching { audio.setStreamVolume(stream, index, 0) } }
-        }
-    }
-    val shape = if (last) RoundedCornerShape(m.buttonInnerRadius, m.buttonInnerRadius, m.buttonOuterRadius, m.buttonOuterRadius)
-    else RoundedCornerShape(m.buttonInnerRadius)
-    val fill = scheme.primary
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .clip(shape)
-            .background(IslandInk.Surface)
-            .drawBehind { drawRect(fill, size = Size(size.width * level.value.coerceIn(0f, 1f), size.height)) }
-            .pointerInput(stream) { detectTapGestures { set(it.x / size.width) } }
-            .pointerInput(stream) {
-                detectHorizontalDragGestures(
-                    onDragStart = { dragging = true },
-                    onDragEnd = { dragging = false },
-                    onDragCancel = { dragging = false },
-                ) { change, _ ->
-                    change.consume()
-                    set(change.position.x / size.width)
-                }
-            },
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        val on = level.value > 0.14f
-        Row(Modifier.padding(start = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(icon, null, tint = if (on) scheme.onPrimary else IslandInk.Secondary, modifier = Modifier.size(20.dp))
-            Text(label, color = if (on) scheme.onPrimary else IslandInk.Secondary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-        }
-    }
+    ExpressiveSlider(
+        value = (actual - min).toFloat() / (max - min).coerceAtLeast(1),
+        onChange = { f, _ ->
+            val index = min + Math.round(f * (max - min))
+            if (index != lastIndex) {
+                lastIndex = index
+                scope.launch(Dispatchers.Default) { runCatching { audio.setStreamVolume(stream, index, 0) } }
+            }
+        },
+        icon = icon, label = label, concentric = last, height = 40.dp, steps = max - min,
+    )
 }

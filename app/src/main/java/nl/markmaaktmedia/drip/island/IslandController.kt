@@ -265,7 +265,9 @@ class IslandController(
     private fun refresh() {
         val ringing = (primary as? IslandContent.Call)?.call?.incoming == true
         val hidden = !settings.enabled || (!ringing && (
-            (settings.hideFullscreen && !visibility.statusBarShown) ||
+            // On the lock screen the status bar is part of the lock screen's own window, so it looks like full screen
+            // there; the lock screen has its own switch instead.
+            (settings.hideFullscreen && !visibility.statusBarShown && !visibility.locked) ||
                 (settings.hideLandscape && visibility.landscape) ||
                 (settings.hideOnLockscreen && visibility.locked) ||
                 (visibility.foregroundPackage != null && visibility.foregroundPackage in settings.hiddenApps)

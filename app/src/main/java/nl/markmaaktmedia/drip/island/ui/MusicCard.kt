@@ -461,19 +461,12 @@ private val WaveTaper = 18.dp
 private fun TimeText(text: String) = Text(text, color = IslandInk.Secondary, fontSize = 12.sp, fontWeight = FontWeight.Medium, style = TabularNumbers)
 
 /**
- * The media volume as a thick bar: its bottom corners concentric with the island, its top corners small.
- *
- * Under the finger the fill follows it exactly, with no spring in between. The volume itself is set off the main thread
- * and only when it really changes a step, so a quick drag never waits on the audio service. Let go, the bar stays where it
- * was left until Android reports the new volume, instead of jumping back for a moment.
+ * The media volume as a Material 3 Expressive slider along the bottom, its bottom corners concentric with the island.
+ * The volume is set off the main thread and only when it really changes.
  */
 @Composable
 private fun VolumeBar(hub: IslandHub) {
-    val m = LocalCardMetrics.current
-    val scheme = MaterialTheme.colorScheme
     val volume by hub.musicVolume.collectAsState()
-    var dragging by remember { mutableStateOf(false) }
-    var held by remember { mutableStateOf<Pair<Float, Long>?>(null) }
     val requests = remember { kotlinx.coroutines.flow.MutableStateFlow<Float?>(null) }
     LaunchedEffect(Unit) {
         var last = -1f
@@ -483,46 +476,10 @@ private fun VolumeBar(hub: IslandHub) {
             withContext(Dispatchers.Default) { hub.setMusicVolume?.invoke(f) }
         }
     }
-    // A report that matches, or a second and a half, ends the hold.
-    val now = SystemClock.elapsedRealtime()
-    val hold = held?.takeIf { (f, at) -> now - at < 1500 && kotlin.math.abs(f - volume) > 0.04f }
-    val target = hold?.first ?: volume
-    val smooth = remember { Animatable(volume) }
-    LaunchedEffect(target, dragging) { if (!dragging) smooth.animateTo(target, spring(0.9f, 500f)) }
-    val context = LocalContext.current
-    val shape = RoundedCornerShape(topStart = m.buttonInnerRadius, topEnd = m.buttonInnerRadius, bottomStart = m.buttonOuterRadius, bottomEnd = m.buttonOuterRadius)
-    val scope = rememberCoroutineScope()
-    fun set(fraction: Float, final: Boolean) {
-        val f = fraction.coerceIn(0f, 1f)
-        scope.launch { smooth.snapTo(f) }
-        requests.value = f
-        if (final) held = f to SystemClock.elapsedRealtime()
-    }
-    val fill = scheme.primary
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .clip(shape)
-            .background(IslandInk.Surface)
-            .drawBehind { drawRect(fill, size = Size(size.width * smooth.value.coerceIn(0f, 1f), size.height)) }
-            .pointerInput(Unit) { detectTapGestures { set(it.x / size.width, final = true) } }
-            .pointerInput(Unit) {
-                detectHorizontalDragGestures(
-                    onDragStart = { dragging = true; context.graph.haptics.play(Haptics.Kind.TICK) },
-                    onDragEnd = { set(smooth.value, final = true); dragging = false },
-                    onDragCancel = { dragging = false },
-                ) { change, _ ->
-                    change.consume()
-                    set(change.position.x / size.width, final = false)
-                }
-            },
-    ) {
-        val shown = smooth.value
-        Icon(
-            if (shown <= 0.001f) DripIcons.VolumeOff else DripIcons.VolumeUp, contentDescription = stringResource(R.string.island_volume),
-            tint = if (shown > 0.12f) scheme.onPrimary else IslandInk.Secondary,
-            modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp).size(22.dp),
-        )
-    }
+    ExpressiveSlider(
+        value = volume,
+        onChange = { f, _ -> requests.value = f },
+        icon = if (volume <= 0.001f) DripIcons.VolumeOff else DripIcons.VolumeUp,
+        concentric = true,
+    )
 }
