@@ -103,8 +103,8 @@ class IslandService : AccessibilityService() {
         val className = event.className?.toString().orEmpty()
         // A screenshot was taken: its preview and editor have their buttons along the top, right where an open card is.
         if ("screenshot" in className.lowercase() || "screenshot" in pkg || "markup" in pkg) controller.stepAside()
-        // The keyboard and the system's own panels are not the app in front.
-        if (pkg == packageName || pkg == "com.android.systemui" || "InputMethod" in className) return
+        // The keyboard, the system's own panels and Android asking for a permission are not the app in front.
+        if (pkg == packageName || pkg == "com.android.systemui" || "InputMethod" in className || "permissioncontroller" in pkg) return
         if (pkg != visibility.foregroundPackage) {
             // Not the first app seen after a start: that is no switch, only the service catching up.
             if (visibility.foregroundPackage != null) controller.stepAside()

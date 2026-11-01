@@ -91,10 +91,12 @@ internal class BatteryPart(env: SourceEnv) : Part(env) {
         val share = level / 100f
         when (event) {
             BatteryEvent.PLUGGED_IN -> if (s.showCharging) {
+                // How it charges only matters when it is unusual: wireless says so, a cable just gives the level.
                 env.announce(
                     "charging", AlertKind.CHARGING, env.text(R.string.src_charging),
-                    env.text(R.string.src_charging_text, env.text(plugLabel(plug)), level),
-                    if (plug == PlugType.USB) R.drawable.sym_usb else R.drawable.sym_bolt_filled, share,
+                    if (plug == PlugType.WIRELESS) env.text(R.string.src_charging_text, env.text(R.string.src_plug_wireless), level)
+                    else env.text(R.string.src_percent, level),
+                    R.drawable.sym_bolt_filled, share,
                 )
             }
             BatteryEvent.UNPLUGGED -> if (s.showCharging) {
@@ -126,12 +128,6 @@ internal class BatteryPart(env: SourceEnv) : Part(env) {
 
     private fun powerSave() = safely("power save") { power?.isPowerSaveMode } ?: false
 
-    private fun plugLabel(plug: PlugType) = when (plug) {
-        PlugType.USB -> R.string.src_plug_usb
-        PlugType.WIRELESS -> R.string.src_plug_wireless
-        PlugType.DOCK -> R.string.src_plug_dock
-        PlugType.AC, PlugType.NONE -> R.string.src_plug_ac
-    }
 
     private companion object {
         // Hidden extras of the battery broadcast, the same SystemUI reads for "Charging rapidly".

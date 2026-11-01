@@ -14,6 +14,7 @@ import android.os.Looper
 import android.os.SystemClock
 import nl.markmaaktmedia.drip.island.MediaCommands
 import nl.markmaaktmedia.drip.island.NowPlaying
+import nl.markmaaktmedia.drip.island.RepeatMode
 
 /**
  * Follows every active media session and tells [publish] what the island should show. Each session gets its own
@@ -100,12 +101,20 @@ internal class MediaSource(
             canSkipNext = state == null || actions and PlaybackState.ACTION_SKIP_TO_NEXT != 0L,
             canSkipPrevious = state == null || actions and PlaybackState.ACTION_SKIP_TO_PREVIOUS != 0L,
             canSeek = duration > 0 && actions and PlaybackState.ACTION_SEEK_TO != 0L,
-            repeat = repeat?.let { repeatModeOf(it.action, it.name?.toString()) },
-            shuffle = shuffle?.let { shuffleOnOf(it.action, it.name?.toString()) },
+            repeat = repeat?.let { a ->
+                followPress(repeatOfAction(a, packageName), s.pressedRepeat, justNow(s.repeatAt), signatureOf(a) == s.repeatSignature)
+                    ?: RepeatMode.OFF
+            },
+            shuffle = shuffle?.let { a ->
+                followPress(shuffleOfAction(a, packageName), s.pressedShuffle, justNow(s.shuffleAt), signatureOf(a) == s.shuffleSignature)
+                    ?: false
+            },
             liked = likedOf(s, m, rated, like, packageName, title),
             next = nextInQueue(s.queue, state?.activeQueueItemId ?: MediaSession.QueueItem.UNKNOWN_ID.toLong()),
             commands = s.commands,
             embeddedLyrics = lyricsOf(m),
+            mediaId = m.getString(MediaMetadata.METADATA_KEY_MEDIA_ID),
+            mediaUri = m.getString(MediaMetadata.METADATA_KEY_MEDIA_URI),
         )
     }
 
@@ -151,11 +160,28 @@ internal class MediaSource(
         m.keySet().firstOrNull { "lyric" in it.lowercase() }?.let { m.getText(it)?.toString() ?: m.getString(it) }?.takeIf { it.isNotBlank() }
     }
 
+    private fun media3Icon(a: PlaybackState.CustomAction): Int? =
+        a.extras?.takeIf { it.containsKey(MEDIA3_ICON_KEY) }?.getInt(MEDIA3_ICON_KEY)
+
     private fun kindOf(a: PlaybackState.CustomAction): CustomKind? {
-        val media3 = a.extras?.takeIf { it.containsKey(MEDIA3_ICON_KEY) }?.getInt(MEDIA3_ICON_KEY)
+        val media3 = media3Icon(a)
         if (media3 != null && likedOfMedia3Icon(media3) != null) return CustomKind.LIKE
+        if (media3 != null && shuffleOfMedia3Icon(media3) != null) return CustomKind.SHUFFLE
+        if (media3 != null && repeatOfMedia3Icon(media3) != null) return CustomKind.REPEAT
         return customKindOf(a.action, a.name?.toString())
     }
+
+    private fun shuffleOfAction(a: PlaybackState.CustomAction, packageName: String): Boolean? =
+        media3Icon(a)?.let(::shuffleOfMedia3Icon)
+            ?: shuffleOfIconName(iconName(packageName, a.icon))
+            ?: shuffleStatedBy(a.action, a.name?.toString())
+
+    private fun repeatOfAction(a: PlaybackState.CustomAction, packageName: String): RepeatMode? =
+        media3Icon(a)?.let(::repeatOfMedia3Icon)
+            ?: repeatOfIconName(iconName(packageName, a.icon))
+            ?: repeatStatedBy(a.action, a.name?.toString())
+
+    private fun justNow(at: Long) = SystemClock.elapsedRealtime() - at < 1500
 
     private inner class Session(val controller: MediaController) : MediaController.Callback() {
         /** The song and the state the heart was last pressed to here, for players that never say it themselves. */
@@ -163,6 +189,13 @@ internal class MediaSource(
         var pressedAt = 0L
         /** The heart action as it was when pressed, to see whether the player changed it afterwards. */
         var pressedSignature: String? = null
+        /** The same for shuffle and repeat, which belong to the player rather than to one song. */
+        var pressedShuffle: Boolean? = null
+        var shuffleAt = 0L
+        var shuffleSignature: String? = null
+        var pressedRepeat: RepeatMode? = null
+        var repeatAt = 0L
+        var repeatSignature: String? = null
         var metadata: MediaMetadata? = null
         var state: PlaybackState? = null
         var lastPlayingAt = 0L
@@ -258,8 +291,28 @@ internal class MediaSource(
         override fun next() = controls("next") { it.skipToNext() }
         override fun previous() = controls("previous") { it.skipToPrevious() }
         override fun seekTo(positionMs: Long) = controls("seek") { it.seekTo(positionMs.coerceAtLeast(0)) }
-        override fun cycleRepeat() = custom(CustomKind.REPEAT)
-        override fun toggleShuffle() = custom(CustomKind.SHUFFLE)
+        override fun cycleRepeat() {
+            val shown = safely("repeat") { build(s)?.repeat } ?: RepeatMode.OFF
+            s.pressedRepeat = when (shown) {
+                RepeatMode.OFF -> RepeatMode.ALL
+                RepeatMode.ALL -> RepeatMode.ONE
+                RepeatMode.ONE -> RepeatMode.OFF
+            }
+            s.repeatAt = SystemClock.elapsedRealtime()
+            s.repeatSignature = action(CustomKind.REPEAT)?.let(::signatureOf)
+            handler.post { update() }
+            custom(CustomKind.REPEAT)
+        }
+
+        override fun toggleShuffle() {
+            s.pressedShuffle = safely("shuffle") { build(s)?.shuffle } != true
+            s.shuffleAt = SystemClock.elapsedRealtime()
+            s.shuffleSignature = action(CustomKind.SHUFFLE)?.let(::signatureOf)
+            handler.post { update() }
+            custom(CustomKind.SHUFFLE)
+        }
+
+        private fun action(kind: CustomKind) = s.controller.playbackState?.customActions?.firstOrNull { kindOf(it) == kind }
         override fun toggleLike() {
             val shown = safely("liked") { build(s)?.liked } == true
             s.title()?.let { s.pressedLike = it to !shown }

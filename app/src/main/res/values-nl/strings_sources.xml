@@ -3,10 +3,7 @@
     <!-- Lader en batterij -->
     <string name="src_charging">Opladen</string>
     <string name="src_charging_text">%1$s, %2$d%%</string>
-    <string name="src_plug_ac">Lader</string>
-    <string name="src_plug_usb">USB</string>
     <string name="src_plug_wireless">Draadloos</string>
-    <string name="src_plug_dock">Dock</string>
     <string name="src_unplugged">Losgekoppeld</string>
     <string name="src_percent">%1$d%%</string>
     <string name="src_battery_low">Batterij bijna leeg</string>

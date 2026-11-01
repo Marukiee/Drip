@@ -53,15 +53,74 @@ internal fun repeatModeOf(action: String?, name: String?): RepeatMode {
 }
 
 /** "Turn off shuffle" means it is on now; "shuffle on" means it is on. */
-internal fun shuffleOnOf(action: String?, name: String?): Boolean {
+internal fun shuffleOnOf(action: String?, name: String?): Boolean = shuffleStatedBy(action, name) ?: false
+
+/** As [shuffleOnOf], but null when the words say nothing either way: a bare "Shuffle", as many players have. */
+internal fun shuffleStatedBy(action: String?, name: String?): Boolean? {
     val t = words(action, name)
     return when {
         t.hasWord("disable", "deactivate", "uitzetten", "uitschakelen") || t.hasPart("turn off") -> true
         t.hasWord("enable", "activate", "aanzetten", "inschakelen") || t.hasPart("turn on") -> false
         t.hasWord("off", "disabled", "uit", "false") -> false
         t.hasWord("on", "enabled", "aan", "true") -> true
-        else -> false
+        else -> null
     }
+}
+
+/** Shuffle from Media3's icon number: shuffle and shuffle with a star are on, the crossed-out one is off. */
+internal fun shuffleOfMedia3Icon(icon: Int): Boolean? = when (icon) {
+    0xe043, 0xfe043 -> true
+    0xfe044 -> false
+    else -> null
+}
+
+/** Repeat from Media3's icon number. */
+internal fun repeatOfMedia3Icon(icon: Int): RepeatMode? = when (icon) {
+    0xe040 -> RepeatMode.ALL
+    0xe041 -> RepeatMode.ONE
+    0xfe040 -> RepeatMode.OFF
+    else -> null
+}
+
+/** Shuffle from the name of the player's icon, "ic_shuffle_on" or "shuffle_off"; null when a plain "ic_shuffle". */
+internal fun shuffleOfIconName(name: String?): Boolean? {
+    val t = words(name ?: return null)
+    return when {
+        t.hasWord("off", "disabled", "inactive", "outline", "outlined", "unselected") -> false
+        t.hasWord("on", "enabled", "active", "selected", "filled", "checked") -> true
+        else -> null
+    }
+}
+
+/** Repeat from the name of the player's icon, "ic_repeat_one", "repeat_on", "repeat_off". */
+internal fun repeatOfIconName(name: String?): RepeatMode? {
+    val t = words(name ?: return null)
+    return when {
+        t.hasWord("one", "single", "1") -> RepeatMode.ONE
+        t.hasWord("off", "disabled", "inactive", "outline", "outlined", "unselected") -> RepeatMode.OFF
+        t.hasWord("on", "all", "enabled", "active", "selected", "filled") -> RepeatMode.ALL
+        else -> null
+    }
+}
+
+/** As [repeatModeOf], but null for a bare "Repeat" that says nothing about the mode. */
+internal fun repeatStatedBy(action: String?, name: String?): RepeatMode? {
+    val t = words(action, name)
+    return when {
+        t.hasWord("one", "single", "track", "song", "nummer", "1") -> RepeatMode.ONE
+        t.hasWord("off", "none", "disabled", "uit", "geen") -> RepeatMode.OFF
+        t.hasWord("all", "list", "queue", "playlist", "alles", "alle", "on", "aan") -> RepeatMode.ALL
+        else -> null
+    }
+}
+
+/**
+ * What a switch of the player shows, the way [heartOf] works for the heart: right after a press, and for as long as
+ * the player offers the very same action it did when pressed, the press says it; otherwise the player does.
+ */
+internal fun <T> followPress(stated: T?, pressed: T?, pressedJustNow: Boolean, actionUnchanged: Boolean): T? = when {
+    pressed != null && (pressedJustNow || actionUnchanged) -> pressed
+    else -> stated ?: pressed
 }
 
 /**

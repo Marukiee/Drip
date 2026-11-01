@@ -14,7 +14,6 @@
     <string name="island_open">Openen</string>
     <string name="island_charging">Opladen</string>
     <string name="island_charging_wireless">Draadloos opladen</string>
-    <string name="island_charging_usb">Opladen via USB</string>
     <string name="island_full_in">vol over %1$s</string>
     <string name="island_torch">Zaklamp</string>
     <string name="island_on">Aan</string>
@@ -70,6 +69,8 @@
     <string name="island_lyrics_retry">Opnieuw</string>
     <string name="island_lyrics_ask">Deze speler geeft geen songtekst mee. Drip kan hem opzoeken bij lrclib.net, die dan de titel en artiest van het nummer krijgt.</string>
     <string name="island_lyrics_online">Online opzoeken</string>
+    <string name="island_lyrics_files">Uit het bestand</string>
+    <string name="island_lyrics_ask_both">Deze speler geeft de songtekst niet door. Drip kan hem uit het muziekbestand lezen, of opzoeken bij lrclib.net.</string>
     <string name="island_minutes_ago">%d min</string>
     <string name="island_privacy_title">In gebruik</string>
     <string name="island_privacy_camera">Camera</string>

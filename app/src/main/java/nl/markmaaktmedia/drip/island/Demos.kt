@@ -21,6 +21,11 @@ object Demos {
     fun play(context: Context, demo: Demo, controller: IslandController) {
         val hub = context.graph.hub
         when (demo) {
+            // A song from a file on the phone (Music/drip-test.flac on the test phone), to try reading lyrics from it.
+            Demo.FILE_LYRICS -> hub.nowPlaying.value = music(context).copy(
+                packageName = "com.android.music", title = "Drip Test", artist = "Mark Maakt Media", album = null,
+                durationMs = 60_000L, positionMs = 0L, positionAtElapsed = SystemClock.elapsedRealtime(), embeddedLyrics = null,
+            )
             // A well-known song with no lyrics of its own, to try the lookup at lrclib.net.
             Demo.LYRICS -> hub.nowPlaying.value = music(context).copy(
                 title = "Bohemian Rhapsody", artist = "Queen", album = "A Night At The Opera (2011 Remaster)",

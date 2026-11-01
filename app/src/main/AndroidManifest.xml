@@ -11,6 +11,9 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- The countdown to the next appointment. -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <!-- Lyrics out of the song's own file, for players of your own music. Asked from the lyrics, only when wanted. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <!-- The battery of Bluetooth earbuds and headphones. -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <!-- The location dot: whether GPS runs for some app. Android 12 only grants precise location asked for together with approximate. -->
@@ -58,6 +61,14 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
             </intent-filter>
         </activity>
+
+        <!-- Asks for a permission from the island, showing nothing but Android's own question. -->
+        <activity
+            android:name=".GrantActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Drip.Invisible" />
 
         <!-- Draws the island above the status bar and runs the gestures. -->
         <service

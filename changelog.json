@@ -1,5 +1,35 @@
 [
   {
+    "version": "0.1.13",
+    "date": "2026-11-01",
+    "en": {
+      "title": "Lyrics from your files",
+      "new": [
+        "Lyrics from the song's own file, for players of your own music like PixelPlayer (FLAC, MP3, M4A, Ogg)"
+      ],
+      "better": [
+        "The card stays open while the lyrics are open",
+        "Shuffle and repeat follow PixelPlayer",
+        "Charging just shows the level, and says so when it is wireless",
+        "Notch and camera each keep their own shape and place",
+        "Position has a reset at the top, and the text beside a slider no longer jumps"
+      ]
+    },
+    "nl": {
+      "title": "Songteksten uit je bestanden",
+      "new": [
+        "Songteksten uit het muziekbestand zelf, voor spelers van je eigen muziek zoals PixelPlayer (FLAC, MP3, M4A, Ogg)"
+      ],
+      "better": [
+        "De kaart blijft open zolang de songtekst open staat",
+        "Shuffle en herhalen volgen PixelPlayer",
+        "Opladen toont alleen het percentage, en zegt het als het draadloos is",
+        "Notch en camera onthouden elk hun eigen vorm en plek",
+        "Positie heeft bovenaan een terugzetknop, en de tekst naast een slider verspringt niet meer"
+      ]
+    }
+  },
+  {
     "version": "0.1.12",
     "date": "2026-11-01",
     "en": {

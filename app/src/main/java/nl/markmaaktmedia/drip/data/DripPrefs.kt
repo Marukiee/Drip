@@ -43,6 +43,44 @@ enum class Gesture { TAP, DOUBLE_TAP, LONG_PRESS, SWIPE_DOWN, SWIPE_LEFT, SWIPE_
 /** How the island sits on this phone. Auto picks notch without a camera hole and a pill around one with it. */
 enum class FitMode { AUTO, NOTCH, CUTOUT }
 
+/**
+ * The closed island's sizes and place for one way of sitting: as a notch, or as a pill around the camera. Each way keeps
+ * its own, so trying the other and coming back changes nothing.
+ */
+data class FitProfile(
+    val idleWidthDp: Float? = null,
+    val idleHeightDp: Float? = null,
+    val compactWidthDp: Float? = null,
+    val shoulderDp: Float = 10f,
+    val collapsedRoundness: Float = 1f,
+    val offsetXDp: Float = 0f,
+    val offsetYDp: Float = 0f,
+    val cutoutPaddingDp: Float = 3f,
+)
+
+/** Whether [mode] makes a notch on a phone that has a camera hole or not; Auto follows the phone. */
+fun FitMode.isNotch(hasCutout: Boolean): Boolean = when (this) {
+    FitMode.NOTCH -> true
+    FitMode.CUTOUT -> false
+    FitMode.AUTO -> !hasCutout
+}
+
+/**
+ * Another fit. When it turns the island from a notch into a pill or back, what was set for the old way is put aside and
+ * what was set for the new way, or how it came, takes its place.
+ */
+fun IslandSettings.withFit(mode: FitMode, hasCutout: Boolean): IslandSettings {
+    if (fitMode.isNotch(hasCutout) == mode.isNotch(hasCutout)) return copy(fitMode = mode)
+    val current = FitProfile(idleWidthDp, idleHeightDp, compactWidthDp, shoulderDp, collapsedRoundness, offsetXDp, offsetYDp, cutoutPaddingDp)
+    val next = otherFit ?: FitProfile()
+    return copy(
+        fitMode = mode, otherFit = current,
+        idleWidthDp = next.idleWidthDp, idleHeightDp = next.idleHeightDp, compactWidthDp = next.compactWidthDp,
+        shoulderDp = next.shoulderDp, collapsedRoundness = next.collapsedRoundness,
+        offsetXDp = next.offsetXDp, offsetYDp = next.offsetYDp, cutoutPaddingDp = next.cutoutPaddingDp,
+    )
+}
+
 /** The colour of an opened island: always black, or a dark tint of the accent. */
 enum class CardStyle { BLACK, TINTED }
 
@@ -87,6 +125,8 @@ data class IslandSettings(
     val offsetYDp: Float = 0f,
     /** Room around the camera hole in cutout mode. */
     val cutoutPaddingDp: Float = 3f,
+    /** The closed island's sizes and place for the other way of sitting, kept while this one is in use. */
+    val otherFit: FitProfile? = null,
     /** 0 is calm, 1 is lively. Sets how much the island overshoots when it opens. */
     val bounce: Float = 0.5f,
     /** 0.5 is half as fast, 2 is twice as fast. */
@@ -303,6 +343,15 @@ class DripPrefs(private val context: Context) {
             offsetXDp = f("offset_x", d.offsetXDp),
             offsetYDp = f("offset_y", d.offsetYDp),
             cutoutPaddingDp = f("cutout_padding", d.cutoutPaddingDp),
+            otherFit = if (b("other_fit", false)) {
+                FitProfile(
+                    fn("other_idle_width"), fn("other_idle_height"), fn("other_compact_width"),
+                    f("other_shoulder", d.shoulderDp), f("other_roundness", d.collapsedRoundness),
+                    f("other_offset_x", d.offsetXDp), f("other_offset_y", d.offsetYDp), f("other_cutout_padding", d.cutoutPaddingDp),
+                )
+            } else {
+                null
+            },
             bounce = f("bounce", d.bounce),
             speed = f("speed", d.speed),
             hapticsEnabled = b("haptics", d.hapticsEnabled),
@@ -397,6 +446,16 @@ class DripPrefs(private val context: Context) {
         f("offset_x", v.offsetXDp, d.offsetXDp)
         f("offset_y", v.offsetYDp, d.offsetYDp)
         f("cutout_padding", v.cutoutPaddingDp, d.cutoutPaddingDp)
+        val other = v.otherFit ?: FitProfile()
+        b("other_fit", v.otherFit != null, false)
+        fn("other_idle_width", other.idleWidthDp)
+        fn("other_idle_height", other.idleHeightDp)
+        fn("other_compact_width", other.compactWidthDp)
+        f("other_shoulder", other.shoulderDp, d.shoulderDp)
+        f("other_roundness", other.collapsedRoundness, d.collapsedRoundness)
+        f("other_offset_x", other.offsetXDp, d.offsetXDp)
+        f("other_offset_y", other.offsetYDp, d.offsetYDp)
+        f("other_cutout_padding", other.cutoutPaddingDp, d.cutoutPaddingDp)
         f("bounce", v.bounce, d.bounce)
         f("speed", v.speed, d.speed)
         b("haptics", v.hapticsEnabled, d.hapticsEnabled)

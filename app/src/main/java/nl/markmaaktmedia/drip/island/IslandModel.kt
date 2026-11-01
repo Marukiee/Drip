@@ -67,6 +67,9 @@ data class NowPlaying(
     val commands: MediaCommands,
     /** Lyrics the player put in the song's metadata, plain or with LRC time stamps. Few players do. */
     val embeddedLyrics: String? = null,
+    /** The player's own id of the song and, when it says, where the file is; for reading lyrics out of the file. */
+    val mediaId: String? = null,
+    val mediaUri: String? = null,
 ) {
     override fun equals(other: Any?): Boolean = other is NowPlaying && packageName == other.packageName &&
         title == other.title && artist == other.artist && album == other.album && art === other.art &&
@@ -230,10 +233,15 @@ sealed interface LyricsState {
     data class Loading(override val key: String) : LyricsState
     /** [synced] lines have their time; plain ones are all at 0 and are shown without following the song. */
     data class Found(override val key: String, val lines: List<LyricLine>, val synced: Boolean, val online: Boolean) : LyricsState
-    data class Missing(override val key: String, val instrumental: Boolean = false) : LyricsState
-    /** The player gave none and looking online is off: asks before anything leaves the phone. */
-    data class AskOnline(override val key: String) : LyricsState
-    data class Failed(override val key: String) : LyricsState
+    /** Nothing found. [files]: the song may be a file Drip is not allowed to look into yet. */
+    data class Missing(override val key: String, val instrumental: Boolean = false, val files: Boolean = false) : LyricsState
+    /**
+     * Nothing Drip may look into on its own, so it asks first: [files] to see the music on the phone and read the lyrics
+     * out of the song's file, [online] to look them up at lrclib.net.
+     */
+    data class Ask(override val key: String, val files: Boolean, val online: Boolean) : LyricsState
+    /** lrclib.net could not be reached. [files]: reading the song's file is still there to try. */
+    data class Failed(override val key: String, val files: Boolean = false) : LyricsState
 }
 
 /** The line being sung at [positionMs]: the last one that has started, a moment early so it lights up on the beat. */

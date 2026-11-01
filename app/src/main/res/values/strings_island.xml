@@ -14,7 +14,6 @@
     <string name="island_open">Open</string>
     <string name="island_charging">Charging</string>
     <string name="island_charging_wireless">Charging wirelessly</string>
-    <string name="island_charging_usb">Charging over USB</string>
     <string name="island_full_in">full in %1$s</string>
     <string name="island_torch">Torch</string>
     <string name="island_on">On</string>
@@ -70,6 +69,8 @@
     <string name="island_lyrics_retry">Try again</string>
     <string name="island_lyrics_ask">This player gives no lyrics. Drip can look them up at lrclib.net, which gets the title and artist of the song.</string>
     <string name="island_lyrics_online">Look up online</string>
+    <string name="island_lyrics_files">From the file</string>
+    <string name="island_lyrics_ask_both">This player does not pass the lyrics on. Drip can read them from the song\'s file, or look them up at lrclib.net.</string>
     <string name="island_minutes_ago">%d min</string>
     <string name="island_privacy_title">In use</string>
     <string name="island_privacy_camera">Camera</string>

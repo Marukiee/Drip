@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -34,6 +35,7 @@ import kotlinx.coroutines.launch
 import nl.markmaaktmedia.drip.R
 import nl.markmaaktmedia.drip.data.FitMode
 import nl.markmaaktmedia.drip.data.IslandSettings
+import nl.markmaaktmedia.drip.data.withFit
 import nl.markmaaktmedia.drip.graph
 import nl.markmaaktmedia.drip.island.Demo
 import nl.markmaaktmedia.drip.island.ui.IslandPreview
@@ -52,9 +54,11 @@ import nl.markmaaktmedia.drip.ui.theme.DripMotion
  */
 @Composable
 internal fun ShapePage(onBack: () -> Unit) {
-    val graph = LocalContext.current.graph
+    val context = LocalContext.current
+    val graph = context.graph
     val (island, edit) = rememberIsland()
     val guess = rememberAutoGuess(island)
+    val hasCutout = remember { DeviceFit.read(context).cutout != null }
     var showOpened by remember { mutableStateOf(false) }
 
     // The opened island is only on screen when something opens it, so each drag of one of its sliders opens it (it may
@@ -93,7 +97,7 @@ internal fun ShapePage(onBack: () -> Unit) {
                 SegmentedRow(
                     0, 2, DripIcons.FitScreen, stringResource(R.string.shape_fit),
                     FitMode.entries, island.fitMode, { stringResource(fitLabel(it)) },
-                ) { mode -> edit { it.copy(fitMode = mode) } }
+                ) { mode -> edit { it.withFit(mode, hasCutout) } }
             }
             SettingsTarget(FocusKeys.ShapeIdleVisible, 1, 2) {
                 SwitchRow(
@@ -207,7 +211,20 @@ internal fun ShapePage(onBack: () -> Unit) {
             }
         }
 
-        SectionHeader(stringResource(R.string.shape_section_place), top = 20.dp)
+        // Back to how the place came, at the top of the section: the sliders here are the easiest to lose.
+        val placeMoved = island.offsetXDp != 0f || island.offsetYDp != 0f || island.cutoutPaddingDp != IslandSettings().cutoutPaddingDp
+        // The button keeps its room while hidden, so the rows below never shift when it comes or goes.
+        val resetAlpha by androidx.compose.animation.core.animateFloatAsState(if (placeMoved) 1f else 0f, DripMotion.fadeSpec(), label = "placeReset")
+        SectionHeader(stringResource(R.string.shape_section_place), top = 20.dp, trailing = {
+            androidx.compose.material3.TextButton(
+                onClick = { edit { it.copy(offsetXDp = 0f, offsetYDp = 0f, cutoutPaddingDp = IslandSettings().cutoutPaddingDp) } },
+                enabled = placeMoved,
+                modifier = Modifier.graphicsLayer { alpha = resetAlpha },
+            ) {
+                androidx.compose.material3.Icon(DripIcons.Restart, null, Modifier.padding(end = 6.dp).height(18.dp))
+                Text(stringResource(R.string.shape_place_reset))
+            }
+        })
         SettingsGroup {
             val nudge = stringResource(R.string.shape_nudge_sub)
             SettingsTarget(FocusKeys.ShapeNudgeX, 0, 3) {

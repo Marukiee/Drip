@@ -128,10 +128,11 @@
     <string name="shape_attached_sub">Met een notch hangt het open eiland aan de rand in plaats van los te zweven</string>
     <string name="shape_nudge_x">Opzij schuiven</string>
     <string name="shape_nudge_y">Omhoog of omlaag schuiven</string>
-    <string name="shape_nudge_sub">Voor een cameragat dat de automatische pasvorm net niet omsluit</string>
+    <string name="shape_nudge_sub">Als hij net niet goed zit</string>
     <string name="shape_cutout_padding">Ruimte om de camera</string>
     <string name="shape_cutout_padding_sub">Alleen rond een cameragat</string>
     <string name="shape_reset">Vorm terugzetten</string>
+    <string name="shape_place_reset">Terugzetten</string>
     <string name="shape_reset_sub">Alle maten, hoeken en verschuivingen weer automatisch</string>
 
     <!-- Beweging en gevoel -->

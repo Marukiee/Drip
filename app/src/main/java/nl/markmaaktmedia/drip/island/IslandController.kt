@@ -17,7 +17,13 @@ sealed interface IslandContent {
     /** Stable per thing shown, so a song that moves on keeps its card and a different thing gets a new one. */
     val key: String
 
-    data class Music(val playing: NowPlaying) : IslandContent { override val key get() = "music" }
+    data class Music(val playing: NowPlaying) : IslandContent {
+        override val key get() = KEY
+
+        companion object {
+            const val KEY = "music"
+        }
+    }
     data class Call(val call: CallInfo) : IslandContent { override val key get() = "call:" + call.key }
     data class Live(val live: LiveInfo) : IslandContent { override val key get() = "live:" + live.key }
     data class Charging(val battery: BatteryInfo) : IslandContent { override val key get() = "charging" }
@@ -124,6 +130,10 @@ class IslandController(
         }
         scope.launch {
             hub.alerts.collect { onAlert(it) }
+        }
+        scope.launch {
+            // Opening or closing the lyrics stops or starts the card's own time again.
+            hub.lyricsOpen.collect { poke() }
         }
         scope.launch {
             // Paused music gives way after a while even when nothing else changes.
@@ -309,7 +319,9 @@ class IslandController(
     /** Someone touched the opened card: it stays open a while longer. */
     fun poke() {
         expandJob?.cancel()
-        if (expandedKey == null || typing) return
+        // Lyrics are read along with the song: the card stays until it is closed by hand.
+        val reading = expandedKey == IslandContent.Music.KEY && settings.showLyrics && hub.lyricsOpen.value
+        if (expandedKey == null || typing || reading) return
         expandJob = scope.launch {
             delay(EXPANDED_IDLE_MS)
             collapse()

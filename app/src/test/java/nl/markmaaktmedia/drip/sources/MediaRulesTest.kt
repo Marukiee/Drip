@@ -59,6 +59,22 @@ class MediaRulesTest {
         assertFalse(heartOf(stated = null, pressed = null, pressedJustNow = false, actionUnchanged = true))
     }
 
+    @Test fun shuffleAndRepeatFromIcons() {
+        assertEquals(true, shuffleOfMedia3Icon(0xe043))
+        assertEquals(false, shuffleOfMedia3Icon(0xfe044))
+        assertEquals(RepeatMode.ONE, repeatOfMedia3Icon(0xe041))
+        assertEquals(RepeatMode.OFF, repeatOfMedia3Icon(0xfe040))
+        assertEquals(true, shuffleOfIconName("ic_shuffle_on"))
+        assertEquals(false, shuffleOfIconName("shuffleOff"))
+        assertNull(shuffleOfIconName("ic_shuffle"))
+        assertEquals(RepeatMode.ONE, repeatOfIconName("ic_repeat_one"))
+        assertNull(repeatOfIconName("ic_repeat"))
+        assertNull(shuffleStatedBy("SHUFFLE", "Shuffle"))
+        // A bare "Shuffle" pressed on: on, as long as the player keeps that same action.
+        assertEquals(true, followPress(null, true, pressedJustNow = false, actionUnchanged = true))
+        assertEquals(false, followPress(false, true, pressedJustNow = false, actionUnchanged = false))
+    }
+
     @Test fun likeStateFromIcons() {
         assertEquals(true, likedOfMedia3Icon(0xfe87d))
         assertEquals(false, likedOfMedia3Icon(0xe87d))

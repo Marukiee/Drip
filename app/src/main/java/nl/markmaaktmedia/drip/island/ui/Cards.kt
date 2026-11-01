@@ -180,7 +180,6 @@ fun ChargingCard(battery: BatteryInfo) {
             RollingText("${battery.level}%", IslandInk.Primary, 34.sp, fontWeight = FontWeight.Bold)
             val how = when (battery.plug) {
                 PlugType.WIRELESS -> stringResource(R.string.island_charging_wireless)
-                PlugType.USB -> stringResource(R.string.island_charging_usb)
                 else -> stringResource(R.string.island_charging)
             }
             Subtitle(battery.timeToFullMs?.let { how + " · " + stringResource(R.string.island_full_in, formatSpan(it)) } ?: how)

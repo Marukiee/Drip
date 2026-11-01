@@ -128,10 +128,11 @@
     <string name="shape_attached_sub">With a notch, the opened island hangs from the edge instead of floating</string>
     <string name="shape_nudge_x">Nudge sideways</string>
     <string name="shape_nudge_y">Nudge up or down</string>
-    <string name="shape_nudge_sub">For a camera hole the automatic fit does not quite hug</string>
+    <string name="shape_nudge_sub">When it sits just off</string>
     <string name="shape_cutout_padding">Room around the camera</string>
     <string name="shape_cutout_padding_sub">Only around a camera hole</string>
     <string name="shape_reset">Reset the shape</string>
+    <string name="shape_place_reset">Reset</string>
     <string name="shape_reset_sub">Every size, corner and nudge back to automatic</string>
 
     <!-- Motion and feel -->

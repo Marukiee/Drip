@@ -17,22 +17,25 @@ import nl.markmaaktmedia.drip.island.NowPlaying
 
 /**
  * The lyrics of the song that plays, but only while they are open under the music card. What the player put in the
- * song comes first; otherwise lrclib.net, when looking online is on. Answers are kept for the last songs, so going back
- * to one costs nothing.
+ * song's metadata comes first, then the song's own file (players of your own music keep them there), then lrclib.net
+ * when looking online is on. Answers are kept for the last songs, so going back to one costs nothing.
  */
 internal class LyricsPart(env: SourceEnv) : Part(env) {
     private var scope: CoroutineScope? = null
-    private val wanted = MutableStateFlow(Wanted(show = false, online = false))
+    private val wanted = MutableStateFlow(Wanted(show = false, online = false, files = false))
     private val retry = MutableStateFlow(0)
     private val lrclib = LrcLib("Drip/${BuildConfig.VERSION_NAME} (https://github.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO})")
     private val cache = object : LinkedHashMap<String, LyricsState>(16, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, LyricsState>?) = size > 40
     }
 
-    private data class Wanted(val show: Boolean, val online: Boolean)
+    private data class Wanted(val show: Boolean, val online: Boolean, val files: Boolean)
 
     /** What of the song matters for its lyrics; the rest of NowPlaying changes all the time. */
-    private data class Song(val key: String, val title: String, val artist: String, val album: String?, val durationMs: Long, val embedded: String?)
+    private data class Song(
+        val key: String, val title: String, val artist: String, val album: String?, val durationMs: Long, val embedded: String?,
+        val packageName: String, val mediaId: String?, val mediaUri: String?,
+    )
 
     override fun start() {
         val s = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -54,11 +57,13 @@ internal class LyricsPart(env: SourceEnv) : Part(env) {
 
     override fun onSettings() {
         val s = settings ?: return
-        wanted.value = Wanted(s.showLyrics, s.lyricsOnline)
+        // Also called when a permission was allowed, so music access is read again here.
+        wanted.value = Wanted(s.showLyrics, s.lyricsOnline, LocalSongs.allowed(context))
     }
 
     private fun songOf(np: NowPlaying) = Song(
         songKey(np.title, np.artist, np.durationMs), np.title, np.artist, np.album, np.durationMs, np.embeddedLyrics,
+        np.packageName, np.mediaId, np.mediaUri,
     )
 
     private suspend fun resolve(song: Song?, open: Boolean, w: Wanted) {
@@ -74,12 +79,28 @@ internal class LyricsPart(env: SourceEnv) : Part(env) {
                 return
             }
         }
-        cache[key]?.let {
+        // What was found or not found depends on what Drip was allowed to look into.
+        val cacheKey = "$key|${w.files}|${w.online}"
+        cache[cacheKey]?.let {
             hub.lyrics.value = it
             return
         }
+        val askFiles = !w.files && LocalSongs.mayBeLocal(song.packageName, song.mediaId, song.mediaUri)
+        if (w.files) {
+            hub.lyrics.value = LyricsState.Loading(key)
+            val text = withContext(Dispatchers.IO) {
+                LocalSongs.lyrics(context, song.title, song.artist, song.durationMs, song.mediaId, song.mediaUri)
+            }
+            val lines = text?.let { if (looksSynced(it)) parseLrc(it) else plainLines(it) }.orEmpty()
+            if (lines.isNotEmpty()) {
+                val found = LyricsState.Found(key, lines, synced = lines.any { it.timeMs > 0 }, online = false)
+                cache[cacheKey] = found
+                hub.lyrics.value = found
+                return
+            }
+        }
         if (!w.online) {
-            hub.lyrics.value = LyricsState.AskOnline(key)
+            hub.lyrics.value = LyricsState.Ask(key, files = askFiles, online = true)
             return
         }
         hub.lyrics.value = LyricsState.Loading(key)
@@ -89,15 +110,15 @@ internal class LyricsPart(env: SourceEnv) : Part(env) {
         val state = answer.fold(
             onSuccess = { a ->
                 when {
-                    a == null -> LyricsState.Missing(key)
+                    a == null -> LyricsState.Missing(key, files = askFiles)
                     a.synced != null -> LyricsState.Found(key, parseLrc(a.synced), synced = true, online = true)
                     a.plain != null -> LyricsState.Found(key, plainLines(a.plain), synced = false, online = true)
                     else -> LyricsState.Missing(key, instrumental = a.instrumental)
                 }
             },
-            onFailure = { LyricsState.Failed(key) },
+            onFailure = { LyricsState.Failed(key, files = askFiles) },
         )
-        if (state !is LyricsState.Failed) cache[key] = state
+        if (state !is LyricsState.Failed) cache[cacheKey] = state
         hub.lyrics.value = state
     }
 }

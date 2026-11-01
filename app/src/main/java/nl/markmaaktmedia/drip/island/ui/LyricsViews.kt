@@ -99,10 +99,20 @@ fun LyricsPanel(np: NowPlaying, hub: IslandHub) {
             when (s) {
                 is LyricsState.Found -> if (s.synced) SyncedLines(s.lines, np) else PlainLines(s.lines)
                 is LyricsState.Loading, LyricsState.Off -> LyricsNote(stringResource(R.string.island_lyrics_looking), searching = true)
-                is LyricsState.Missing -> LyricsNote(stringResource(if (s.instrumental) R.string.island_lyrics_instrumental else R.string.island_lyrics_none))
-                is LyricsState.AskOnline -> AskOnline()
-                is LyricsState.Failed -> LyricsNote(stringResource(R.string.island_lyrics_failed), action = stringResource(R.string.island_lyrics_retry)) {
-                    hub.retryLyrics?.invoke()
+                is LyricsState.Missing -> {
+                    val context = LocalContext.current
+                    LyricsNote(
+                        stringResource(if (s.instrumental) R.string.island_lyrics_instrumental else R.string.island_lyrics_none),
+                        action = if (s.files) stringResource(R.string.island_lyrics_files) else null,
+                    ) { askFiles(context) }
+                }
+                is LyricsState.Ask -> Ask(s.files)
+                is LyricsState.Failed -> {
+                    val context = LocalContext.current
+                    LyricsNote(
+                        stringResource(R.string.island_lyrics_failed), action = stringResource(R.string.island_lyrics_retry),
+                        second = if (s.files) stringResource(R.string.island_lyrics_files) to { askFiles(context) } else null,
+                    ) { hub.retryLyrics?.invoke() }
                 }
             }
         }
@@ -201,39 +211,70 @@ private fun PlainLines(lines: List<LyricLine>) {
 
 /** A quiet line in the middle of the panel: looking, nothing found, no connection; with a button when there is one. */
 @Composable
-private fun LyricsNote(text: String, searching: Boolean = false, action: String? = null, onAction: (() -> Unit)? = null) {
+private fun LyricsNote(
+    text: String,
+    searching: Boolean = false,
+    action: String? = null,
+    second: Pair<String, () -> Unit>? = null,
+    onAction: (() -> Unit)? = null,
+) {
     Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         val pulse by animateFloatAsState(if (searching) 1f else 0f, tween(400), label = "lyricsPulse")
         Icon(DripIcons.Lyrics, null, tint = IslandInk.Tertiary, modifier = Modifier.size(28.dp).graphicsLayer { alpha = 0.6f + 0.4f * pulse })
         Text(text, color = IslandInk.Secondary, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 10.dp))
-        if (action != null && onAction != null) PillButton(action, onAction, Modifier.padding(top = 14.dp))
+        if (action != null && onAction != null) {
+            androidx.compose.foundation.layout.Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                second?.let { (label, run) -> PillButton(label, run) }
+                PillButton(action, onAction, quiet = second != null)
+            }
+        }
     }
 }
 
-/** Nothing from the player and looking online is off: say what would leave the phone, and let the person switch it on. */
+/**
+ * Nothing Drip may look into yet: say where it could look and what that means, with a button for each. Reading the
+ * song's file needs permission to see music; looking online sends the title and artist to lrclib.net.
+ */
 @Composable
-private fun AskOnline() {
+private fun Ask(files: Boolean) {
     val context = LocalContext.current
-    LyricsNote(stringResource(R.string.island_lyrics_ask), action = stringResource(R.string.island_lyrics_online)) {
-        context.graph.scope.launch { context.graph.prefs.editIsland { it.copy(lyricsOnline = true) } }
+    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(DripIcons.Lyrics, null, tint = IslandInk.Tertiary, modifier = Modifier.size(28.dp))
+        Text(
+            stringResource(if (files) R.string.island_lyrics_ask_both else R.string.island_lyrics_ask),
+            color = IslandInk.Secondary, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 10.dp),
+        )
+        androidx.compose.foundation.layout.Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (files) PillButton(stringResource(R.string.island_lyrics_files), { askFiles(context) })
+            PillButton(stringResource(R.string.island_lyrics_online), {
+                context.graph.scope.launch { context.graph.prefs.editIsland { it.copy(lyricsOnline = true) } }
+            }, quiet = files)
+        }
     }
 }
 
+/** The card closes first: the island lies over every window, Android's question included. */
+private fun askFiles(context: android.content.Context) {
+    context.graph.hub.demo(nl.markmaaktmedia.drip.island.Demo.COLLAPSE)
+    nl.markmaaktmedia.drip.GrantActivity.ask(context, nl.markmaaktmedia.drip.sources.LocalSongs.permission)
+}
+
+/** A round button; [quiet] is the second choice next to the first, tonal instead of filled. */
 @Composable
-private fun PillButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun PillButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, quiet: Boolean = false) {
     val scheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     Box(
         modifier
             .clip(CircleShape)
-            .background(scheme.primary)
+            .background(if (quiet) scheme.primary.copy(alpha = 0.22f) else scheme.primary)
             .clickable {
                 context.graph.haptics.play(Haptics.Kind.TAP)
                 onClick()
             }
             .padding(horizontal = 18.dp, vertical = 10.dp),
     ) {
-        Text(label, color = scheme.onPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Text(label, color = if (quiet) scheme.primary else scheme.onPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 

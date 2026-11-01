@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -204,12 +205,20 @@ private fun SliderBody(
                     ) { text ->
                         Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    // Under Auto the guess stays readable, quieter, so it is clear where the slider starts.
+                    // Under Auto the guess stays readable, quieter, so it is clear where the slider starts. As wide as the
+                    // widest value it can show, with digits of one width, so the text beside it never rewraps while dragging.
+                    val valueStyle = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum")
+                    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+                    val ends = listOf(label(range.start), label(range.endInclusive), label(snapTo((range.start + range.endInclusive) / 2f, range, step)))
+                    val widest = with(androidx.compose.ui.platform.LocalDensity.current) {
+                        remember(ends, valueStyle) { ends.maxOf { measurer.measure(it, valueStyle).size.width } }.toDp()
+                    }
                     Text(
                         label(snapTo(moved, range, step)),
-                        style = MaterialTheme.typography.titleMedium,
+                        style = valueStyle,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
                         color = if (locked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 12.dp),
+                        modifier = Modifier.padding(start = 12.dp).widthIn(min = widest),
                     )
                 }
                 Slider(
