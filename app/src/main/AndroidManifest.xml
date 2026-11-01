@@ -87,6 +87,14 @@
                 android:value="true" />
         </service>
 
+        <!-- Lets the language chosen in the app survive on Android 12, before the system setting existed. -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data android:name="autoStoreLocales" android:value="true" />
+        </service>
+
         <receiver
             android:name=".update.InstallResultReceiver"
             android:exported="false" />

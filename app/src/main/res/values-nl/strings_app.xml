@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Gedeeld -->
+    <string name="action_back">Terug</string>
+    <string name="action_allow">Toestaan</string>
+    <string name="action_cancel">Annuleren</string>
+    <string name="access_allowed">Toegestaan</string>
+    <string name="value_auto">Auto</string>
+    <string name="value_dp">%1$d dp</string>
+    <string name="value_percent">%1$d%%</string>
+    <string name="value_speed">%1$sx</string>
+    <string name="value_seconds">%1$s s</string>
+
+    <!-- Instellingen: overzicht, pagina's en zoeken -->
+    <string name="settings_search_hint">Zoek in instellingen</string>
+    <string name="settings_search_clear">Zoekopdracht wissen</string>
+    <string name="settings_search_none_title">Niets gevonden</string>
+    <string name="settings_search_none_body">Geen instelling past bij \"%1$s\". Probeer een ander woord.</string>
+    <plurals name="settings_search_results">
+        <item quantity="one">%d resultaat</item>
+        <item quantity="other">%d resultaten</item>
+    </plurals>
+    <string name="settings_sum_on_of">%1$d van %2$d aan</string>
+    <string name="settings_sum_all_on">Alles aan</string>
+    <string name="settings_sum_all_off">Alles uit</string>
+    <string name="settings_sum_version">Versie %1$s</string>
+    <string name="settings_sum_up_to_date">Versie %1$s, bijgewerkt</string>
+    <string name="settings_sum_sizes_auto">maten automatisch</string>
+    <string name="settings_sum_sizes_custom">maten met de hand</string>
+    <string name="settings_sum_motion">Vering %1$s, snelheid %2$s</string>
+    <string name="settings_sum_haptics_off">geen trillingen</string>
+    <string name="settings_sum_needs_listener">Heeft toegang tot meldingen nodig</string>
+    <string name="settings_sum_keep_on">Zet het eiland weer aan</string>
+    <string name="settings_sum_keep_off">Niet nodig, niet ingesteld</string>
+    <string name="settings_sum_never">Nooit</string>
+
+    <string name="settings_cat_shape">Vorm en pasvorm</string>
+    <string name="settings_cat_motion">Beweging en gevoel</string>
+    <string name="settings_cat_shows">Wat het eiland laat zien</string>
+    <string name="settings_cat_notifications">Meldingen</string>
+    <string name="settings_cat_gestures">Gebaren</string>
+    <string name="settings_cat_hide">Wanneer het opzij gaat</string>
+    <string name="settings_look">Uiterlijk en taal</string>
+    <string name="settings_cat_keep">Het eiland aan houden</string>
+    <string name="settings_cat_updates">Updates en back-up</string>
+    <string name="settings_cat_about">Over</string>
+
+    <!-- Start -->
+    <string name="home_island_on">Het eiland staat aan</string>
+    <string name="home_island_off">Het eiland staat uit</string>
+    <string name="home_island_on_sub">Muziek, gesprekken en meer boven in je scherm</string>
+    <string name="home_island_off_sub">Zet het aan om het bovenin te zien</string>
+    <string name="home_island_needs">Aan, en het wacht tot je het hieronder toestaat</string>
+    <string name="home_todo">Nog toestaan</string>
+    <string name="home_try">Probeer het</string>
+    <string name="home_try_blocked">Sta het eiland eerst toe, dan kun je het proberen</string>
+    <string name="home_try_off">Zet het eiland eerst aan, dan kun je het proberen</string>
+    <string name="home_settings">Instellingen</string>
+    <string name="try_music">Muziek</string>
+    <string name="try_call">Gesprek</string>
+    <string name="try_charging">Opladen</string>
+    <string name="try_notification">Melding</string>
+    <string name="try_timer">Timer</string>
+    <string name="try_expand">Open</string>
+
+    <!-- Rechten -->
+    <string name="perm_island">Het eiland</string>
+    <string name="perm_island_why">Zet Drip aan onder Toegankelijkheid. Het tekent alleen het eiland en doet je gebaren, en leest nooit wat er op je scherm staat.</string>
+    <string name="perm_listener">Toegang tot meldingen</string>
+    <string name="perm_listener_why">Zodat het eiland muziek, gesprekken, timers en meldingen kan laten zien. Er gaat niets van je telefoon af.</string>
+    <string name="perm_post">Updatemeldingen</string>
+    <string name="perm_post_why">Alleen om te laten weten dat er een nieuwe versie klaarstaat.</string>
+    <string name="perm_restricted">Is de schakelaar grijs in Android? Open App-info, tik rechtsboven op het menu en kies Beperkte instellingen toestaan.</string>
+    <string name="perm_app_info">App-info</string>
+    <string name="perm_partly">Deels</string>
+    <string name="perm_open_settings">Instellingen openen</string>
+
+    <!-- Eerste keer -->
+    <string name="onb_title">Hoi, dit is Drip</string>
+    <string name="onb_body">Een eiland boven in je scherm voor muziek, gesprekken, timers en meer. Twee kleine stappen en het is er.</string>
+    <string name="onb_step">Stap %1$d van %2$d</string>
+    <string name="onb_island_title">Laat het eiland binnen</string>
+    <string name="onb_island_body">Android houdt tekenen over andere apps achter de instellingen voor Toegankelijkheid. Zoek Drip daar op, soms onder Gedownloade apps, en zet het aan.</string>
+    <string name="onb_notif_title">Laat het zien wat er gebeurt</string>
+    <string name="onb_notif_body">Met toegang tot meldingen weet het eiland wat er speelt, wie er belt en wanneer een timer loopt.</string>
+    <string name="onb_continue">Verder</string>
+    <string name="onb_done">Klaar</string>
+    <string name="onb_later">Later</string>
+    <string name="onboarding_page">Pagina %1$d van %2$d</string>
+
+    <!-- Vorm en pasvorm -->
+    <string name="shape_preview">Voorbeeld</string>
+    <string name="shape_closed">Dicht</string>
+    <string name="shape_opened">Open</string>
+    <string name="shape_fit">Hoe het zit</string>
+    <string name="fit_auto">Auto</string>
+    <string name="fit_notch">Notch</string>
+    <string name="fit_cutout">Camera</string>
+    <string name="fit_auto_note">Auto maakt een notch op een telefoon zonder cameragat en een ring om de camera op een telefoon met een gat.</string>
+    <string name="shape_section_fit">Op deze telefoon</string>
+    <string name="shape_section_closed">Dicht eiland</string>
+    <string name="shape_section_opened">Open eiland</string>
+    <string name="shape_section_place">Plaats</string>
+    <string name="shape_idle_visible">Laten staan in rust</string>
+    <string name="shape_idle_visible_sub">De kleine notch of ring blijft als er niets gebeurt</string>
+    <string name="shape_idle_width">Breedte</string>
+    <string name="shape_idle_height">Hoogte</string>
+    <string name="shape_size_auto">Auto past bij de camera en de statusbalk</string>
+    <string name="shape_compact_width">Breedte met iets aan beide kanten</string>
+    <string name="shape_compact_width_sub">Zoals een nummer of een lader</string>
+    <string name="shape_shoulder">Schouder</string>
+    <string name="shape_shoulder_sub">De bocht waar een notch de bovenrand raakt</string>
+    <string name="shape_roundness">Rondheid</string>
+    <string name="shape_roundness_sub">Van de onderhoeken, van vierkant tot helemaal rond</string>
+    <string name="shape_margin">Ruimte tot de randen</string>
+    <string name="shape_margin_sub">Tussen het open eiland en de zijkanten van het scherm</string>
+    <string name="shape_top_corners">Bovenhoeken</string>
+    <string name="shape_top_corners_auto">Auto loopt mee met de hoeken van het scherm</string>
+    <string name="shape_bottom_corners">Onderhoeken</string>
+    <string name="shape_bottom_corners_sub">Mogen ronder zijn dan de bovenkant</string>
+    <string name="shape_button_outer">Buitenhoeken van knoppen</string>
+    <string name="shape_button_outer_auto">Auto blijft concentrisch met het eiland</string>
+    <string name="shape_button_inner">Binnenhoeken van knoppen</string>
+    <string name="shape_button_inner_sub">Waar een knop naar een andere wijst</string>
+    <string name="shape_attached">Aan de bovenrand blijven</string>
+    <string name="shape_attached_sub">Met een notch hangt het open eiland aan de rand in plaats van los te zweven</string>
+    <string name="shape_nudge_x">Opzij schuiven</string>
+    <string name="shape_nudge_y">Omhoog of omlaag schuiven</string>
+    <string name="shape_nudge_sub">Voor een cameragat dat de automatische pasvorm net niet omsluit</string>
+    <string name="shape_cutout_padding">Ruimte om de camera</string>
+    <string name="shape_cutout_padding_sub">Alleen rond een cameragat</string>
+    <string name="shape_reset">Vorm terugzetten</string>
+    <string name="shape_reset_sub">Alle maten, hoeken en verschuivingen weer automatisch</string>
+
+    <!-- Beweging en gevoel -->
+    <string name="motion_section">Beweging</string>
+    <string name="motion_bounce">Vering</string>
+    <string name="motion_bounce_sub">Van rustig tot levendig</string>
+    <string name="motion_speed">Snelheid</string>
+    <string name="motion_speed_sub">Hoe snel het opent en sluit</string>
+    <string name="motion_try">Eiland openen</string>
+    <string name="motion_try_sub">Zie de vering en de snelheid</string>
+    <string name="motion_section_haptics">Gevoel</string>
+    <string name="motion_haptics">Trillingen</string>
+    <string name="motion_haptics_sub">Een tikje als het opent, sluit en iets meldt</string>
+    <string name="motion_strength">Sterkte</string>
+    <string name="motion_strength_sub">Hoe stevig de tikjes zijn</string>
+    <string name="motion_feel">Voel het</string>
+    <string name="motion_feel_sub">Speelt het tikje van het openen</string>
+    <string name="motion_haptics_off">Zet trillingen eerst aan</string>
+
+    <!-- Wat het eiland laat zien -->
+    <string name="shows_section">Op het eiland</string>
+    <string name="show_music">Muziek</string>
+    <string name="show_music_sub">Wat er speelt, met de knoppen erbij</string>
+    <string name="show_charging">Opladen</string>
+    <string name="show_charging_sub">De batterij terwijl hij laadt</string>
+    <string name="show_calls">Gesprekken</string>
+    <string name="show_calls_sub">Binnenkomende en lopende gesprekken</string>
+    <string name="show_live">Timers en live updates</string>
+    <string name="show_live_sub">Timers, stopwatches, ritten en bezorgingen</string>
+    <string name="show_torch">Zaklamp</string>
+    <string name="show_torch_sub">Zolang de zaklamp aan is</string>
+    <string name="show_notifications">Meldingen</string>
+    <string name="show_notifications_sub">Een korte blik op een nieuwe melding</string>
+    <string name="show_privacy">Camera en microfoon</string>
+    <string name="show_privacy_sub">Een groene of oranje stip zolang er een in gebruik is</string>
+    <string name="shows_section_alerts">Aankondigingen</string>
+    <string name="alert_battery_low">Batterij bijna leeg</string>
+    <string name="alert_battery_full">Batterij vol</string>
+    <string name="alert_battery_saver">Batterijbesparing</string>
+    <string name="alert_dnd">Niet storen</string>
+    <string name="alert_rotation">Draaivergrendeling</string>
+    <string name="alert_ringer">Bellen, trillen of stil</string>
+    <string name="alert_volume">Volume</string>
+    <string name="alert_brightness">Helderheid</string>
+    <string name="alert_headphones">Koptelefoon</string>
+    <string name="alert_duration">Hoe lang ze blijven</string>
+    <string name="alert_duration_sub">Voordat het eiland weer dichtgaat</string>
+    <string name="needs_listener">Heeft toegang tot meldingen nodig, tik om die te geven</string>
+
+    <!-- Meldingen -->
+    <string name="notif_section_apps">Apps</string>
+    <string name="notif_on">Meldingen laten zien</string>
+    <string name="notif_on_sub">Een nieuwe melding opent het eiland even</string>
+    <string name="notif_which">Van welke apps</string>
+    <string name="notif_all">Alle apps</string>
+    <string name="notif_chosen">Gekozen apps</string>
+    <string name="notif_apps">Apps kiezen</string>
+    <plurals name="apps_count">
+        <item quantity="one">%d app</item>
+        <item quantity="other">%d apps</item>
+    </plurals>
+    <string name="apps_none">Nog geen</string>
+    <string name="notif_text">De tekst laten zien</string>
+    <string name="notif_text_sub">Uit houdt het bij de app en de titel</string>
+
+    <!-- Gebaren -->
+    <string name="gestures_section">Op het eiland</string>
+    <string name="gesture_tap">Tikken</string>
+    <string name="gesture_hold">Vasthouden</string>
+    <string name="gesture_swipe_down">Omlaag vegen</string>
+    <string name="gesture_swipe_left">Naar links vegen</string>
+    <string name="gesture_swipe_right">Naar rechts vegen</string>
+    <string name="gesture_none">Niets</string>
+    <string name="gesture_expand">Eiland openen</string>
+    <string name="gesture_open_app">De app openen die het laat zien</string>
+    <string name="gesture_play_pause">Afspelen of pauzeren</string>
+    <string name="gesture_next">Volgend nummer</string>
+    <string name="gesture_previous">Vorig nummer</string>
+    <string name="gesture_back">Terug</string>
+    <string name="gesture_home">Startscherm</string>
+    <string name="gesture_recents">Recente apps</string>
+    <string name="gesture_notifications">Meldingenpaneel</string>
+    <string name="gesture_quick_settings">Snelle instellingen</string>
+    <string name="gesture_lock">Scherm vergrendelen</string>
+    <string name="gesture_screenshot">Schermafbeelding</string>
+    <string name="gesture_torch">Zaklamp aan of uit</string>
+    <string name="gesture_open_drip">Drip openen</string>
+
+    <!-- Wanneer het opzij gaat -->
+    <string name="hide_section">Het eiland gaat opzij</string>
+    <string name="hide_fullscreen">In apps op volledig scherm</string>
+    <string name="hide_fullscreen_sub">Video\'s en games houden het hele scherm</string>
+    <string name="hide_landscape">Liggend</string>
+    <string name="hide_landscape_sub">Zolang de telefoon op zijn kant ligt</string>
+    <string name="hide_lock">Op het vergrendelscherm</string>
+    <string name="hide_lock_sub">Tot de telefoon ontgrendeld is</string>
+    <string name="hide_apps">In gekozen apps</string>
+
+    <!-- Uiterlijk -->
+    <string name="look_island">Het eiland</string>
+    <string name="look_card">Open eiland</string>
+    <string name="look_card_sub">Altijd zwart, of een donkere tint van het accent</string>
+    <string name="card_black">Zwart</string>
+    <string name="card_tinted">Getint</string>
+    <string name="look_accent">Accent van de muziek</string>
+    <string name="look_accent_sub">Uit de albumhoes of uit het thema van de app</string>
+    <string name="accent_album">Albumhoes</string>
+    <string name="accent_theme">Thema</string>
+    <string name="appearance_theme">Thema van de app</string>
+    <string name="appearance_mode">Licht of donker</string>
+    <string name="appearance_light">Licht</string>
+    <string name="appearance_dark">Donker</string>
+    <string name="appearance_black">Puur zwart</string>
+    <string name="appearance_black_sub">Spaart batterij op een OLED-scherm</string>
+    <string name="appearance_colour">Kleur</string>
+    <string name="appearance_accent">Accent</string>
+    <string name="appearance_style">Paletstijl</string>
+    <string name="settings_appearance">Kleuren</string>
+    <string name="settings_appearance_sub">Kleuren van je achtergrond of een palet, en de stijl</string>
+    <string name="settings_language">Taal</string>
+    <string name="language_system">Systeem</string>
+    <string name="language_en">English</string>
+    <string name="language_nl">Nederlands</string>
+    <string name="colours_seed_wallpaper">Achtergrond</string>
+    <string name="colours_seed_indigo">Indigo</string>
+    <string name="colours_seed_ocean">Oceaan</string>
+    <string name="colours_seed_forest">Bos</string>
+    <string name="colours_seed_amber">Amber</string>
+    <string name="colours_seed_rose">Roze</string>
+    <string name="colours_seed_plum">Pruim</string>
+    <string name="colours_seed_slate">Leisteen</string>
+    <string name="colours_wallpaper_note">Volgt je achtergrond, net als de rest van je telefoon.</string>
+    <string name="colours_mono_note">Monochroom negeert de accentkleur.</string>
+    <string name="colours_style_tonal_spot">Tonal Spot</string>
+    <string name="colours_style_vibrant">Levendig</string>
+    <string name="colours_style_expressive">Expressief</string>
+    <string name="colours_style_fruit_salad">Fruitsalade</string>
+    <string name="colours_style_fidelity">Getrouw</string>
+    <string name="colours_style_monochrome">Monochroom</string>
+    <string name="colours_style_tonal_spot_desc">De standaard van Android. Rustige kleuren die dicht bij het accent blijven.</string>
+    <string name="colours_style_vibrant_desc">Sterkere, meer verzadigde kleuren.</string>
+    <string name="colours_style_expressive_desc">Speels. De andere kleuren wijken af van het accent.</string>
+    <string name="colours_style_fruit_salad_desc">Een gedurfd, gemengd palet met een verschoven tint.</string>
+    <string name="colours_style_fidelity_desc">Blijft zo dicht mogelijk bij de accentkleur.</string>
+    <string name="colours_style_monochrome_desc">Helemaal geen kleur, alleen tinten grijs.</string>
+
+    <!-- Het eiland aan houden -->
+    <string name="keep_intro">Android zet toegankelijkheidsdiensten soms uit, na een update of om batterij te sparen, en dan is het eiland weg tot je het zelf weer aanzet. Met één recht mag Drip het zelf weer aanzetten. Dit hoeft niet.</string>
+    <string name="keep_section_state">Status</string>
+    <string name="keep_state_on">Drip kan het eiland weer aanzetten</string>
+    <string name="keep_state_on_sub">Het kijkt elke keer als je Drip opent of de tegel gebruikt</string>
+    <string name="keep_state_off">Nog niet toegestaan</string>
+    <string name="keep_state_off_sub">Geef het recht met Shizuku of met één opdracht vanaf een computer</string>
+    <string name="keep_section_shizuku">Met Shizuku</string>
+    <string name="shizuku_not_installed">Shizuku staat er niet op</string>
+    <string name="shizuku_not_installed_sub">Tik om Shizuku te halen</string>
+    <string name="shizuku_not_running">Shizuku draait niet</string>
+    <string name="shizuku_not_running_sub">Open Shizuku en start het, kom dan terug</string>
+    <string name="shizuku_needs_permission">Sta Drip toe in Shizuku</string>
+    <string name="shizuku_needs_permission_sub">Tik en kies Toestaan</string>
+    <string name="shizuku_denied">Shizuku zei nee</string>
+    <string name="shizuku_denied_sub">Sta Drip toe in de app van Shizuku</string>
+    <string name="shizuku_too_old">Shizuku is te oud</string>
+    <string name="shizuku_too_old_sub">Werk Shizuku bij naar versie 11 of nieuwer</string>
+    <string name="shizuku_ready">Shizuku is klaar</string>
+    <string name="shizuku_ready_sub">Drip kan het om het recht vragen</string>
+    <string name="keep_grant">Het recht geven</string>
+    <string name="keep_grant_sub">Shizuku voert de opdracht voor je uit, één keer</string>
+    <string name="keep_grant_wait">Sta Drip eerst toe in Shizuku</string>
+    <string name="keep_grant_failed">Dat lukte niet: %1$s</string>
+    <string name="keep_section_adb">Met een computer</string>
+    <string name="keep_adb_body">Zet USB-foutopsporing aan, sluit de telefoon aan en voer dit één keer uit:</string>
+    <string name="keep_adb_copy">Opdracht kopiëren</string>
+    <string name="keep_copied">Opdracht gekopieerd</string>
+
+    <!-- Over -->
+    <string name="settings_about">Over</string>
+    <string name="about_github">Broncode</string>
+    <string name="about_privacy">Er gaat niets van je telefoon af</string>
+    <string name="about_privacy_body">Geen account, geen statistieken, geen reclame. Drip gaat alleen online om naar een update te kijken.</string>
+    <string name="about_reset">Eiland terugzetten</string>
+    <string name="about_reset_sub">Alle instellingen van het eiland weer zoals ze kwamen</string>
+    <string name="about_reset_body">Vorm, beweging, gebaren en wat het eiland laat zien gaan terug naar hoe ze kwamen. Het thema van de app en updates blijven zoals ze zijn.</string>
+    <string name="about_reset_confirm">Terugzetten</string>
+    <string name="about_tour">De eerste stappen nog eens</string>
+    <string name="about_tour_sub">De twee stappen van toen Drip nieuw was</string>
+
+    <!-- Apps kiezen -->
+    <string name="picker_notify_title">Apps die mogen laten zien</string>
+    <string name="picker_hide_title">Apps om opzij te gaan</string>
+    <string name="picker_search">Zoek apps</string>
+    <string name="picker_none">Geen app past bij \"%1$s\"</string>
+
+    <!-- Tegel in Snelle instellingen -->
+    <string name="tile_needs">Eerst toestaan</string>
+
+    <!-- Zoekwoorden, gescheiden door komma's -->
+    <string name="settings_kw_shape">notch, cutout, camera, gat, maat, hoeken, pil, pasvorm</string>
+    <string name="settings_kw_fit">notch, cutout, cameragat, gaatje, pil, ring, auto</string>
+    <string name="settings_kw_sizes">maat, breed, smal, hoog, klein, groot</string>
+    <string name="settings_kw_corners">straal, rond, afgerond, hoek, bocht, radius</string>
+    <string name="settings_kw_nudge">verschuiven, verplaatsen, plaats, uitlijnen, offset</string>
+    <string name="settings_kw_motion">animatie, veer, vering, bounce, snelheid, snel, langzaam, trilling</string>
+    <string name="settings_kw_haptics">trilling, trillen, haptiek, tik, feedback</string>
+    <string name="settings_kw_shows">muziek, media, gesprek, bellen, opladen, batterij, timer, zaklamp, privacy</string>
+    <string name="settings_kw_alerts">aankondiging, popup, melding, batterij, volume, helderheid, stil, trillen, koptelefoon, bluetooth</string>
+    <string name="settings_kw_notifications">melding, bericht, app, banner, tekst, voorbeeld</string>
+    <string name="settings_kw_gestures">tikken, vasthouden, lang drukken, vegen, gebaar, actie, snelkoppeling</string>
+    <string name="settings_kw_hide">verbergen, volledig scherm, video, game, liggend, vergrendelscherm, apps</string>
+    <string name="settings_kw_look">uiterlijk, thema, kleur, donker, licht, zwart, taal</string>
+    <string name="settings_kw_appearance">thema, kleur, palet, material you, achtergrond, stijl</string>
+    <string name="settings_kw_language">taal, engels, nederlands, english, dutch, vertalen</string>
+    <string name="settings_kw_keep">shizuku, adb, toegankelijkheid, uit, recht, secure settings, aan houden</string>
+    <string name="settings_kw_updates">update, bijwerken, versie, back-up, terugzetten, exporteren, importeren, wat is er nieuw</string>
+    <string name="settings_kw_about">over, github, broncode, privacy, terugzetten, licentie</string>
+</resources>
