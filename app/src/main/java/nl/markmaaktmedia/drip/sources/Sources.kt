@@ -20,18 +20,24 @@ import nl.markmaaktmedia.drip.island.IslandHub
  * Starts and stops everything that feeds the island apart from the notification listener: the battery, the torch,
  * the privacy dots, the volume and the system switches.
  */
-class Sources(context: Context) {
-    private val env = SourceEnv(context.applicationContext, context.graph.hub)
-    private val parts = listOf(BatteryPart(env), CameraPart(env), AudioPart(env), SignalsPart(env))
+class Sources(private val context: Context) {
+    // Built in start(): a service that makes this as a property has no context attached yet at that point.
+    private var env: SourceEnv? = null
+    private var parts: List<Part> = emptyList()
     private var scope: CoroutineScope? = null
 
     fun start() {
         if (scope != null) return
+        val app = context.applicationContext
+        val e = env ?: SourceEnv(app, app.graph.hub).also {
+            env = it
+            parts = listOf(BatteryPart(it), CameraPart(it), AudioPart(it), SignalsPart(it))
+        }
         parts.forEach { safely("start ${it.javaClass.simpleName}") { it.start() } }
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).also {
             it.launch {
-                env.context.graph.prefs.island.collect { s ->
-                    env.settings = s
+                app.graph.prefs.island.collect { s ->
+                    e.settings = s
                     parts.forEach { p -> safely("settings ${p.javaClass.simpleName}") { p.onSettings() } }
                 }
             }
@@ -39,10 +45,11 @@ class Sources(context: Context) {
     }
 
     fun stop() {
-        scope?.cancel()
+        val s = scope ?: return
+        s.cancel()
         scope = null
         parts.forEach { safely("stop ${it.javaClass.simpleName}") { it.stop() } }
-        env.settings = null
+        env?.settings = null
     }
 }
 
