@@ -29,12 +29,13 @@ class ChargeTraits {
         val charging = status == BatteryManager.BATTERY_STATUS_CHARGING
         if (charging && (plugWatts(maxCurrentUa, maxVoltageUv) >= FAST_WATTS || fastCurrent(currentNow, level))) fastSeen = true
 
-        // Discharging while plugged in is a weak charger under load, not a limit.
-        val held = level < 100 &&
-            (status == BatteryManager.BATTERY_STATUS_NOT_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL)
+        // Discharging while plugged in is a weak charger under load, not a limit. Some phones say full at 98 or 99,
+        // which is the end of a charge, not a limit either.
+        val held = (status == BatteryManager.BATTERY_STATUS_NOT_CHARGING && level < 100) ||
+            (status == BatteryManager.BATTERY_STATUS_FULL && level <= MAX_LIMIT)
         val before = heldAt
         heldAt = when {
-            held -> roundedLimit(level)
+            held -> roundedLimit(level).coerceAtMost(MAX_LIMIT)
             // Topping up to the limit again after it slipped a little: still the same limit.
             before != null && charging && level < 100 && level >= before - TOP_UP_SLACK -> before
             else -> null
@@ -52,6 +53,8 @@ class ChargeTraits {
         /** Into the battery itself: an ordinary 10 W charger stays well under this once losses and the phone are paid. */
         const val FAST_MILLIAMPS = 2_500
         private const val TOP_UP_SLACK = 3
+        /** The highest level that counts as a limit; anything above is a full battery. */
+        const val MAX_LIMIT = 95
 
         /** Watts the charger offers. A missing voltage is 5 V, as in SystemUI. */
         fun plugWatts(maxCurrentUa: Int, maxVoltageUv: Int): Double {

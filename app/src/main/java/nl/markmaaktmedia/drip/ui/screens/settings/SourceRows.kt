@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -221,6 +222,33 @@ internal fun MoreShows(island: IslandSettings, edit: IslandEdit) {
             SwitchRow(
                 2, 3, DripIcons.Devices, stringResource(R.string.set2_tandem), stringResource(R.string.set2_tandem_sub),
                 island.showTandem, { on -> edit { it.copy(showTandem = on) } },
+            )
+        }
+    }
+}
+
+/** How long a short announcement stays, in a few steps: the difference between 3 and 3.5 seconds is not worth a slider. */
+private val AnnouncementMillis = listOf(2_000L, 3_500L, 5_000L, 8_000L)
+
+/** "3.5" or "3,5", as the language of the app writes it. */
+@Composable
+internal fun secondsText(ms: Long): String {
+    val format = java.text.NumberFormat.getNumberInstance(LocalConfiguration.current.locales[0])
+    format.maximumFractionDigits = 1
+    return format.format(ms / 1000.0)
+}
+
+/** At the top of the notifications page: every announcement, a notification or the volume, stays this long. */
+@Composable
+internal fun AnnouncementTime(island: IslandSettings, edit: IslandEdit) {
+    SectionHeader(stringResource(R.string.set2_section_announcements), top = 20.dp)
+    SettingsGroup {
+        SettingsTarget(FocusKeys.AlertDuration, 0, 1) {
+            SegmentedRow(
+                0, 1, DripIcons.Hourglass, stringResource(R.string.alert_duration), AnnouncementMillis,
+                selected = AnnouncementMillis.minBy { kotlin.math.abs(it - island.alertDurationMs) },
+                label = { stringResource(R.string.value_seconds, secondsText(it)) },
+                onSelect = { ms -> edit { it.copy(alertDurationMs = ms) } },
             )
         }
     }

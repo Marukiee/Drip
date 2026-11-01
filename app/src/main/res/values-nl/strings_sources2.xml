@@ -35,6 +35,9 @@
     <string name="set2_tandem">Tandem</string>
     <string name="set2_tandem_sub">Overdrachten, het klembord en de verbonden computer</string>
 
+    <string name="set2_section_announcements">Korte meldingen</string>
+    <string name="set2_sum_duration">%1$s s in beeld</string>
+
     <string name="set2_section_other_apps">Andere apps</string>
     <string name="set2_automation">Andere apps het eiland laten gebruiken</string>
     <string name="set2_automation_sub">Apps zoals Tasker kunnen er hun eigen dingen op zetten</string>

@@ -38,6 +38,8 @@ internal fun NotificationsPage(onBack: () -> Unit, onOpen: (Route) -> Unit) {
     val openListener = { Access.openListener(context) }
 
     SettingsPageFrame(stringResource(R.string.settings_cat_notifications), onBack) {
+        AnnouncementTime(island, edit)
+
         SectionHeader(stringResource(R.string.shows_section), top = 20.dp)
         SettingsGroup {
             SettingsTarget(FocusKeys.NotifyOn, 0, 2) {

@@ -1,9 +1,6 @@
 package nl.markmaaktmedia.drip.ui.screens.settings
 
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -66,16 +63,6 @@ internal fun ShowsPage(onBack: () -> Unit) {
         SectionHeader(stringResource(R.string.shows_section_alerts), top = 20.dp)
         Toggles(Announced, island, edit)
         BluetoothPermissionRow(island)
-        Spacer(Modifier.height(12.dp))
-        SettingsGroup {
-            SettingsTarget(FocusKeys.AlertDuration, 0, 1) {
-                SliderRow(
-                    0, 1, DripIcons.Hourglass, stringResource(R.string.alert_duration), stringResource(R.string.alert_duration_sub),
-                    island.alertDurationMs / 1000f, 1.5f..8f, 0.5f, { stringResource(R.string.value_seconds, speedText(it)) },
-                    onChange = { v -> edit { it.copy(alertDurationMs = (v * 1000).toLong()) } },
-                )
-            }
-        }
 
         OtherAppsSection(island, edit)
     }

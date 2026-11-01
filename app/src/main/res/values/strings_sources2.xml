@@ -36,6 +36,9 @@
     <string name="set2_tandem">Tandem</string>
     <string name="set2_tandem_sub">Transfers, the clipboard and the connected computer</string>
 
+    <string name="set2_section_announcements">Announcements</string>
+    <string name="set2_sum_duration">%1$s s on screen</string>
+
     <string name="set2_section_other_apps">Other apps</string>
     <string name="set2_automation">Let other apps use the island</string>
     <string name="set2_automation_sub">Apps like Tasker can put their own things on it</string>

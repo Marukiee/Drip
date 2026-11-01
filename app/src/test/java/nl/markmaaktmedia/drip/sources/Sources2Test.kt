@@ -146,5 +146,7 @@ class ChargeTraitsTest {
         assertNull(ChargeTraits().update(true, full, 100, 0, 0, null).limit)
         assertNull(ChargeTraits().update(false, notCharging, 80, 0, 0, null).limit)
         assertEquals(90, ChargeTraits().update(true, full, 90, 0, 0, null).limit)
+        assertNull(ChargeTraits().update(true, full, 99, 0, 0, null).limit)
+        assertEquals(95, ChargeTraits().update(true, notCharging, 99, 0, 0, null).limit)
     }
 }

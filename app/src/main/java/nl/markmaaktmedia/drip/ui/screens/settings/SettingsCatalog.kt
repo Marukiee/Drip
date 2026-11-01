@@ -232,7 +232,6 @@ internal object SettingsCatalog {
         row("alert_volume", R.string.alert_volume, R.string.settings_kw_alerts, SettingsCategory.Shows, FocusKeys.AlertVolume, { DripIcons.VolumeUp }),
         row("alert_brightness", R.string.alert_brightness, R.string.settings_kw_alerts, SettingsCategory.Shows, FocusKeys.AlertBrightness, { DripIcons.Brightness }),
         row("alert_headphones", R.string.alert_headphones, R.string.settings_kw_alerts, SettingsCategory.Shows, FocusKeys.AlertHeadphones, { DripIcons.Headphones }),
-        row("alert_duration", R.string.alert_duration, R.string.settings_kw_alerts, SettingsCategory.Shows, FocusKeys.AlertDuration, { DripIcons.Hourglass }, R.string.alert_duration_sub),
         row("show_second", R.string.set2_second, R.string.set2_kw_more, SettingsCategory.Shows, FocusKeys.ShowSecond, { DripIcons.Tab }, R.string.set2_second_sub),
         row("show_lyrics", R.string.set2_lyrics, R.string.set2_kw_more, SettingsCategory.Shows, FocusKeys.ShowLyrics, { DripIcons.Lyrics }, R.string.set2_lyrics_sub),
         row("lyrics_online", R.string.set2_lyrics_online, R.string.set2_kw_more, SettingsCategory.Shows, FocusKeys.LyricsOnline, { DripIcons.Language }, R.string.set2_lyrics_online_sub),
@@ -246,6 +245,7 @@ internal object SettingsCatalog {
 
         // Notifications
         page(SettingsCategory.Notifications, R.string.settings_kw_notifications),
+        row("alert_duration", R.string.alert_duration, R.string.settings_kw_alerts, SettingsCategory.Notifications, FocusKeys.AlertDuration, { DripIcons.Hourglass }, R.string.alert_duration_sub),
         row("notif_on", R.string.notif_on, R.string.settings_kw_notifications, SettingsCategory.Notifications, FocusKeys.NotifyOn, { DripIcons.Notifications }, R.string.notif_on_sub),
         row("notif_which", R.string.notif_which, R.string.settings_kw_notifications, SettingsCategory.Notifications, FocusKeys.NotifyWhich, { DripIcons.Apps }),
         SettingsEntry(
