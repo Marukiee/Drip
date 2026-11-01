@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -185,6 +186,8 @@ private fun SliderBody(
                         checked = auto,
                         onCheckedChange = { onAuto(it) },
                         modifier = Modifier.height(36.dp),
+                        // Unchecked it sits on the row's own colour, so it gets a step lighter fill to still read as a button.
+                        colors = ToggleButtonDefaults.toggleButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
                         contentPadding = PaddingValues(horizontal = 14.dp),
                     ) {
                         Text(stringResource(R.string.value_auto), style = MaterialTheme.typography.labelLarge)
@@ -201,8 +204,9 @@ private fun SliderBody(
                     ) { text ->
                         Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                    // Under Auto the guess stays readable, quieter, so it is clear where the slider starts.
                     Text(
-                        if (locked) stringResource(R.string.value_auto) else label(snapTo(moved, range, step)),
+                        label(snapTo(moved, range, step)),
                         style = MaterialTheme.typography.titleMedium,
                         color = if (locked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(start = 12.dp),

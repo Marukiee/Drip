@@ -42,6 +42,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -283,6 +285,8 @@ private fun Step(number: Int, title: String, body: String, top: @Composable () -
 private fun IslandStep() {
     val context = LocalContext.current
     val access = rememberAccess()
+    // The hint about restricted settings only once a try came back without the permission.
+    var asked by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
     Step(
         1, stringResource(R.string.onb_island_title), stringResource(R.string.onb_island_body),
         top = {
@@ -306,8 +310,8 @@ private fun IslandStep() {
     ) {
         PermissionCard(
             DripIcons.Touch, stringResource(R.string.perm_island), stringResource(R.string.perm_island_why),
-            granted = access.island, onGrant = { Access.openAccessibility(context) },
-            note = if (access.island) null else restrictedNote(),
+            granted = access.island, onGrant = { asked = true; Access.openAccessibility(context) },
+            note = if (access.island || !asked) null else restrictedNote(),
         )
     }
 }
@@ -317,11 +321,12 @@ private fun NotificationsStep() {
     val context = LocalContext.current
     val access = rememberAccess()
     val askPost = rememberPostRequest()
+    var asked by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
     Step(2, stringResource(R.string.onb_notif_title), stringResource(R.string.onb_notif_body)) {
         PermissionCard(
             DripIcons.Notifications, stringResource(R.string.perm_listener), stringResource(R.string.perm_listener_why),
-            granted = access.listener, onGrant = { Access.openListener(context) },
-            note = if (access.listener) null else restrictedNote(),
+            granted = access.listener, onGrant = { asked = true; Access.openListener(context) },
+            note = if (access.listener || !asked) null else restrictedNote(),
             index = 0, total = 2,
         )
         PermissionCard(

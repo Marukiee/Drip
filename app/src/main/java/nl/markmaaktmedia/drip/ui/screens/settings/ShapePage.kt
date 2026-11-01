@@ -85,7 +85,7 @@ internal fun ShapePage(onBack: () -> Unit) {
             )
         }
 
-        SectionHeader(stringResource(R.string.shape_fit), top = 20.dp)
+        SectionHeader(stringResource(R.string.shape_section_fit), top = 20.dp)
         SettingsGroup {
             SettingsTarget(FocusKeys.ShapeFit, 0, 2) {
                 SegmentedRow(
@@ -118,7 +118,7 @@ internal fun ShapePage(onBack: () -> Unit) {
             SettingsTarget(FocusKeys.ShapeIdleWidth, 0, 5) {
                 AutoSliderRow(
                     0, 5, DripIcons.Straighten, stringResource(R.string.shape_idle_width), null, sizeAuto,
-                    island.idleWidthDp, guess.idleWidth, 40f..260f, 1f, { dpLabel(it) },
+                    island.idleWidthDp, guess.idleWidth, 20f..260f, 1f, { dpLabel(it) },
                     onChange = { v -> edit { it.copy(idleWidthDp = v) } }, onStart = closed,
                 )
             }
@@ -266,8 +266,9 @@ private fun rememberAutoGuess(island: IslandSettings): AutoGuess {
         val statusBar = (insets?.getInsets(WindowInsets.Type.statusBars())?.top ?: 0) / density
         val corner = (insets?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)?.radius ?: 0) / density
         val ring = hole != null && island.fitMode != FitMode.NOTCH
-        val height = if (ring) hole!!.height() / density + island.cutoutPaddingDp * 2 else statusBar.takeIf { it > 0 } ?: 28f
-        val width = if (ring) hole!!.width() / density + island.cutoutPaddingDp * 2 else height * 3.8f
+        // The bounding rect of a camera hole runs from the top edge down past the hole, so its width is the hole.
+        val height = if (ring) hole!!.width() / density + island.cutoutPaddingDp * 2 else statusBar.takeIf { it > 0 } ?: 28f
+        val width = if (ring) height else height * 3.8f
         AutoGuess(
             idleWidth = width,
             idleHeight = height,

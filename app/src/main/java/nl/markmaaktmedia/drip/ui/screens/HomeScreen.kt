@@ -20,14 +20,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -198,16 +198,22 @@ private fun Overview(summaries: Map<SettingsCategory, String>, listState: LazyLi
     val access = rememberAccess()
     val askPost = rememberPostRequest()
     val restricted = restrictedNote()
+    // The hint about restricted settings only after a first try came back without the permission, not as a warning up front.
+    var askedIsland by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    var askedListener by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    val (island, _) = rememberIsland()
     val missing = listOfNotNull(
         Missing.Island.takeIf { !access.island },
         Missing.Listener.takeIf { !access.listener },
         Missing.Post.takeIf { !access.post },
     )
 
+    // The list runs on under the gesture bar and stops above it at the end.
+    val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 32.dp
     LazyColumn(
-        Modifier.fillMaxSize().navigationBarsPadding(),
+        Modifier.fillMaxSize(),
         state = listState,
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 32.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = bottom),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item(key = "master") { MasterSwitch(allowed = access.island, modifier = Modifier.animateItem()) }
@@ -222,13 +228,13 @@ private fun Overview(summaries: Map<SettingsCategory, String>, listState: LazyLi
                             when (item) {
                                 Missing.Island -> PermissionCard(
                                     DripIcons.Touch, stringResource(R.string.perm_island), stringResource(R.string.perm_island_why),
-                                    granted = false, onGrant = { Access.openAccessibility(context) },
-                                    note = restricted, index = position, total = missing.size,
+                                    granted = false, onGrant = { askedIsland = true; Access.openAccessibility(context) },
+                                    note = restricted.takeIf { askedIsland }, index = position, total = missing.size,
                                 )
                                 Missing.Listener -> PermissionCard(
                                     DripIcons.Notifications, stringResource(R.string.perm_listener), stringResource(R.string.perm_listener_why),
-                                    granted = false, onGrant = { Access.openListener(context) },
-                                    index = position, total = missing.size,
+                                    granted = false, onGrant = { askedListener = true; Access.openListener(context) },
+                                    note = restricted.takeIf { askedListener }, index = position, total = missing.size,
                                 )
                                 Missing.Post -> PermissionCard(
                                     DripIcons.Update, stringResource(R.string.perm_post), stringResource(R.string.perm_post_why),
@@ -245,7 +251,7 @@ private fun Overview(summaries: Map<SettingsCategory, String>, listState: LazyLi
         item(key = "try") {
             Column(Modifier.animateItem()) {
                 SectionHeader(stringResource(R.string.home_try), top = 4.dp)
-                TryButtons(enabled = access.island)
+                TryButtons(blocked = if (!access.island) R.string.home_try_blocked else if (!island.enabled) R.string.home_try_off else null)
             }
         }
 
@@ -365,15 +371,16 @@ private val TryRows = listOf(
 )
 
 /**
- * Buttons that make the real island act something out. Without the island allowed nothing would answer them, so they
- * are grey then and a tap says why.
+ * Buttons that make the real island act something out. Without the island allowed, or with it switched off, nothing
+ * would answer them, so they are grey then and a tap says why.
  */
 @Suppress("DEPRECATION")
 @Composable
-private fun TryButtons(enabled: Boolean) {
+private fun TryButtons(blocked: Int?) {
     val context = LocalContext.current
     val hub = context.graph.hub
-    val blocked = stringResource(R.string.home_try_blocked)
+    val enabled = blocked == null
+    val reason = blocked?.let { stringResource(it) }
     Column(Modifier.fillMaxWidth().alpha(if (enabled) 1f else 0.5f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         TryRows.forEach { row ->
             ButtonGroup(Modifier.fillMaxWidth()) {
@@ -381,17 +388,17 @@ private fun TryButtons(enabled: Boolean) {
                     val interaction = remember { MutableInteractionSource() }
                     FilledTonalButton(
                         onClick = {
-                            if (enabled) hub.demo(item.demo) else Toast.makeText(context, blocked, Toast.LENGTH_SHORT).show()
+                            if (reason == null) hub.demo(item.demo) else Toast.makeText(context, reason, Toast.LENGTH_SHORT).show()
                         },
                         modifier = Modifier.weight(1f).animateWidth(interaction),
                         interactionSource = interaction,
-                        contentPadding = ButtonDefaults.SmallContentPadding,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp),
                     ) {
-                        Icon(item.icon(), null, modifier = Modifier.size(18.dp))
-                        Text(
-                            stringResource(item.label), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(start = 6.dp),
-                        )
+                        // The icon over the word, so even the longest word has the whole width of its third.
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(item.icon(), null, modifier = Modifier.size(20.dp))
+                            Text(stringResource(item.label), maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelLarge)
+                        }
                     }
                 }
             }

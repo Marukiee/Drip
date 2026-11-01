@@ -38,7 +38,7 @@ internal fun NotificationsPage(onBack: () -> Unit, onOpen: (Route) -> Unit) {
     val openListener = { Access.openListener(context) }
 
     SettingsPageFrame(stringResource(R.string.settings_cat_notifications), onBack) {
-        SectionHeader(stringResource(R.string.notif_section), top = 20.dp)
+        SectionHeader(stringResource(R.string.shows_section), top = 20.dp)
         SettingsGroup {
             SettingsTarget(FocusKeys.NotifyOn, 0, 2) {
                 SwitchRow(
@@ -56,7 +56,7 @@ internal fun NotificationsPage(onBack: () -> Unit, onOpen: (Route) -> Unit) {
             }
         }
 
-        SectionHeader(stringResource(R.string.notif_which), top = 20.dp)
+        SectionHeader(stringResource(R.string.notif_section_apps), top = 20.dp)
         SettingsGroup {
             SettingsTarget(FocusKeys.NotifyWhich, 0, 1) {
                 SegmentedRow(

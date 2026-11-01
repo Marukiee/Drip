@@ -121,6 +121,7 @@ internal fun KeepOnPage(onBack: () -> Unit) {
             ActionRow(
                 1, 2, DripIcons.Key, stringResource(R.string.keep_grant),
                 when {
+                    allowed -> stringResource(R.string.access_allowed)
                     problem != null -> stringResource(R.string.keep_grant_failed, problem!!)
                     !ready -> stringResource(R.string.keep_grant_wait)
                     else -> stringResource(R.string.keep_grant_sub)

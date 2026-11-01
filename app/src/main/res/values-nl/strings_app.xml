@@ -54,6 +54,7 @@
     <string name="home_todo">Nog toestaan</string>
     <string name="home_try">Probeer het</string>
     <string name="home_try_blocked">Sta het eiland eerst toe, dan kun je het proberen</string>
+    <string name="home_try_off">Zet het eiland eerst aan, dan kun je het proberen</string>
     <string name="home_settings">Instellingen</string>
     <string name="try_music">Muziek</string>
     <string name="try_call">Gesprek</string>
@@ -96,6 +97,7 @@
     <string name="fit_notch">Notch</string>
     <string name="fit_cutout">Camera</string>
     <string name="fit_auto_note">Auto maakt een notch op een telefoon zonder cameragat en een ring om de camera op een telefoon met een gat.</string>
+    <string name="shape_section_fit">Op deze telefoon</string>
     <string name="shape_section_closed">Dicht eiland</string>
     <string name="shape_section_opened">Open eiland</string>
     <string name="shape_section_place">Plaats</string>
@@ -138,7 +140,7 @@
     <string name="motion_speed_sub">Hoe snel het opent en sluit</string>
     <string name="motion_try">Eiland openen</string>
     <string name="motion_try_sub">Zie de vering en de snelheid</string>
-    <string name="motion_section_haptics">Trillingen</string>
+    <string name="motion_section_haptics">Gevoel</string>
     <string name="motion_haptics">Trillingen</string>
     <string name="motion_haptics_sub">Een tikje als het opent, sluit en iets meldt</string>
     <string name="motion_strength">Sterkte</string>
@@ -178,7 +180,7 @@
     <string name="needs_listener">Heeft toegang tot meldingen nodig, tik om die te geven</string>
 
     <!-- Meldingen -->
-    <string name="notif_section">Meldingen</string>
+    <string name="notif_section_apps">Apps</string>
     <string name="notif_on">Meldingen laten zien</string>
     <string name="notif_on_sub">Een nieuwe melding opent het eiland even</string>
     <string name="notif_which">Van welke apps</string>

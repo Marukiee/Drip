@@ -3,6 +3,8 @@ package nl.markmaaktmedia.drip
 import nl.markmaaktmedia.drip.engine.IslandKeeper
 import nl.markmaaktmedia.drip.engine.LauncherApp
 import nl.markmaaktmedia.drip.engine.LauncherApps
+import nl.markmaaktmedia.drip.ui.screens.settings.snapTo
+import nl.markmaaktmedia.drip.ui.screens.settings.speedText
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -83,5 +85,23 @@ class LauncherAppsTest {
     @Test fun chosenAppsComeFirst() {
         val ordered = LauncherApps.chosenFirst(apps, setOf("org.telegram.messenger", "com.google.android.apps.maps"))
         assertEquals(listOf("Maps", "Telegram", "Spotify", "Café Nero", "YouTube Music"), ordered.map { it.label })
+    }
+}
+
+class SliderHelpersTest {
+    @Test fun aValueSnapsToTheNearestStepInsideTheRange() {
+        val snap = ::snapTo
+        assertEquals(0.55f, snap(0.53f, 0f..1f, 0.05f), 0.0001f)
+        assertEquals(-40f, snap(-55f, -40f..40f, 1f), 0f)
+        assertEquals(8f, snap(9f, 1.5f..8f, 0.5f), 0f)
+        assertEquals(1.5f, snap(1.6f, 1.5f..8f, 0.5f), 0f)
+    }
+
+    @Test fun speedReadsLikeAMultiplier() {
+        val text = ::speedText
+        assertEquals("1", text(1f))
+        assertEquals("1.5", text(1.5f))
+        assertEquals("0.75", text(0.75f))
+        assertEquals("2", text(2f))
     }
 }
