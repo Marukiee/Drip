@@ -152,7 +152,19 @@ class IslandController(
         refresh()
     }
 
+    /** What was announced lately, so the same message posted twice (an app that updates it at once) shows once. */
+    private val recent = ArrayDeque<Pair<String, Long>>()
+
+    private fun signature(a: Alert) = listOf(a.kind.name, a.packageName.orEmpty(), a.title, a.text.orEmpty()).joinToString("|")
+
     private fun onAlert(incoming: Alert) {
+        if (incoming.kind == AlertKind.NOTIFICATION || incoming.kind == AlertKind.ALARM) {
+            val now = SystemClock.elapsedRealtime()
+            while (recent.isNotEmpty() && now - recent.first().second > DUPLICATE_WINDOW_MS) recent.removeFirst()
+            val sig = signature(incoming)
+            if (recent.any { it.first == sig }) return
+            recent.addLast(sig to now)
+        }
         val current = alert
         if (current != null && current.id == incoming.id) {
             // The same announcement again, like the volume moving on: update it in place and give it its time again.
@@ -312,6 +324,7 @@ class IslandController(
             AlertKind.VOLUME, AlertKind.BRIGHTNESS, AlertKind.RINGER, AlertKind.DND, AlertKind.ROTATION, AlertKind.BATTERY_SAVER,
             AlertKind.CHARGING, AlertKind.UNPLUGGED, AlertKind.BATTERY_FULL, AlertKind.UNLOCK, AlertKind.HEADPHONES,
         )
+        const val DUPLICATE_WINDOW_MS = 6_000L
         const val PAUSED_LINGER_MS = 3 * 60_000L
         const val EXPANDED_IDLE_MS = 9_000L
         const val MAX_QUEUE = 4

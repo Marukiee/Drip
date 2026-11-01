@@ -1,5 +1,43 @@
 [
   {
+    "version": "0.1.8",
+    "date": "2026-11-01",
+    "en": {
+      "title": "Reply and plan",
+      "new": [
+        "Reply to a message from the island",
+        "A countdown to your next appointment, with Join for a video call",
+        "Installs and updates, earbuds with their battery, unlock, and the location dot",
+        "Gestures per kind of thing, and a double tap"
+      ],
+      "better": [
+        "Battery Care shows the limit the phone holds",
+        "How long announcements stay now sits under Notifications"
+      ],
+      "fixed": [
+        "The song no longer jumps after you let go",
+        "The same message no longer comes in twice"
+      ]
+    },
+    "nl": {
+      "title": "Antwoorden en plannen",
+      "new": [
+        "Antwoord vanuit het eiland op een bericht",
+        "Aftellen naar je volgende afspraak, met Deelnemen bij een videogesprek",
+        "Installaties en updates, oordopjes met hun batterij, ontgrendelen, en de locatiestip",
+        "Gebaren per soort ding, en een dubbeltik"
+      ],
+      "better": [
+        "Battery Care laat zien waar de telefoon op stopt",
+        "Hoe lang meldingen blijven staat nu bij Meldingen"
+      ],
+      "fixed": [
+        "Het nummer springt na loslaten niet meer terug",
+        "Dezelfde melding komt niet meer dubbel binnen"
+      ]
+    }
+  },
+  {
     "version": "0.1.7",
     "date": "2026-11-01",
     "en": {

@@ -372,7 +372,11 @@ private fun SeekBar(np: NowPlaying) {
     val track = IslandInk.SurfaceHigh
     // The played part fades towards the track while the music is paused, so the bar says it stands still.
     val fill by animateColorAsState(if (np.playing) scheme.primary else androidx.compose.ui.graphics.lerp(scheme.primary, track, 0.5f), tween(320), label = "fill")
-    val hold = held?.takeIf { (_, at, report) -> report == np.positionAtElapsed && SystemClock.elapsedRealtime() - at < 2500 }
+    // Some players first report the old position once more after a jump, and only then the new one: the hold ends when
+    // the reported position is close to where the finger left it, or after three seconds.
+    val hold = held?.takeIf { (target, at, _) ->
+        SystemClock.elapsedRealtime() - at < 3000 && kotlin.math.abs(position(SystemClock.elapsedRealtime()) - target * duration) > 1500
+    }
     val shown = drag ?: hold?.first ?: (position(clock.longValue) / duration.toFloat())
     val wave = remember { androidx.compose.ui.graphics.Path() }
 
