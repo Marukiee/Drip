@@ -52,8 +52,11 @@ enum class AccentSource { ALBUM_ART, THEME }
 data class IslandSettings(
     val enabled: Boolean = true,
     val fitMode: FitMode = FitMode.AUTO,
-    /** Shows the small notch or the ring around the camera while nothing is going on. */
-    val idleVisible: Boolean = true,
+    /**
+     * Shows the small notch or the ring around the camera while nothing is going on. Off by default: with nothing to
+     * show, the island pulls back into the top edge (or the camera) and is gone.
+     */
+    val idleVisible: Boolean = false,
     val idleWidthDp: Float? = null,
     val idleHeightDp: Float? = null,
     /** Width of the island with something on both sides of it, like a song or a charger. */
@@ -77,7 +80,7 @@ data class IslandSettings(
     val offsetXDp: Float = 0f,
     val offsetYDp: Float = 0f,
     /** Room around the camera hole in cutout mode. */
-    val cutoutPaddingDp: Float = 4f,
+    val cutoutPaddingDp: Float = 3f,
     /** 0 is calm, 1 is lively. Sets how much the island overshoots when it opens. */
     val bounce: Float = 0.5f,
     /** 0.5 is half as fast, 2 is twice as fast. */
@@ -269,65 +272,82 @@ class DripPrefs(private val context: Context) {
         )
     }
 
+    /**
+     * Writes only what differs from the default and removes the rest, so a default that improves in a later version
+     * reaches everyone who never changed that setting.
+     */
     private fun MutablePreferences.writeIsland(v: IslandSettings) {
-        fun b(name: String, value: Boolean) { this[booleanPreferencesKey(name)] = value }
-        fun f(name: String, value: Float) { this[floatPreferencesKey(name)] = value }
+        val d = IslandSettings()
+        fun b(name: String, value: Boolean, default: Boolean) {
+            val key = booleanPreferencesKey(name)
+            if (value == default) remove(key) else this[key] = value
+        }
+        fun f(name: String, value: Float, default: Float) {
+            val key = floatPreferencesKey(name)
+            if (value == default) remove(key) else this[key] = value
+        }
         fun fn(name: String, value: Float?) {
             if (value == null) remove(floatPreferencesKey(name)) else this[floatPreferencesKey(name)] = value
         }
-        fun s(name: String, value: String) { this[stringPreferencesKey(name)] = value }
-        fun set(name: String, value: Set<String>) { this[stringSetPreferencesKey(name)] = value }
-        b("island_enabled", v.enabled)
-        s("fit_mode", v.fitMode.name)
-        b("idle_visible", v.idleVisible)
+        fun s(name: String, value: String, default: String) {
+            val key = stringPreferencesKey(name)
+            if (value == default) remove(key) else this[key] = value
+        }
+        fun set(name: String, value: Set<String>) {
+            val key = stringSetPreferencesKey(name)
+            if (value.isEmpty()) remove(key) else this[key] = value
+        }
+        b("island_enabled", v.enabled, d.enabled)
+        s("fit_mode", v.fitMode.name, d.fitMode.name)
+        b("idle_visible", v.idleVisible, d.idleVisible)
         fn("idle_width", v.idleWidthDp)
         fn("idle_height", v.idleHeightDp)
         fn("compact_width", v.compactWidthDp)
-        f("shoulder", v.shoulderDp)
-        f("collapsed_roundness", v.collapsedRoundness)
-        f("expanded_margin", v.expandedMarginDp)
+        f("shoulder", v.shoulderDp, d.shoulderDp)
+        f("collapsed_roundness", v.collapsedRoundness, d.collapsedRoundness)
+        f("expanded_margin", v.expandedMarginDp, d.expandedMarginDp)
         fn("expanded_top_radius", v.expandedTopRadiusDp)
-        f("expanded_bottom_radius", v.expandedBottomRadiusDp)
+        f("expanded_bottom_radius", v.expandedBottomRadiusDp, d.expandedBottomRadiusDp)
         fn("button_outer_radius", v.buttonOuterRadiusDp)
-        f("button_inner_radius", v.buttonInnerRadiusDp)
-        b("expanded_attached", v.expandedAttached)
-        f("offset_x", v.offsetXDp)
-        f("offset_y", v.offsetYDp)
-        f("cutout_padding", v.cutoutPaddingDp)
-        f("bounce", v.bounce)
-        f("speed", v.speed)
-        b("haptics", v.hapticsEnabled)
-        f("haptics_strength", v.hapticsStrength)
-        s("card_style", v.cardStyle.name)
-        s("accent_source", v.accentSource.name)
-        b("show_music", v.showMusic)
-        b("show_charging", v.showCharging)
-        b("show_calls", v.showCalls)
-        b("show_live", v.showLive)
-        b("show_torch", v.showTorch)
-        b("show_notifications", v.showNotifications)
-        b("show_privacy", v.showPrivacy)
-        b("alert_battery_low", v.alertBatteryLow)
-        b("alert_battery_full", v.alertBatteryFull)
-        b("alert_battery_saver", v.alertBatterySaver)
-        b("alert_dnd", v.alertDnd)
-        b("alert_rotation", v.alertRotation)
-        b("alert_ringer", v.alertRinger)
-        b("alert_volume", v.alertVolume)
-        b("alert_brightness", v.alertBrightness)
-        b("alert_headphones", v.alertHeadphones)
-        this[longPreferencesKey("alert_duration")] = v.alertDurationMs
-        b("notify_all_apps", v.notifyAllApps)
+        f("button_inner_radius", v.buttonInnerRadiusDp, d.buttonInnerRadiusDp)
+        b("expanded_attached", v.expandedAttached, d.expandedAttached)
+        f("offset_x", v.offsetXDp, d.offsetXDp)
+        f("offset_y", v.offsetYDp, d.offsetYDp)
+        f("cutout_padding", v.cutoutPaddingDp, d.cutoutPaddingDp)
+        f("bounce", v.bounce, d.bounce)
+        f("speed", v.speed, d.speed)
+        b("haptics", v.hapticsEnabled, d.hapticsEnabled)
+        f("haptics_strength", v.hapticsStrength, d.hapticsStrength)
+        s("card_style", v.cardStyle.name, d.cardStyle.name)
+        s("accent_source", v.accentSource.name, d.accentSource.name)
+        b("show_music", v.showMusic, d.showMusic)
+        b("show_charging", v.showCharging, d.showCharging)
+        b("show_calls", v.showCalls, d.showCalls)
+        b("show_live", v.showLive, d.showLive)
+        b("show_torch", v.showTorch, d.showTorch)
+        b("show_notifications", v.showNotifications, d.showNotifications)
+        b("show_privacy", v.showPrivacy, d.showPrivacy)
+        b("alert_battery_low", v.alertBatteryLow, d.alertBatteryLow)
+        b("alert_battery_full", v.alertBatteryFull, d.alertBatteryFull)
+        b("alert_battery_saver", v.alertBatterySaver, d.alertBatterySaver)
+        b("alert_dnd", v.alertDnd, d.alertDnd)
+        b("alert_rotation", v.alertRotation, d.alertRotation)
+        b("alert_ringer", v.alertRinger, d.alertRinger)
+        b("alert_volume", v.alertVolume, d.alertVolume)
+        b("alert_brightness", v.alertBrightness, d.alertBrightness)
+        b("alert_headphones", v.alertHeadphones, d.alertHeadphones)
+        longPreferencesKey("alert_duration").let { if (v.alertDurationMs == d.alertDurationMs) remove(it) else this[it] = v.alertDurationMs }
+        b("notify_all_apps", v.notifyAllApps, d.notifyAllApps)
         set("notify_apps", v.notifyApps)
-        b("notify_show_text", v.notifyShowText)
-        s("gesture_tap", v.gestureTap.name)
-        s("gesture_long_press", v.gestureLongPress.name)
-        s("gesture_swipe_down", v.gestureSwipeDown.name)
-        s("gesture_swipe_left", v.gestureSwipeLeft.name)
-        s("gesture_swipe_right", v.gestureSwipeRight.name)
-        b("hide_fullscreen", v.hideFullscreen)
-        b("hide_landscape", v.hideLandscape)
-        b("hide_on_lockscreen", v.hideOnLockscreen)
+        b("notify_show_text", v.notifyShowText, d.notifyShowText)
+        s("gesture_tap", v.gestureTap.name, d.gestureTap.name)
+        s("gesture_long_press", v.gestureLongPress.name, d.gestureLongPress.name)
+        s("gesture_swipe_down", v.gestureSwipeDown.name, d.gestureSwipeDown.name)
+        s("gesture_swipe_left", v.gestureSwipeLeft.name, d.gestureSwipeLeft.name)
+        s("gesture_swipe_right", v.gestureSwipeRight.name, d.gestureSwipeRight.name)
+        b("hide_fullscreen", v.hideFullscreen, d.hideFullscreen)
+        b("hide_landscape", v.hideLandscape, d.hideLandscape)
+        b("hide_on_lockscreen", v.hideOnLockscreen, d.hideOnLockscreen)
         set("hidden_apps", v.hiddenApps)
     }
 

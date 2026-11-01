@@ -1,6 +1,8 @@
 package nl.markmaaktmedia.drip.island
 
 import android.content.Context
+import android.graphics.RectF
+import android.view.DisplayCutout
 import android.hardware.display.DisplayManager
 import android.view.Display
 import android.view.RoundedCorner
@@ -41,7 +43,7 @@ data class DeviceFit(
             val display = context.getSystemService(DisplayManager::class.java).getDisplay(Display.DEFAULT_DISPLAY)
             val density = context.resources.displayMetrics.density
             val statusBar = insets.getInsetsIgnoringVisibility(WindowInsets.Type.statusBars()).top
-            val cutout = (insets.displayCutout ?: display?.cutout)?.boundingRectTop?.takeIf { !it.isEmpty }
+            val cutout = (insets.displayCutout ?: display?.cutout)?.let { holeOf(it) }
             val corner = insets.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)?.radius
                 ?: display?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)?.radius
             return DeviceFit(
@@ -49,10 +51,28 @@ data class DeviceFit(
                 screenHeight = bounds.height(),
                 density = density,
                 statusBarHeight = statusBar.takeIf { it > 0 } ?: (24 * density).toInt(),
-                cutout = cutout?.let { Hole(it.left, it.top, it.right, it.bottom) },
+                cutout = cutout,
                 screenCornerRadius = corner?.takeIf { it > 0 },
                 landscape = bounds.width() > bounds.height(),
             )
+        }
+
+        /**
+         * The camera itself, not the box the system reserves for it: that box runs from the top edge down to the end of
+         * the status bar and is far bigger than the hole. The outline of the cutout is the real shape, so the island can
+         * hug the lens.
+         */
+        private fun holeOf(cutout: DisplayCutout): Hole? {
+            val box = cutout.boundingRectTop.takeIf { !it.isEmpty } ?: return null
+            val path = cutout.cutoutPath
+            if (path != null) {
+                val bounds = RectF()
+                path.computeBounds(bounds, true)
+                if (bounds.intersect(RectF(box))) {
+                    return Hole(bounds.left.toInt(), bounds.top.toInt(), bounds.right.toInt(), bounds.bottom.toInt())
+                }
+            }
+            return Hole(box.left, box.top, box.right, box.bottom)
         }
     }
 }
@@ -109,7 +129,7 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
     )
 
     val compactWidth: Float = settings.compactWidthDp?.let(::dp)
-        ?: min(fit.screenWidth * 0.62f, dp(250f)).coerceAtLeast(idleWidth + dp(80f))
+        ?: max(idleWidth + dp(72f), dp(150f)).coerceAtMost(fit.screenWidth * 0.45f)
 
     val margin: Float = dp(settings.expandedMarginDp)
 

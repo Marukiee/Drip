@@ -20,7 +20,10 @@ object Demos {
     fun play(context: Context, demo: Demo, controller: IslandController) {
         val hub = context.graph.hub
         when (demo) {
-            Demo.MUSIC -> hub.nowPlaying.value = music(context)
+            Demo.MUSIC -> {
+                hub.nowPlaying.value = music(context)
+                if (hub.setMusicVolume == null) hub.musicVolume.value = 0.6f
+            }
             Demo.CALL -> hub.call.value = call(context, incoming = false)
             Demo.INCOMING -> hub.call.value = call(context, incoming = true)
             Demo.CHARGING -> {

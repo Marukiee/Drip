@@ -267,6 +267,7 @@ class IslandController(
             settings.idleVisible -> IslandUi(Stage.IDLE, null, privacy)
             else -> IslandUi(Stage.HIDDEN, null, privacy)
         }
+        android.util.Log.d("DripIsland", "stage=${ui.stage} content=${ui.content?.key} hidden=$hidden vis=$visibility")
         _ui.value = ui
     }
 

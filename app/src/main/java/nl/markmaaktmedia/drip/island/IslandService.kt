@@ -51,6 +51,10 @@ class IslandService : AccessibilityService() {
         window = IslandWindow(this)
         window.onOutsideTouch = { controller.collapse() }
         window.onInsets = ::onInsets
+        window.onStatusBar = { shown ->
+            visibility = visibility.copy(statusBarShown = shown)
+            controller.setVisibility(visibility)
+        }
         fit.value = DeviceFit.read(this)
         window.show(ComposeView(this).apply {
             setContent {
@@ -95,13 +99,8 @@ class IslandService : AccessibilityService() {
         controller.setVisibility(visibility)
     }
 
-    private fun onInsets(insets: WindowInsets) {
-        // An app in full screen hides the status bar; the island goes with it.
-        val shown = insets.isVisible(WindowInsets.Type.statusBars())
-        if (shown != visibility.statusBarShown) {
-            visibility = visibility.copy(statusBarShown = shown)
-            controller.setVisibility(visibility)
-        }
+    private fun onInsets(@Suppress("UNUSED_PARAMETER") insets: WindowInsets) {
+        // Insets change with a rotation or a new cutout setting: read the top of the screen again.
         val newFit = DeviceFit.read(this)
         if (newFit != fit.value) fit.value = newFit
     }

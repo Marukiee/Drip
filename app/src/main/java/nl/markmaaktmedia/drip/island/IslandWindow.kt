@@ -44,6 +44,8 @@ class IslandWindow(private val context: Context) {
 
     var onOutsideTouch: (() -> Unit)? = null
     var onInsets: ((WindowInsets) -> Unit)? = null
+    /** True while the status bar is on screen, false while an app uses the full screen. */
+    var onStatusBar: ((Boolean) -> Unit)? = null
 
     private val root = OverlayRoot(context)
     private val params = WindowManager.LayoutParams(
@@ -76,11 +78,13 @@ class IslandWindow(private val context: Context) {
         content.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
         root.addView(content, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
         runCatching { windowManager.addView(root, params) }.onSuccess { attached = true }
+        runCatching { windowManager.addView(probe, probeParams) }
     }
 
     fun hide() {
         if (!attached) return
         runCatching { windowManager.removeViewImmediate(root) }
+        runCatching { windowManager.removeViewImmediate(probe) }
         root.removeAllViews()
         attached = false
         owner.stop()
@@ -112,6 +116,39 @@ class IslandWindow(private val context: Context) {
         if (Build.VERSION.SDK_INT >= 35) {
             root.requestedFrameRate = if (moving) View.REQUESTED_FRAME_RATE_CATEGORY_HIGH else View.REQUESTED_FRAME_RATE_CATEGORY_DEFAULT
         }
+    }
+
+    /**
+     * Whether an app uses the full screen. An overlay is not told whether the status bar shows (its own insets always say
+     * it does not), so this asks the window manager another way: a window one pixel wide and the height of the screen,
+     * invisible and untouchable, that is laid out below the status bar like any normal window. When the status bar goes
+     * away, the probe moves up to the top edge, and that move is the answer.
+     */
+    private val probe = object : View(context) {
+        private val location = IntArray(2)
+        private var last: Boolean? = null
+
+        override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+            super.onLayout(changed, left, top, right, bottom)
+            getLocationOnScreen(location)
+            val shown = location[1] > 0
+            if (shown != last) {
+                last = shown
+                onStatusBar?.invoke(shown)
+            }
+        }
+    }
+
+    private val probeParams = WindowManager.LayoutParams(
+        1, WindowManager.LayoutParams.MATCH_PARENT, 0, 0,
+        WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+        PixelFormat.TRANSLUCENT,
+    ).apply {
+        gravity = Gravity.TOP or Gravity.START
+        fitInsetsTypes = WindowInsets.Type.statusBars()
+        windowAnimations = 0
+        title = "Drip probe"
     }
 
     private inner class OverlayRoot(context: Context) : FrameLayout(context) {

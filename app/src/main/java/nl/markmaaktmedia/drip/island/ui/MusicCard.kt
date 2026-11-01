@@ -142,7 +142,7 @@ private fun PlayButton(playing: Boolean, onClick: () -> Unit) {
         Modifier
             .size(width, 56.dp)
             .clip(RoundedCornerShape(corner))
-            .background(MaterialTheme.colorScheme.primaryContainer)
+            .background(MaterialTheme.colorScheme.primary)
             .clickable(source, null) {
                 context.graph.haptics.play(Haptics.Kind.TAP)
                 onClick()
@@ -153,7 +153,7 @@ private fun PlayButton(playing: Boolean, onClick: () -> Unit) {
             Icon(
                 if (now) DripIcons.PauseFilled else DripIcons.PlayFilled,
                 contentDescription = stringResource(if (now) R.string.island_pause else R.string.island_play),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(28.dp),
+                tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(28.dp),
             )
         }
     }
