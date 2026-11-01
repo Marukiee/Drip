@@ -8,6 +8,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
 import android.os.Build
+import android.media.AudioManager
+import android.view.KeyEvent
 import android.view.WindowInsets
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityWindowInfo
@@ -19,6 +21,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import nl.markmaaktmedia.drip.data.GestureAction
+import nl.markmaaktmedia.drip.engine.SystemPopups
 import nl.markmaaktmedia.drip.graph
 import nl.markmaaktmedia.drip.island.ui.IslandOverlay
 import nl.markmaaktmedia.drip.sources.Sources
@@ -77,6 +80,11 @@ class IslandService : AccessibilityService() {
         updateLocked()
         checkStatusBar()
         scope.launch { graph.hub.demos.collect { Demos.play(applicationContext, it, controller) } }
+        scope.launch {
+            graph.prefs.island.collect { s ->
+                SystemPopups.apply(applicationContext, s.enabled && s.showNotifications && s.hideSystemPopups)
+            }
+        }
         graph.hub.islandRunning.value = true
         graph.hub.openOutput = { openOutputSwitcher(graph.hub.nowPlaying.value?.packageName) }
         graph.hub.setTyping = { on ->
@@ -133,6 +141,32 @@ class IslandService : AccessibilityService() {
     }
 
     override fun onInterrupt() = Unit
+
+    /**
+     * The volume buttons while an opened card shows the volume: Drip moves it itself, without Android's panel, which
+     * would be a second volume on top of the card and lag behind it. Any other time the buttons go on to Android.
+     */
+    override fun onKeyEvent(event: KeyEvent): Boolean {
+        val up = event.keyCode == KeyEvent.KEYCODE_VOLUME_UP
+        if (!up && event.keyCode != KeyEvent.KEYCODE_VOLUME_DOWN) return false
+        if (!::controller.isInitialized) return false
+        val ui = controller.ui.value
+        if (ui.stage != Stage.EXPANDED) return false
+        val stream = when (val c = ui.content) {
+            is IslandContent.Music -> AudioManager.STREAM_MUSIC
+            is IslandContent.Notice -> when (c.alert.kind) {
+                AlertKind.VOLUME, AlertKind.RINGER -> AudioManager.USE_DEFAULT_STREAM_TYPE
+                else -> return false
+            }
+            else -> return false
+        }
+        val nudge = graph.hub.nudgeVolume ?: return false
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            nudge(stream, if (up) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER)
+            controller.poke()
+        }
+        return true
+    }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
@@ -228,6 +262,7 @@ class IslandService : AccessibilityService() {
     private fun tearDown() {
         if (tornDown || !::controller.isInitialized) return
         tornDown = true
+        SystemPopups.apply(applicationContext, false)
         applicationContext.graph.hub.islandRunning.value = false
         applicationContext.graph.hub.openOutput = null
         applicationContext.graph.hub.setTyping = null

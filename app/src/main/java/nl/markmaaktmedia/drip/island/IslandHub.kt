@@ -27,6 +27,8 @@ class IslandHub {
      * microphone, but it is nearly always the one in front when it starts, so the privacy card names that one.
      */
     val foregroundApp = MutableStateFlow<String?>(null)
+    /** The message whose card should open straight into typing a reply (its reply button in the notch was pressed). */
+    val replyTo = MutableStateFlow<String?>(null)
 
     @Volatile var torchCommands: TorchCommands? = null
     /** Gives the island the keyboard while a reply is typed, and takes it away again. Set by the island service. */
@@ -35,6 +37,8 @@ class IslandHub {
     @Volatile var openOutput: (() -> Unit)? = null
     /** Sets the media volume, 0 to 1, without the system's own volume panel. */
     @Volatile var setMusicVolume: ((Float) -> Unit)? = null
+    /** One step up or down (AudioManager.ADJUST_RAISE or ADJUST_LOWER) of a stream, without the system's panel. */
+    @Volatile var nudgeVolume: ((stream: Int, direction: Int) -> Unit)? = null
 
     private val _alerts = MutableSharedFlow<Alert>(extraBufferCapacity = 32, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val alerts: SharedFlow<Alert> = _alerts.asSharedFlow()

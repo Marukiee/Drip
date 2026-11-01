@@ -56,6 +56,7 @@ internal fun ShowsPage(onBack: () -> Unit) {
     SettingsPageFrame(stringResource(R.string.settings_cat_shows), onBack) {
         SectionHeader(stringResource(R.string.shows_section), top = 20.dp)
         Toggles(Shown, island, edit)
+        PausedMusicTime(island, edit)
         LocationPermissionRow(island)
 
         MoreShows(island, edit)

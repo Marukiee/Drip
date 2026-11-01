@@ -160,6 +160,12 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
 
     private val shoulder = dp(settings.shoulderDp)
 
+    /**
+     * Hangs from the top edge with shoulders, rather than floating. A notch phone set to round its top corners outward
+     * floats like a pill, and its small drop does too.
+     */
+    private val hangs: Boolean get() = notch && shoulder > 0f
+
     /** Room the content of an opened card leaves at the top, so a notch phone's status bar stays readable above it. */
     val cardTopInset: Float get() = if (notch && settings.expandedAttached) fit.statusBarHeight.toFloat() else 0f
 
@@ -185,9 +191,9 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
             Stage.COMPACT -> collapsedShape(compactWidth, compactHeight, roundness)
             Stage.MINI -> collapsedShape(min(compactWidth + dp(56f), fullWidth), compactHeight, roundness)
             Stage.ALERT -> {
-                // Only as tall as the words need: the status bar is covered anyway, no room is kept free for it.
-                val h = dp(60f)
-                val w = min(fullWidth, dp(360f))
+                // A photo, two lines and a button: the status bar is covered anyway, no room is kept free for it.
+                val h = dp(74f)
+                val w = min(fullWidth, dp(380f))
                 if (notch) {
                     IslandGeometry(centerX, 0f, w, h, shoulder, min(expandedBottomRadius, h / 2f))
                 } else {
@@ -214,7 +220,7 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
      */
     fun secondGeometry(main: IslandGeometry): IslandGeometry {
         val h = compactHeight
-        return if (notch) {
+        return if (hangs) {
             IslandGeometry(main.right + shoulder * 2 + dp(2f) + h / 2, main.top, h, h, shoulder, h / 2)
         } else {
             IslandGeometry(main.right + dp(6f) + h / 2, main.top, h, h, -h / 2, h / 2)
@@ -224,7 +230,13 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
     /** Where the small drop waits while there is no second thing: tucked inside the right end of [main], out of sight. */
     fun tuckedSecond(main: IslandGeometry): IslandGeometry {
         val h = (main.height * 0.8f).coerceAtLeast(0f)
-        return IslandGeometry(main.right - main.height / 2, main.top, h, h, 0f, h / 2)
+        // Hanging from the edge it may be flat on top; a floating pill is round all over, so the drop is a ball in the
+        // middle of its round end, or its corners would stick out of the pill.
+        return if (hangs) {
+            IslandGeometry(main.right - main.height / 2, main.top, h, h, 0f, h / 2)
+        } else {
+            IslandGeometry(main.right - main.height / 2, main.top + (main.height - h) / 2, h, h, -h / 2, h / 2)
+        }
     }
 
     /**
@@ -234,7 +246,7 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
      */
     fun retractedSecond(): IslandGeometry {
         val out = secondGeometry(geometry(Stage.COMPACT))
-        return if (notch) {
+        return if (hangs) {
             IslandGeometry(out.centerX, out.top, out.width * 0.4f, 0f, 0f, 0f)
         } else {
             IslandGeometry(out.centerX, out.top + out.height / 2f, 0f, 0f, 0f, 0f)

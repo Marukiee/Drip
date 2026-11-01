@@ -257,29 +257,14 @@ fun TorchCard(torch: TorchInfo, hub: IslandHub) {
 @Composable
 fun NoticeCard(alert: Alert, controller: IslandController, hub: IslandHub) {
     val accent = alertAccent(alert)
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        when {
-            alert.image != null -> Picture(alert.image, 48.dp, CircleShape)
-            alert.iconRes != null -> Box(Modifier.size(48.dp).clip(CircleShape).background(accent.copy(alpha = 0.22f)), contentAlignment = Alignment.Center) {
-                Icon(androidx.compose.ui.res.painterResource(alert.iconRes), null, tint = accent, modifier = Modifier.size(26.dp))
-            }
-            else -> AppIcon(null, alert.packageName, 44.dp)
-        }
-        Column(Modifier.weight(1f)) {
-            Title(alert.title, size = 18)
-        }
-        if (alert.image != null) AppIcon(null, alert.packageName, 22.dp)
-    }
-    alert.text?.let {
-        Spacer(Modifier.height(10.dp))
-        Text(it, color = IslandInk.Primary.copy(alpha = 0.85f), fontSize = 15.sp, lineHeight = 20.sp, maxLines = 8, overflow = TextOverflow.Ellipsis)
-    }
+    NoticeHead(alert, accent)
     alert.level?.let {
         Spacer(Modifier.height(12.dp))
         LevelBar(it, accent, Modifier.fillMaxWidth().height(8.dp))
     }
     Spacer(Modifier.height(16.dp))
-    var replying by remember { mutableStateOf<IslandAction?>(null) }
+    // Opened with the reply button in the notch: straight into typing.
+    var replying by remember { mutableStateOf(alert.actions.firstOrNull { it.reply != null }?.takeIf { hub.replyTo.value == alert.id }) }
     val reply = replying
     androidx.compose.animation.AnimatedContent(
         targetState = reply,

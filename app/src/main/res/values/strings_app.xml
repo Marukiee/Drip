@@ -10,6 +10,8 @@
     <string name="value_percent">%1$d%%</string>
     <string name="value_speed">%1$sx</string>
     <string name="value_seconds">%1$s s</string>
+    <string name="value_minutes">%1$s min</string>
+    <string name="paused_linger">Paused music stays</string>
 
     <!-- Settings: overview, pages and search -->
     <string name="settings_search_hint">Search settings</string>
@@ -194,6 +196,9 @@
     <string name="apps_none">None yet</string>
     <string name="notif_text">Show the text</string>
     <string name="notif_text_sub">Off keeps it to the app and the title</string>
+    <string name="notif_hide_popups">Hide Android\'s pop-ups</string>
+    <string name="notif_hide_popups_sub">A new message shows once, in the island. It stays in the notification shade</string>
+    <string name="notif_hide_popups_blocked">Needs the permission from Keep the island on</string>
 
     <!-- Gestures -->
     <string name="gestures_section">On the island</string>

@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import nl.markmaaktmedia.drip.graph
 import nl.markmaaktmedia.drip.island.Haptics
@@ -51,8 +52,9 @@ import kotlin.math.abs
  * handle with a small gap on both sides, the lighter rest of the track and a stop dot at its end. The handle narrows
  * while it is held. The outer corners are round; with [concentric] the bottom ones follow the island instead.
  *
- * Under the finger the fill follows it exactly. Let go, it stays where it was left until [value] (what the system
- * reports) catches up or a second and a half has passed, so it never jumps back for a moment.
+ * Under the finger the fill follows it exactly. Let go, and it stays where it was left: while the system catches up, and
+ * after that for as long as what [value] reports is that same step, so it never hops to the exact value of the step.
+ * Only a slider with a few coarse steps (the torch) settles on its step, with a spring.
  *
  * The icon and label sit at the start of the filled part. When that is too short to hold them they move to just after
  * the handle, on the track, as the Material 3 slider does, so the handle never runs through them.
@@ -77,9 +79,17 @@ fun ExpressiveSlider(
     val scope = rememberCoroutineScope()
     var dragging by remember { mutableStateOf(false) }
     var held by remember { mutableStateOf<Pair<Float, Long>?>(null) }
-    val hold = held?.takeIf { (f, at) -> SystemClock.elapsedRealtime() - at < 1500 && abs(f - value) > 0.04f }
+    // Let go of only when the system reports something else than where it was left (a volume button, another app).
+    LaunchedEffect(held, value) {
+        val (f, at) = held ?: return@LaunchedEffect
+        val wait = HOLD_MS - (SystemClock.elapsedRealtime() - at)
+        if (wait > 0) delay(wait)
+        if (abs(f - value) > SAME_STEP) held = null
+    }
     val shown = remember { Animatable(value) }
-    LaunchedEffect(hold?.first ?: value, dragging) { if (!dragging) shown.animateTo(hold?.first ?: value, spring(0.9f, 500f)) }
+    val target = held?.first ?: value
+    LaunchedEffect(target, dragging) { if (!dragging) shown.animateTo(target, spring(0.9f, 500f)) }
+    val coarse = steps in 1..COARSE_STEPS
     val handle by animateDpAsState(if (dragging) 2.dp else 4.dp, spring(0.6f, 600f), label = "handle")
     var widthPx by remember { mutableStateOf(1f) }
     var contentPx by remember { mutableStateOf(0f) }
@@ -88,7 +98,8 @@ fun ExpressiveSlider(
     fun set(x: Float, final: Boolean) {
         val f = (x / widthPx).coerceIn(0f, 1f)
         val snapped = if (steps > 0) Math.round(f * steps).toFloat() / steps else f
-        scope.launch { shown.snapTo(if (final && steps > 0) snapped else f) }
+        val rest = if (final && coarse) snapped else f
+        scope.launch { if (final && coarse) shown.animateTo(rest, spring(0.7f, 600f)) else shown.snapTo(rest) }
         if (steps > 0) {
             val step = Math.round(f * steps)
             if (step != lastStep) {
@@ -97,7 +108,7 @@ fun ExpressiveSlider(
             }
         }
         onChange(snapped, final)
-        if (final) held = snapped to SystemClock.elapsedRealtime()
+        if (final) held = rest to SystemClock.elapsedRealtime()
     }
 
     val outer = height / 2
@@ -188,3 +199,8 @@ fun ExpressiveSlider(
         }
     }
 }
+
+private const val HOLD_MS = 1500L
+/** Further apart than this, [value] is a different step and no longer the one the finger left it at. */
+private const val SAME_STEP = 0.05f
+private const val COARSE_STEPS = 8

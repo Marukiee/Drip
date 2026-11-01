@@ -70,6 +70,21 @@ internal class AudioPart(env: SourceEnv) : Part(env) {
         }
     }
 
+    private val nudge: (Int, Int) -> Unit = { stream, direction ->
+        audio?.let { am ->
+            safely("nudge volume") {
+                echo.markOwn(SystemClock.elapsedRealtime())
+                if (stream == AudioManager.USE_DEFAULT_STREAM_TYPE) {
+                    am.adjustSuggestedStreamVolume(direction, stream, 0)
+                } else {
+                    am.adjustStreamVolume(stream, direction, 0)
+                }
+                // At once, not when the system gets round to saying so: the card follows the button without a delay.
+                hub.musicVolume.value = musicLevel(am)
+            }
+        }
+    }
+
     override fun start() {
         val am = audio ?: return
         safely("volume") { hub.musicVolume.value = musicLevel(am) }
@@ -88,6 +103,7 @@ internal class AudioPart(env: SourceEnv) : Part(env) {
             micBusy = am.activeRecordingConfigurations.isNotEmpty()
         }
         hub.setMusicVolume = setVolume
+        hub.nudgeVolume = nudge
     }
 
     override fun stop() {
@@ -96,6 +112,7 @@ internal class AudioPart(env: SourceEnv) : Part(env) {
         safely("device callback") { audio?.unregisterAudioDeviceCallback(devices) }
         safely("recording callback") { audio?.unregisterAudioRecordingCallback(recording) }
         if (hub.setMusicVolume === setVolume) hub.setMusicVolume = null
+        if (hub.nudgeVolume === nudge) hub.nudgeVolume = null
         known.clear()
         micBusy = false
         hub.privacy.update { it.copy(microphone = false) }

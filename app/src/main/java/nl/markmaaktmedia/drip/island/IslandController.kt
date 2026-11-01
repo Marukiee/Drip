@@ -68,6 +68,8 @@ class IslandController(
     private var second: IslandContent? = null
     private var privacy = PrivacyInfo()
     private var sources: Sources5? = null
+    /** What was swapped to the front by a tap on the small drop: it stays the island while it lasts. */
+    private var pinnedKey: String? = null
 
     private val queue = ArrayDeque<Alert>()
     private var alert: Alert? = null
@@ -90,6 +92,7 @@ class IslandController(
                 settings = it
                 haptics.enabled = it.hapticsEnabled
                 haptics.strength = it.hapticsStrength
+                repick()
                 refresh()
             }
         }
@@ -141,9 +144,38 @@ class IslandController(
     )
 
     private fun repick() {
-        val picked = pick(sources ?: return)
+        val picked = pick(sources ?: return).toMutableList()
+        val pinned = picked.indexOfFirst { it.key == pinnedKey }
+        when {
+            pinned < 0 -> pinnedKey = null
+            // A call still comes first; whatever was swapped forward waits behind it.
+            pinned > 0 && picked.first() !is IslandContent.Call -> picked.add(0, picked.removeAt(pinned))
+        }
         primary = picked.firstOrNull()
         second = picked.getOrNull(1)
+        // Paused music goes the moment its time is up, not at the next check.
+        lingerJob?.cancel()
+        val music = sources?.music
+        if (music != null && !music.playing) {
+            val left = lastPlayingAt + settings.pausedLingerMs - SystemClock.elapsedRealtime()
+            if (left > 0) lingerJob = scope.launch {
+                delay(left + 50)
+                repick()
+                refresh()
+            }
+        }
+    }
+
+    private var lingerJob: Job? = null
+
+    /** The small drop becomes the island and the island the small drop. */
+    fun swapSecond(): Boolean {
+        val content = second ?: return false
+        pinnedKey = content.key
+        haptics.play(Haptics.Kind.SWIPE)
+        repick()
+        refresh()
+        return true
     }
 
     /** Everything worth showing, most important first. The first is the island, the second its small drop. */
@@ -160,7 +192,7 @@ class IslandController(
         // Held at a limit (Battery Care) the phone is plugged in but not charging: still worth showing, with the limit.
         val plugged = s.battery.charging || (s.battery.limit != null && s.battery.plug != PlugType.NONE)
         if (settings.showCharging && plugged) out += IslandContent.Charging(s.battery)
-        if (settings.showMusic && s.music != null && !s.music.playing && now - lastPlayingAt < PAUSED_LINGER_MS) out += IslandContent.Music(s.music)
+        if (settings.showMusic && s.music != null && !s.music.playing && now - lastPlayingAt < settings.pausedLingerMs) out += IslandContent.Music(s.music)
         return out
     }
 
@@ -176,6 +208,10 @@ class IslandController(
     private fun signature(a: Alert) = listOf(a.kind.name, a.packageName.orEmpty(), a.title, a.text.orEmpty()).joinToString("|")
 
     private fun onAlert(incoming: Alert) {
+        // News from the app that is open is news the person is looking at: picking a device in Tandem, a message in the
+        // chat that is open. It would only cover the top of that app.
+        val fromFront = incoming.packageName != null && incoming.packageName == visibility.foregroundPackage
+        if (fromFront && (incoming.kind == AlertKind.NOTIFICATION || incoming.kind == AlertKind.OTHER)) return
         if (incoming.kind == AlertKind.NOTIFICATION || incoming.kind == AlertKind.ALARM) {
             val now = SystemClock.elapsedRealtime()
             while (recent.isNotEmpty() && now - recent.first().second > DUPLICATE_WINDOW_MS) recent.removeFirst()
@@ -252,6 +288,7 @@ class IslandController(
         expandedKey = null
         expandedFallback = null
         expandJob?.cancel()
+        hub.replyTo.value = null
         if (!quiet) haptics.play(Haptics.Kind.COLLAPSE)
         if (wasNotice) {
             alert = null
@@ -357,7 +394,6 @@ class IslandController(
             AlertKind.CHARGING, AlertKind.UNPLUGGED, AlertKind.BATTERY_FULL, AlertKind.UNLOCK, AlertKind.HEADPHONES,
         )
         const val DUPLICATE_WINDOW_MS = 6_000L
-        const val PAUSED_LINGER_MS = 3 * 60_000L
         const val EXPANDED_IDLE_MS = 9_000L
         const val MAX_QUEUE = 4
     }

@@ -199,4 +199,19 @@ data class Alert(
     val durationMs: Long? = null,
     val actions: List<IslandAction> = emptyList(),
     val open: (() -> Unit)? = null,
+    /** The app's name, for the line above an opened message. */
+    val appLabel: String? = null,
+    /** When it came in, as System.currentTimeMillis. */
+    val postedAt: Long? = null,
+    /** The group a message was sent in; [title] is then the sender. */
+    val conversation: String? = null,
+    /** The last few messages of a conversation, oldest first, for the opened card. */
+    val messages: List<AlertMessage> = emptyList(),
+    /** A photo that came with it. */
+    val picture: Bitmap? = null,
+    /** [image] is a person, not the app's icon, so the app's icon goes on it as a small badge. */
+    val personImage: Boolean = false,
 )
+
+/** One message of a conversation. [mine] is what the person sent themselves. */
+data class AlertMessage(val sender: String?, val text: String, val mine: Boolean)

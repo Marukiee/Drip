@@ -28,6 +28,8 @@
     <string name="demo_stop">Stoppen</string>
     <string name="demo_alert_title">Teun</string>
     <string name="demo_alert_text">Kom je vanavond naar de sidequest? Neem je laptop mee.</string>
+    <string name="demo_message_1">Hé! Werkte de nieuwe build?</string>
+    <string name="demo_message_2">Ja, het eiland ziet er top uit</string>
     <string name="demo_reply">Gelezen</string>
     <string name="demo_volume">Mediavolume</string>
     <string name="demo_hang_up">Ophangen</string>
@@ -59,6 +61,8 @@
     <string name="island_ringer_sound">Geluid</string>
     <string name="island_ringer_vibrate">Trillen</string>
     <string name="island_ringer_silent">Stil</string>
+    <string name="island_now">nu</string>
+    <string name="island_minutes_ago">%d min</string>
     <string name="island_privacy_title">In gebruik</string>
     <string name="island_privacy_camera">Camera</string>
     <string name="island_privacy_microphone">Microfoon</string>

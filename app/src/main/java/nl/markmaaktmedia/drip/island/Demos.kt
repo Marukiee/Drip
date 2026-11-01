@@ -145,6 +145,12 @@ object Demos {
                     id = "demo-reply-" + SystemClock.elapsedRealtime(), kind = AlertKind.NOTIFICATION,
                     title = context.getString(R.string.demo_alert_title), text = context.getString(R.string.demo_alert_text),
                     image = art(context, 0xFF7A79EE.toInt(), 0xFFFFB0CB.toInt(), 160), packageName = context.packageName, accent = 0xFF7A79EE.toInt(),
+                    appLabel = "Drip", postedAt = System.currentTimeMillis(), personImage = true,
+                    messages = listOf(
+                        AlertMessage(context.getString(R.string.demo_alert_title), context.getString(R.string.demo_message_1), mine = false),
+                        AlertMessage(null, context.getString(R.string.demo_message_2), mine = true),
+                        AlertMessage(context.getString(R.string.demo_alert_title), context.getString(R.string.demo_alert_text), mine = false),
+                    ),
                     actions = listOf(
                         IslandAction(context.getString(R.string.demo_reply_action), ActionKind.REPLY, reply = { text ->
                             hub.post(Alert(id = "demo-sent", kind = AlertKind.OTHER, title = context.getString(R.string.demo_sent), text = text.toString(), iconRes = R.drawable.sym_send))

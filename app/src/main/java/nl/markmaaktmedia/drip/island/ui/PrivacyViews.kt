@@ -13,7 +13,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,7 +35,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
@@ -96,35 +94,38 @@ private fun labelOf(context: Context, app: String): String = runCatching {
     context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(app, 0)).toString()
 }.getOrDefault(app)
 
+/** What was already greeted, so going back to the closed island from the card does not bring the icons in again. */
+private val greeted = HashSet<PrivacyKind>()
+
 /**
- * The icon of something in use, on a soft disc of its colour. It springs in, and a ring goes out from it once, the way
- * a ping draws the eye without blinking on and on.
+ * The icon of something in use, on a soft disc of its colour. Only when it starts being used does it fade and grow in,
+ * calmly and without overshoot; coming back from the card it is simply there.
  */
 @Composable
-fun PrivacyGlyph(kind: PrivacyKind, size: Dp, modifier: Modifier = Modifier) {
+fun PrivacyGlyph(kind: PrivacyKind, size: Dp, modifier: Modifier = Modifier, animate: Boolean = true) {
     val ink = inkOf(kind)
-    val grow = remember { Animatable(0f) }
-    val ping = remember { Animatable(0f) }
-    LaunchedEffect(Unit) { grow.animateTo(1f, spring(0.5f, 420f)) }
-    LaunchedEffect(Unit) { ping.animateTo(1f, tween(900, delayMillis = 120)) }
-    Box(modifier.size(size), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.fillMaxSize()) {
-            val p = ping.value
-            if (p in 0.001f..0.999f) {
-                drawCircle(ink.copy(alpha = 0.6f * (1f - p)), radius = this.size.minDimension / 2f * (0.7f + 0.5f * p), style = Stroke(2.dp.toPx()))
+    val fresh = remember { animate && greeted.add(kind) }
+    val grow = remember { Animatable(if (fresh) 0f else 1f) }
+    if (fresh) LaunchedEffect(Unit) { grow.animateTo(1f, spring(1f, 300f)) }
+    Box(
+        modifier
+            .size(size)
+            .graphicsLayer {
+                val s = 0.7f + 0.3f * grow.value
+                scaleX = s; scaleY = s
+                alpha = grow.value
             }
-        }
-        Box(
-            Modifier
-                .size(size)
-                .graphicsLayer { scaleX = grow.value; scaleY = grow.value }
-                .clip(CircleShape)
-                .background(ink.copy(alpha = 0.22f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(iconOf(kind), null, tint = ink, modifier = Modifier.size(size * 0.6f))
-        }
+            .clip(CircleShape)
+            .background(ink.copy(alpha = 0.22f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(iconOf(kind), null, tint = ink, modifier = Modifier.size(size * 0.6f))
     }
+}
+
+/** Forgets the kinds no longer in use, so the next time one starts it is greeted again. */
+fun forgetGreeted(inUse: List<PrivacyKind>) {
+    greeted.retainAll(inUse.toSet())
 }
 
 /**
@@ -152,7 +153,7 @@ fun PrivacyCompact(privacy: PrivacyInfo, start: Modifier, end: Modifier, slot: D
 }
 
 private fun swap() =
-    (scaleIn(spring(0.6f, 450f), initialScale = 0.5f) + fadeIn(tween(160)))
+    (scaleIn(spring(0.9f, 450f), initialScale = 0.7f) + fadeIn(tween(160)))
         .togetherWith(scaleOut(tween(160), targetScale = 0.6f) + fadeOut(tween(140)))
 
 /**
@@ -191,7 +192,8 @@ fun PrivacyCard(privacy: PrivacyInfo, onDone: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                PrivacyGlyph(kind, 38.dp)
+                // Still in the card: the icons only pop when something starts being used, not every time it opens.
+                PrivacyGlyph(kind, 38.dp, animate = false)
                 Column(Modifier.weight(1f)) {
                     Text(nameOf(kind), color = IslandInk.Primary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     Subtitle(app?.let { labelOf(context, it) } ?: stringResource(R.string.island_privacy_unknown_app))

@@ -10,6 +10,8 @@
     <string name="value_percent">%1$d%%</string>
     <string name="value_speed">%1$sx</string>
     <string name="value_seconds">%1$s s</string>
+    <string name="value_minutes">%1$s min</string>
+    <string name="paused_linger">Gepauzeerde muziek blijft</string>
 
     <!-- Instellingen: overzicht, pagina's en zoeken -->
     <string name="settings_search_hint">Zoek in instellingen</string>
@@ -194,6 +196,9 @@
     <string name="apps_none">Nog geen</string>
     <string name="notif_text">De tekst laten zien</string>
     <string name="notif_text_sub">Uit houdt het bij de app en de titel</string>
+    <string name="notif_hide_popups">Pop-ups van Android verbergen</string>
+    <string name="notif_hide_popups_sub">Een nieuw bericht komt één keer, in het eiland. Het blijft in je meldingenpaneel staan</string>
+    <string name="notif_hide_popups_blocked">Heeft de toestemming van Eiland aan houden nodig</string>
 
     <!-- Gebaren -->
     <string name="gestures_section">Op het eiland</string>

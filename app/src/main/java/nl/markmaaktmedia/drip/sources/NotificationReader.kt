@@ -15,6 +15,7 @@ import nl.markmaaktmedia.drip.R
 import nl.markmaaktmedia.drip.data.IslandSettings
 import nl.markmaaktmedia.drip.island.ActionKind
 import nl.markmaaktmedia.drip.island.Alert
+import nl.markmaaktmedia.drip.island.AlertMessage
 import nl.markmaaktmedia.drip.island.AlertKind
 import nl.markmaaktmedia.drip.island.CallInfo
 import nl.markmaaktmedia.drip.island.IslandAction
@@ -202,24 +203,33 @@ internal class NotificationReader(
     fun alert(sbn: StatusBarNotification, f: NoticeFacts, kind: AlertKind, s: IslandSettings): Alert {
         val n = sbn.notification
         val e = n.extras
-        val last = messages(e).lastOrNull()
-        val title = e.text(Notification.EXTRA_CONVERSATION_TITLE) ?: f.title ?: apps.label(sbn.packageName)
+        val all = messages(e)
+        val last = all.lastOrNull()
+        val group = e.getBoolean(Notification.EXTRA_IS_GROUP_CONVERSATION)
+        val sender = last?.senderPerson?.name?.toString()?.takeIf { it.isNotBlank() }
+        val conversationTitle = e.text(Notification.EXTRA_CONVERSATION_TITLE)
+        // In a group the sender is the title and the group goes under it, the way a chat app shows it.
+        val title = (if (group && sender != null) sender else conversationTitle) ?: f.title ?: apps.label(sbn.packageName)
         val text = if (!s.notifyShowText) {
             null
         } else {
-            val said = last?.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
-            val sender = last?.senderPerson?.name?.toString()?.takeIf { it.isNotBlank() }
-            when {
-                said == null -> f.text
-                sender != null && e.getBoolean(Notification.EXTRA_IS_GROUP_CONVERSATION) -> "$sender: $said"
-                else -> said
-            }
+            last?.text?.toString()?.trim()?.takeIf { it.isNotEmpty() } ?: f.text
+        }
+        val me = BundleCompat.getParcelable(e, Notification.EXTRA_MESSAGING_PERSON, Person::class.java)?.name?.toString()
+        val thread = if (!s.notifyShowText) emptyList() else all.takeLast(MAX_MESSAGES).mapNotNull { m ->
+            val said = m.text?.toString()?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            val from = m.senderPerson?.name?.toString()
+            AlertMessage(from, said, mine = m.senderPerson == null || (me != null && from == me))
         }
         val people = BundleCompat.getParcelableArrayList(e, Notification.EXTRA_PEOPLE_LIST, Person::class.java)
-        val image = n.getLargeIcon()?.toBitmapWithin(context, PHOTO_PX)
+        val photo = n.getLargeIcon()?.toBitmapWithin(context, PHOTO_PX)
             ?: last?.senderPerson?.icon?.toBitmapWithin(context, PHOTO_PX)
             ?: people?.firstNotNullOfOrNull { it.icon }?.toBitmapWithin(context, PHOTO_PX)
-            ?: apps.icon(sbn.packageName)
+        val image = photo ?: apps.icon(sbn.packageName)
+        val picture = if (!s.notifyShowText) null else safely("picture") {
+            (if (Build.VERSION.SDK_INT >= 31) BundleCompat.getParcelable(e, Notification.EXTRA_PICTURE_ICON, android.graphics.drawable.Icon::class.java)?.toBitmapWithin(context, PICTURE_PX) else null)
+                ?: BundleCompat.getParcelable(e, Notification.EXTRA_PICTURE, Bitmap::class.java)?.fitWithin(PICTURE_PX)
+        }
         return Alert(
             id = sbn.key,
             kind = kind,
@@ -232,6 +242,12 @@ internal class NotificationReader(
             durationMs = s.alertDurationMs,
             actions = alertButtons(n),
             open = opener(sbn),
+            appLabel = apps.label(sbn.packageName),
+            postedAt = sbn.postTime,
+            conversation = conversationTitle?.takeIf { group && it != title },
+            messages = thread,
+            picture = picture,
+            personImage = photo != null,
         )
     }
 
@@ -330,6 +346,9 @@ internal class NotificationReader(
         /** Notification.FLAG_PROMOTED_ONGOING, which only exists from Android 16. */
         const val FLAG_PROMOTED_ONGOING = 0x00040000
         const val PHOTO_PX = 192
+        const val PICTURE_PX = 720
+        /** Messages of a conversation the opened card shows at most. */
+        const val MAX_MESSAGES = 4
         const val TRACKER_PX = 96
         const val MAX_ACTIONS = 3
         /** Notification.EXTRA_PROGRESS_SEGMENTS and friends, hidden in the SDK. */

@@ -87,7 +87,7 @@ fun SceneContent(scene: Scene, privacy: PrivacyInfo, controller: IslandControlle
         }
         Stage.ALERT -> {
             val alert = (scene.content as? IslandContent.Notice)?.alert
-            if (alert != null) AlertContent(alert, Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp))
+            if (alert != null) AlertPopup(alert, layout, controller, hub)
         }
         Stage.EXPANDED -> Column(Modifier.fillMaxWidth().padding(top = m.topInset).padding(m.padding)) {
             when (val c = scene.content) {
@@ -245,34 +245,6 @@ private fun MiniContent(alert: Alert, height: Dp, modifier: Modifier) {
 }
 
 /** A short announcement: what it is about on the left, the words in the middle, a bar for a level. */
-@Composable
-private fun AlertContent(alert: Alert, modifier: Modifier) {
-    val accent = alertAccent(alert)
-    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        when {
-            alert.image != null -> Picture(alert.image, 40.dp, CircleShape)
-            alert.iconRes != null -> Box(Modifier.size(40.dp).clip(CircleShape).background(accent.copy(alpha = 0.22f)), contentAlignment = Alignment.Center) {
-                Icon(painterResource(alert.iconRes), null, tint = accent, modifier = Modifier.size(22.dp))
-            }
-            else -> AppIcon(null, alert.packageName, 36.dp)
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
-            Title(alert.title, size = 15)
-            val level = alert.level
-            if (level != null && alert.text == null) {
-                Spacer(Modifier.height(8.dp))
-                LevelBar(level, accent, Modifier.fillMaxWidth().height(6.dp))
-            } else if (alert.text != null) {
-                Subtitle(alert.text)
-            }
-        }
-        if (alert.level != null && alert.text != null) {
-            Text("${(alert.level * 100).toInt()}%", color = accent, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-        }
-        if (alert.image != null && alert.packageName != null) AppIcon(null, alert.packageName, 18.dp)
-    }
-}
-
 /**
  * The colour of an announcement: what the app gave it, else the colour Android itself uses for that kind of thing
  * (green for charging, red for a battery that runs out, orange for battery saver), else the island's accent.

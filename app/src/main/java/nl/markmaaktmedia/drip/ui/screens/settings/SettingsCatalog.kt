@@ -91,6 +91,7 @@ internal object FocusKeys {
     const val AlertBrightness = "alerts.brightness"
     const val AlertHeadphones = "alerts.headphones"
     const val AlertDuration = "alerts.duration"
+    const val PausedLinger = "shows.paused_linger"
     const val ShowSecond = "shows.second"
     const val ShowLyrics = "shows.lyrics"
     const val LyricsOnline = "shows.lyrics.online"
@@ -105,6 +106,7 @@ internal object FocusKeys {
     const val NotifyOn = "notif.on"
     const val NotifyWhich = "notif.which"
     const val NotifyText = "notif.text"
+    const val NotifyHidePopups = "notif.hide_popups"
 
     const val GestureTap = "gesture.tap"
     const val GestureHold = "gesture.hold"
@@ -217,6 +219,7 @@ internal object SettingsCatalog {
         // What the island shows
         page(SettingsCategory.Shows, R.string.settings_kw_shows),
         row("show_music", R.string.show_music, R.string.settings_kw_shows, SettingsCategory.Shows, FocusKeys.ShowMusic, { DripIcons.Music }, R.string.show_music_sub),
+        row("paused_linger", R.string.paused_linger, R.string.settings_kw_shows, SettingsCategory.Shows, FocusKeys.PausedLinger, { DripIcons.Pause }, null),
         row("show_charging", R.string.show_charging, R.string.settings_kw_shows, SettingsCategory.Shows, FocusKeys.ShowCharging, { DripIcons.BatteryCharging }, R.string.show_charging_sub),
         row("show_calls", R.string.show_calls, R.string.settings_kw_shows, SettingsCategory.Shows, FocusKeys.ShowCalls, { DripIcons.Call }, R.string.show_calls_sub),
         row("show_live", R.string.show_live, R.string.settings_kw_shows, SettingsCategory.Shows, FocusKeys.ShowLive, { DripIcons.Timer }, R.string.show_live_sub),
@@ -253,6 +256,7 @@ internal object SettingsCatalog {
             Route.AppPicker(AppPickerKind.NOTIFY), { DripIcons.Apps }, page = R.string.notif_apps, via = notifications,
         ),
         row("notif_text", R.string.notif_text, R.string.settings_kw_notifications, SettingsCategory.Notifications, FocusKeys.NotifyText, { DripIcons.File }, R.string.notif_text_sub),
+        row("notif_hide_popups", R.string.notif_hide_popups, R.string.settings_kw_notifications, SettingsCategory.Notifications, FocusKeys.NotifyHidePopups, { DripIcons.NotificationsOff }, R.string.notif_hide_popups_sub),
 
         // Gestures
         page(SettingsCategory.Gestures, R.string.settings_kw_gestures),

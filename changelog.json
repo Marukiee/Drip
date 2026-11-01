@@ -1,5 +1,49 @@
 [
   {
+    "version": "0.1.10",
+    "date": "2026-11-01",
+    "en": {
+      "title": "Messages",
+      "new": [
+        "Messages in the notch redone: photo with the app on it, who and when, and a reply button",
+        "An opened message shows the app, the time and the last messages as a chat",
+        "Hide Android's own pop-ups, so a message comes once (needs Keep the island on)",
+        "Choose how long paused music stays, 20 seconds by default"
+      ],
+      "better": [
+        "A tap on the small drop swaps it with the island",
+        "The volume buttons move the opened volume or music card without Android's panel",
+        "A slider stays where you let go",
+        "News from the app you have open is not announced",
+        "Camera and microphone are off by default, and their icons no longer pop"
+      ],
+      "fixed": [
+        "A floating island no longer shows a square corner at its end",
+        "The touch area follows the small drop"
+      ]
+    },
+    "nl": {
+      "title": "Berichten",
+      "new": [
+        "Berichten in de notch opnieuw: foto met de app erop, wie en wanneer, en een antwoordknop",
+        "Een geopend bericht toont de app, de tijd en de laatste berichten als chat",
+        "Pop-ups van Android verbergen, zodat een bericht één keer komt (vraagt Eiland aan houden)",
+        "Kies hoe lang gepauzeerde muziek blijft, standaard 20 seconden"
+      ],
+      "better": [
+        "Een tik op de kleine druppel wisselt hem met het eiland",
+        "De volumeknoppen bedienen de open volume- of muziekkaart zonder het paneel van Android",
+        "Een slider blijft staan waar je loslaat",
+        "Nieuws van de app die je open hebt wordt niet aangekondigd",
+        "Camera en microfoon staan standaard uit, en hun iconen springen niet meer"
+      ],
+      "fixed": [
+        "Een zwevend eiland heeft geen vierkant hoekje meer aan het eind",
+        "Het aanraakgebied gaat mee met de kleine druppel"
+      ]
+    }
+  },
+  {
     "version": "0.1.9",
     "date": "2026-11-01",
     "en": {

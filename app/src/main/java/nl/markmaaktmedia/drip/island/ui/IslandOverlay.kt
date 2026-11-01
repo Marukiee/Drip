@@ -145,6 +145,8 @@ fun IslandOverlay(
         if (ui.second == null && ui.stage == Stage.COMPACT) window.setTouchBounds(touchRect(shape.value.bounds, shape.value.bounds, layout))
     }
     val secondPath = remember { Path() }
+    // A camera or microphone that stops is greeted again the next time it starts.
+    LaunchedEffect(Unit) { hub.privacy.collect { forgetGreeted(it.kinds()) } }
     // Read when the island's own move ends, which can be after the drop came or went.
     val dropNow by rememberUpdatedState(secondTarget)
     val dropOut by rememberUpdatedState(second != null)
@@ -212,9 +214,9 @@ fun IslandOverlay(
                     val at = Offset(down.position.x + o.x, down.position.y + o.y)
                     val onSecond = ui.second != null && stage == Stage.COMPACT && secondShape.value.bounds.contains(at) && !shape.value.bounds.contains(at)
                     if (onSecond) {
-                        // The small drop: a tap opens what it shows; anything else on it is left alone.
+                        // The small drop: a tap swaps it with the island; anything else on it is left alone.
                         val up = waitForUpOrCancellation()
-                        if (up != null) controller.expandSecond()
+                        if (up != null) controller.swapSecond()
                         return@awaitEachGesture
                     }
                     val inside = shape.value.bounds.contains(at)
@@ -406,7 +408,15 @@ private fun SecondDrop(content: IslandContent, drop: AnimatedGeometry, main: Ani
             }
         },
     ) {
-        SecondContent(content, slot)
+        // Swapped with the island: the old one shrinks away and the new one pops in.
+        androidx.compose.animation.AnimatedContent(
+            content, contentKey = { it.key },
+            transitionSpec = {
+                (scaleIn(spring(0.55f, 450f), initialScale = 0.4f) + fadeIn(tween(140)))
+                    .togetherWith(scaleOut(tween(140), targetScale = 0.4f) + fadeOut(tween(120)))
+            },
+            label = "drop",
+        ) { SecondContent(it, slot) }
     }
 }
 

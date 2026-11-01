@@ -23,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.painter.Painter
@@ -229,6 +230,27 @@ internal fun MoreShows(island: IslandSettings, edit: IslandEdit) {
 
 /** How long a short announcement stays, in a few steps: the difference between 3 and 3.5 seconds is not worth a slider. */
 private val AnnouncementMillis = listOf(2_000L, 3_500L, 5_000L, 8_000L)
+
+/** How long paused music stays, from a quick goodbye to a long pause. */
+private val LingerMillis = listOf(10_000L, 20_000L, 60_000L, 300_000L)
+
+/** Under what the island shows: how long paused music stays before the island lets it go. */
+@Composable
+internal fun PausedMusicTime(island: IslandSettings, edit: IslandEdit) {
+    SettingsGroup(Modifier.padding(top = 12.dp)) {
+        SettingsTarget(FocusKeys.PausedLinger, 0, 1) {
+            SegmentedRow(
+                0, 1, DripIcons.Pause, stringResource(R.string.paused_linger), LingerMillis,
+                selected = LingerMillis.minBy { kotlin.math.abs(it - island.pausedLingerMs) },
+                label = {
+                    if (it < 60_000L) stringResource(R.string.value_seconds, secondsText(it))
+                    else stringResource(R.string.value_minutes, (it / 60_000L).toString())
+                },
+                onSelect = { ms -> edit { it.copy(pausedLingerMs = ms) } },
+            )
+        }
+    }
+}
 
 /** "3.5" or "3,5", as the language of the app writes it. */
 @Composable

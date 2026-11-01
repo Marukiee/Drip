@@ -103,7 +103,7 @@ data class IslandSettings(
     val showLive: Boolean = true,
     val showTorch: Boolean = true,
     val showNotifications: Boolean = true,
-    val showPrivacy: Boolean = true,
+    val showPrivacy: Boolean = false,
     val alertBatteryLow: Boolean = true,
     val alertBatteryFull: Boolean = true,
     val alertBatterySaver: Boolean = true,
@@ -120,6 +120,10 @@ data class IslandSettings(
     val notifyApps: Set<String> = emptySet(),
     /** Shows the text of a notification. Off keeps it to the app and the title. */
     val notifyShowText: Boolean = true,
+    /** How long paused music stays on the island before it goes. */
+    val pausedLingerMs: Long = 20_000L,
+    /** Switches Android's own pop-ups off while the island runs, so a new message shows once, in the island. */
+    val hideSystemPopups: Boolean = false,
 
     // Gestures on the island.
     val gestureTap: GestureAction = GestureAction.EXPAND,
@@ -324,6 +328,8 @@ class DripPrefs(private val context: Context) {
             notifyAllApps = b("notify_all_apps", d.notifyAllApps),
             notifyApps = set("notify_apps"),
             notifyShowText = b("notify_show_text", d.notifyShowText),
+            hideSystemPopups = b("hide_system_popups", d.hideSystemPopups),
+            pausedLingerMs = this[longPreferencesKey("paused_linger")] ?: d.pausedLingerMs,
             gestureTap = GestureAction.from(s("gesture_tap"), d.gestureTap),
             gestureLongPress = GestureAction.from(s("gesture_long_press"), d.gestureLongPress),
             gestureSwipeDown = GestureAction.from(s("gesture_swipe_down"), d.gestureSwipeDown),
@@ -415,6 +421,8 @@ class DripPrefs(private val context: Context) {
         b("notify_all_apps", v.notifyAllApps, d.notifyAllApps)
         set("notify_apps", v.notifyApps)
         b("notify_show_text", v.notifyShowText, d.notifyShowText)
+        b("hide_system_popups", v.hideSystemPopups, d.hideSystemPopups)
+        longPreferencesKey("paused_linger").let { if (v.pausedLingerMs == d.pausedLingerMs) remove(it) else this[it] = v.pausedLingerMs }
         s("gesture_tap", v.gestureTap.name, d.gestureTap.name)
         s("gesture_long_press", v.gestureLongPress.name, d.gestureLongPress.name)
         s("gesture_swipe_down", v.gestureSwipeDown.name, d.gestureSwipeDown.name)

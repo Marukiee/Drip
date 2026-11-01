@@ -28,6 +28,8 @@
     <string name="demo_stop">Stop</string>
     <string name="demo_alert_title">Teun</string>
     <string name="demo_alert_text">Are you coming to the sidequest tonight? Bring the laptop.</string>
+    <string name="demo_message_1">Hey! Did the new build work?</string>
+    <string name="demo_message_2">Yes, the island looks great</string>
     <string name="demo_reply">Mark as read</string>
     <string name="demo_volume">Media volume</string>
     <string name="demo_hang_up">Hang up</string>
@@ -59,6 +61,8 @@
     <string name="island_ringer_sound">Sound</string>
     <string name="island_ringer_vibrate">Vibrate</string>
     <string name="island_ringer_silent">Silent</string>
+    <string name="island_now">now</string>
+    <string name="island_minutes_ago">%d min</string>
     <string name="island_privacy_title">In use</string>
     <string name="island_privacy_camera">Camera</string>
     <string name="island_privacy_microphone">Microphone</string>
