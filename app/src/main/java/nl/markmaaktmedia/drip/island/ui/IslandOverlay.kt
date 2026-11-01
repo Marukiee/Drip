@@ -31,6 +31,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -103,7 +104,6 @@ fun IslandOverlay(
     val initialSettings = remember { runBlocking { withTimeoutOrNull(300) { settings.first() } ?: IslandSettings() } }
     val s by settings.collectAsState(initialSettings)
     val layout = remember(deviceFit, s) { IslandLayout(deviceFit, s) }
-    val origin = window.origin
 
     // Heights of opened cards as last measured, so the next opening aims for the right height at once.
     val measured = remember { mutableStateMapOf<String, Float>() }
@@ -118,12 +118,22 @@ fun IslandOverlay(
     // Moving between stages: grow the window to hold both shapes, run the springs, then fit the window to where it ended.
     LaunchedEffect(target, s.bounce, s.speed) {
         window.setTouchable(ui.stage != Stage.HIDDEN)
-        window.setBounds(windowRect(shape.value.bounds, target.bounds, layout))
+        val from = shape.value.bounds
+        // While something is on the island the window is already as tall as its opened card, so a tap opens it at once
+        // instead of waiting for a taller window. The window lets every touch through, so its size costs nothing else.
+        val ready = if (ui.stage == Stage.HIDDEN || ui.stage == Stage.IDLE) target.bounds else layout.geometry(Stage.EXPANDED, expandedHeight).bounds
+        val tall = max(drawHeight(from, target.bounds, layout), drawHeight(ready, ready, layout))
+        window.setHeight(tall)
+        window.setTouchBounds(touchRect(from, target.bounds, layout))
+        // A taller window lands a frame or two later. Starting before it does would cut the growing shape off at the
+        // old bottom edge for those frames, so wait for the window to be laid out at its new height first.
+        withTimeoutOrNull(150) { snapshotFlow { window.laidOutHeight.intValue }.first { it >= tall } }
         window.setMoving(true)
         val opening = target.height > shape.value.height
         shape.animateTo(target, opening, s.bounce, s.speed)
         window.setMoving(false)
-        window.setBounds(windowRect(target.bounds, target.bounds, layout))
+        window.setHeight(max(drawHeight(target.bounds, target.bounds, layout), drawHeight(ready, ready, layout)))
+        window.setTouchBounds(touchRect(target.bounds, target.bounds, layout))
     }
 
     val seed = remember(s) { nl.markmaaktmedia.drip.ui.theme.ColourSeed.WALLPAPER.resolve(context) }
@@ -153,9 +163,9 @@ fun IslandOverlay(
             .pointerInput(Unit) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Main)
-                    val o = origin.value
+                    val o = window.originNow()
                     val g = shape.value.bounds
-                    val inside = g.contains(Offset(down.position.x + o.left, down.position.y + o.top))
+                    val inside = g.contains(Offset(down.position.x + o.x, down.position.y + o.y))
                     if (!inside) {
                         // A touch beside an opened card closes it, the way a tap outside a sheet does.
                         if (stage == Stage.EXPANDED) controller.collapse()
@@ -202,13 +212,27 @@ fun IslandOverlay(
                 }
             }
             .drawBehind {
-                val o = origin.value
+                val o = window.originNow()
                 val g = pressed(shape.value, press.value, this.density)
-                g.buildPath(path, o.left.toFloat(), o.top.toFloat())
+                g.buildPath(path, o.x, o.y)
                 drawPath(path, fill)
             },
     ) {
         IslandTheme(seed = accent, metrics = metrics) {
+            // The opened card of what is showing, measured once out of sight, so the first tap knows how tall to open.
+            val unmeasured = content?.takeIf { (ui.stage == Stage.COMPACT || ui.stage == Stage.ALERT) && measured[it.key] == null }
+            if (unmeasured != null) {
+                val width = layout.geometry(Stage.EXPANDED).width.roundToInt()
+                Box(
+                    Modifier.layout { measurable, _ ->
+                        val p = measurable.measure(Constraints(minWidth = width, maxWidth = width, minHeight = 0, maxHeight = Constraints.Infinity))
+                        measured[unmeasured.key] = p.height.toFloat()
+                        layout(0, 0) {}
+                    },
+                ) {
+                    SceneContent(Scene(Stage.EXPANDED, unmeasured), ui.privacy, controller, hub, layout)
+                }
+            }
             AnimatedContent(
                 targetState = Scene(ui.stage, content),
                 contentKey = { it.stage to it.content?.key },
@@ -220,8 +244,11 @@ fun IslandOverlay(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
+                        // Read here, so this block runs again every frame the shape moves and the clip keeps up.
+                        val o = window.originNow()
+                        val g = pressed(shape.value, press.value, this.density)
                         clip = true
-                        this.shape = GeometryShape(shape, press, origin, density)
+                        this.shape = GeometryShape(g, o)
                     },
                 label = "content",
             ) { scene ->
@@ -230,7 +257,7 @@ fun IslandOverlay(
                     Modifier
                         .fillMaxSize()
                         .blurWhileMoving(this)
-                        .placedIn(shape, origin, sceneTarget, scene.stage == Stage.EXPANDED) { height ->
+                        .placedIn(shape, window, sceneTarget, scene.stage == Stage.EXPANDED) { height ->
                             val key = scene.content?.key
                             if (scene.stage == Stage.EXPANDED && key != null && measured[key] != height) measured[key] = height
                         },
@@ -293,13 +320,22 @@ private fun estimateHeight(content: IslandContent?, density: Density): Float = w
     }.toPx()
 }
 
-/** The window: the union of where the island is and where it goes, with a margin for the press and the springs. */
-private fun windowRect(a: androidx.compose.ui.geometry.Rect, b: androidx.compose.ui.geometry.Rect, layout: IslandLayout): Rect {
-    val slack = layout.fit.dp(10f)
+/** The island window reaches down to the lower of where the island is and where it goes, with room for the springs. */
+private fun drawHeight(a: androidx.compose.ui.geometry.Rect, b: androidx.compose.ui.geometry.Rect, layout: IslandLayout): Int =
+    (max(a.bottom, b.bottom) + layout.fit.dp(16f)).roundToInt()
+
+/**
+ * The touch window covers where the island is and where it goes. A closed island gets a little extra room around it,
+ * because it is small and sits at the very top where a thumb does not land precisely.
+ */
+private fun touchRect(a: androidx.compose.ui.geometry.Rect, b: androidx.compose.ui.geometry.Rect, layout: IslandLayout): Rect {
+    val opened = b.height > layout.fit.dp(120f)
+    val slack = if (opened) 0f else layout.fit.dp(8f)
     val left = (min(a.left, b.left) - slack).coerceAtLeast(0f)
     val right = (max(a.right, b.right) + slack).coerceAtMost(layout.fit.screenWidth.toFloat())
+    val top = (min(a.top, b.top) - slack).coerceAtLeast(0f)
     val bottom = max(a.bottom, b.bottom) + slack
-    return Rect(left.roundToInt(), 0, right.roundToInt(), bottom.roundToInt().coerceAtLeast(1))
+    return Rect(left.roundToInt(), top.roundToInt(), right.roundToInt(), bottom.roundToInt().coerceAtLeast(top.roundToInt() + 1))
 }
 
 @Composable
@@ -349,19 +385,10 @@ class AnimatedGeometry(initial: IslandGeometry) {
     }
 }
 
-/** The animated island as a clip, read in the drawing phase only. */
-private class GeometryShape(
-    private val shape: AnimatedGeometry,
-    private val press: Animatable<Float, AnimationVector1D>,
-    private val origin: State<Rect>,
-    private val density: Density,
-) : Shape {
-    override fun createOutline(size: androidx.compose.ui.geometry.Size, layoutDirection: LayoutDirection, density: Density): Outline {
-        val o = origin.value
-        return Outline.Generic(pressed(shape.value, press.value, density.density).buildPath(Path(), o.left.toFloat(), o.top.toFloat()))
-    }
-    override fun equals(other: Any?) = false
-    override fun hashCode() = System.identityHashCode(this)
+/** The island at one moment as a clip. A new one is made every frame of a movement, in the layer block. */
+private class GeometryShape(private val g: IslandGeometry, private val origin: Offset) : Shape {
+    override fun createOutline(size: androidx.compose.ui.geometry.Size, layoutDirection: LayoutDirection, density: Density): Outline =
+        Outline.Generic(g.buildPath(Path(), origin.x, origin.y))
 }
 
 /**
@@ -371,7 +398,7 @@ private class GeometryShape(
  */
 private fun Modifier.placedIn(
     shape: AnimatedGeometry,
-    origin: State<Rect>,
+    window: IslandWindow,
     target: IslandGeometry,
     wrapHeight: Boolean,
     onHeight: (Float) -> Unit,
@@ -385,11 +412,13 @@ private fun Modifier.placedIn(
         }
         if (wrapHeight) onHeight(placeable.height.toFloat())
         layout(constraints.maxWidth, constraints.maxHeight) {
-            val o = origin.value
+            val o = window.originNow()
             val g = shape.value
             // Opened content keeps to the top of the island and grows with it; closed content stays centred in it.
-            val x = g.centerX - o.left - w / 2f
-            val y = if (wrapHeight) g.top - o.top else g.top - o.top + (g.height - placeable.height) / 2f
+            val x = g.centerX - o.x - w / 2f
+            // Content leaving or arriving keeps its own place under the top of the island instead of sliding to the
+            // middle of a shape that is growing into something else.
+            val y = if (wrapHeight) g.top - o.y else g.top - o.y + (target.height - placeable.height) / 2f
             val grow = if (wrapHeight) (g.width / target.width).coerceIn(0.7f, 1f) else 1f
             placeable.placeWithLayer(x.roundToInt(), y.roundToInt()) {
                 scaleX = grow
