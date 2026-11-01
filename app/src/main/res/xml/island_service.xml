@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Window changes only: which app is in front, so the island can step aside in the apps you chose.
-     The content of the screen is never read. -->
+<!-- Window changes only: which app is in front and whether the status bar is on screen, so the island can step
+     aside in full screen apps and in the apps you chose. Android only hands out the list of windows to a service that
+     may read window content; Drip looks at where the windows are and never at what is in them. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
-    android:accessibilityFlags="flagDefault"
-    android:canRetrieveWindowContent="false"
+    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
+    android:canRetrieveWindowContent="true"
     android:notificationTimeout="80"
     android:isAccessibilityTool="false"
     android:description="@string/island_service_description"

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="island_service_summary">Draws the island at the top of the screen</string>
-    <string name="island_service_description">Drip uses this to draw the island above the status bar, where you can tap it, and to carry out the gestures you set (back, home, notifications, screenshot and so on). It also sees which app is in front, so the island can step aside in the apps you chose. It does not read what is on your screen.</string>
+    <string name="island_service_description">Drip uses this to draw the island above the status bar, where you can tap it, and to carry out the gestures you set (back, home, notifications, screenshot and so on). It also looks at which windows are on screen, so the island can step aside in full screen apps and in the apps you chose. It never reads what is in them.</string>
     <string name="tile_label">Island</string>
     <string name="island_repeat">Repeat</string>
     <string name="island_shuffle">Shuffle</string>

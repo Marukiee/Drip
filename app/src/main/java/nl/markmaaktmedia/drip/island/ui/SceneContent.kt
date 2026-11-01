@@ -65,8 +65,8 @@ fun SceneContent(scene: Scene, privacy: PrivacyInfo, controller: IslandControlle
             PrivacyDots(privacy, Modifier.padding(end = with(density) { (layout.idleHeight / 2f).toDp() } - 3.dp))
         }
         Stage.COMPACT -> {
-            val side = with(density) { (layout.compactHeight / 2f).toDp() }
-            CompactContent(scene.content, privacy, Modifier.fillMaxSize().padding(horizontal = side * 0.55f + 4.dp))
+            val height = with(density) { layout.compactHeight.toDp() }
+            CompactContent(scene.content, privacy, height, Modifier.fillMaxSize())
         }
         Stage.ALERT -> {
             val alert = (scene.content as? IslandContent.Notice)?.alert
@@ -87,67 +87,86 @@ fun SceneContent(scene: Scene, privacy: PrivacyInfo, controller: IslandControlle
     }
 }
 
-/** The closed island with something going on: a small thing on the left, a small thing on the right. */
+/**
+ * The closed island with something going on: a small thing at each end. Each sits in the middle of the round end of the
+ * island, the same distance from the top, the side and the bottom, so a cover or an icon is concentric with the curve
+ * around it instead of being pushed into it.
+ */
 @Composable
-private fun CompactContent(content: IslandContent?, privacy: PrivacyInfo, modifier: Modifier) {
+private fun CompactContent(content: IslandContent?, privacy: PrivacyInfo, height: Dp, modifier: Modifier) {
     val accent = MaterialTheme.colorScheme.primary
-    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+    val gap = (height * 0.15f).coerceIn(3.dp, 6.dp)
+    val slot = height - gap * 2
+    // Text cannot be round, so it ends where the curve of the end begins to close in.
+    val textInset = height / 2 - 4.dp
+    Box(modifier) {
+        val start = Modifier.align(Alignment.CenterStart).padding(start = gap).size(slot)
+        val endSlot = Modifier.align(Alignment.CenterEnd).padding(end = gap).size(slot)
+        val endText = Modifier.align(Alignment.CenterEnd).padding(end = textInset)
+        val icon = slot * 0.72f
         when (content) {
             is IslandContent.Music -> {
-                Picture(content.playing.art, 22.dp, RoundedCornerShape(6.dp), DripIcons.Music)
-                Spacer(Modifier.weight(1f))
-                if (content.playing.playing) Equalizer(accent, Modifier.size(22.dp, 16.dp))
-                else Icon(DripIcons.PauseFilled, null, tint = IslandInk.Secondary, modifier = Modifier.size(18.dp))
+                Picture(content.playing.art, slot, CircleShape, DripIcons.Music, start)
+                Box(endSlot, contentAlignment = Alignment.Center) {
+                    if (content.playing.playing) Equalizer(accent, Modifier.size(slot * 0.62f, slot * 0.5f))
+                    else Icon(DripIcons.PauseFilled, null, tint = IslandInk.Secondary, modifier = Modifier.size(icon * 0.8f))
+                }
             }
             is IslandContent.Call -> {
-                Icon(DripIcons.PhoneInTalkFilled, null, tint = IslandInk.Green, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.weight(1f))
-                val start = content.call.startedAt
-                if (start != null) {
+                Box(start, contentAlignment = Alignment.Center) {
+                    Icon(DripIcons.PhoneInTalkFilled, null, tint = IslandInk.Green, modifier = Modifier.size(icon))
+                }
+                val begin = content.call.startedAt
+                if (begin != null) {
                     val now = rememberNow()
-                    SlotText(formatClock(now - start), IslandInk.Green)
+                    SlotText(formatClock(now - begin), IslandInk.Green, endText)
                 } else {
-                    SlotText(content.call.caller, IslandInk.Green)
+                    SlotText(content.call.caller, IslandInk.Green, endText)
                 }
             }
             is IslandContent.Live -> {
                 val live = content.live
-                if (live.appIcon != null) Picture(live.appIcon, 20.dp, CircleShape)
-                else Icon(liveIcon(live.kind), null, tint = accent, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.weight(1f))
+                val color = live.accent?.let { Color(it) } ?: accent
+                if (live.appIcon != null) {
+                    Picture(live.appIcon, slot, CircleShape, null, start)
+                } else {
+                    Box(start, contentAlignment = Alignment.Center) { Icon(liveIcon(live.kind), null, tint = color, modifier = Modifier.size(icon)) }
+                }
                 val base = live.chronometerBase
                 when {
                     base != null -> {
                         val now = rememberNow()
-                        SlotText(formatClock(if (live.countDown) base - now else now - base), live.accent?.let { Color(it) } ?: accent)
+                        SlotText(formatClock(if (live.countDown) base - now else now - base), color, endText)
                     }
-                    live.progress != null -> ProgressRing(live.progress, live.accent?.let { Color(it) } ?: accent, Modifier.size(18.dp))
-                    live.shortText != null -> SlotText(live.shortText, IslandInk.Primary)
+                    live.progress != null -> Box(endSlot, contentAlignment = Alignment.Center) {
+                        ProgressRing(live.progress, color, Modifier.size(slot * 0.8f))
+                    }
+                    live.shortText != null -> SlotText(live.shortText, IslandInk.Primary, endText)
                     else -> Unit
                 }
             }
             is IslandContent.Charging -> {
-                Icon(DripIcons.BoltFilled, null, tint = IslandInk.Green, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.weight(1f))
-                SlotText("${content.battery.level}%", IslandInk.Green)
+                Box(start, contentAlignment = Alignment.Center) {
+                    Icon(DripIcons.BoltFilled, null, tint = IslandInk.Green, modifier = Modifier.size(icon))
+                }
+                SlotText("${content.battery.level}%", IslandInk.Green, endText)
             }
             is IslandContent.Torch -> {
-                Icon(DripIcons.FlashlightFilled, null, tint = IslandInk.Yellow, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.weight(1f))
-                PrivacyDots(privacy)
+                Box(start, contentAlignment = Alignment.Center) {
+                    Icon(DripIcons.FlashlightFilled, null, tint = IslandInk.Yellow, modifier = Modifier.size(icon))
+                }
             }
-            else -> Spacer(Modifier.weight(1f))
+            else -> Unit
         }
-        if (content !is IslandContent.Torch && (privacy.camera || privacy.microphone)) {
-            Spacer(Modifier.width(6.dp))
-            PrivacyDots(privacy)
+        if (privacy.camera || privacy.microphone) {
+            PrivacyDots(privacy, Modifier.align(Alignment.TopCenter).padding(top = gap))
         }
     }
 }
 
 @Composable
-private fun SlotText(text: String, color: Color) =
-    Text(text, color = color, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+private fun SlotText(text: String, color: Color, modifier: Modifier) =
+    Text(text, modifier = modifier, color = color, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
 
 /** A short announcement: what it is about on the left, the words in the middle, a bar for a level. */
 @Composable

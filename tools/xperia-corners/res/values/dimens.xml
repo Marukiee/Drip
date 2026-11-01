@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The values of the Sony Xperia 1 VI (pdx245), read from its own firmware overlays. -->
+    <dimen name="rounded_corner_radius">16dp</dimen>
+    <dimen name="rounded_corner_content_padding">0dp</dimen>
+</resources>

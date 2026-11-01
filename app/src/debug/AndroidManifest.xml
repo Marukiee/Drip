@@ -9,5 +9,9 @@
                 <action android:name="nl.markmaaktmedia.drip.DEMO" />
             </intent-filter>
         </receiver>
+        <activity
+            android:name=".debug.FullscreenTestActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
     </application>
 </manifest>

@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -43,6 +44,9 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -204,15 +208,27 @@ private fun SeekBar(np: NowPlaying) {
                 ),
             contentAlignment = Alignment.Center,
         ) {
+            val progress = { if (dragging) dragFraction else position(clock.longValue) / duration.toFloat() }
             LinearWavyProgressIndicator(
-                progress = { if (dragging) dragFraction else position(clock.longValue) / duration.toFloat() },
+                progress = progress,
                 modifier = Modifier.fillMaxWidth().height(14.dp),
                 color = scheme.primary,
                 trackColor = IslandInk.SurfaceHigh,
                 stroke = Stroke(width = line, cap = StrokeCap.Round),
                 trackStroke = Stroke(width = line, cap = StrokeCap.Round),
+                gapSize = 8.dp,
                 amplitude = { amplitude },
             )
+            // The handle: an upright bar in the gap between the wave and the track, as on a Material 3 Expressive
+            // slider. It grows while it is dragged.
+            val handle by animateDpAsState(if (dragging) 26.dp else 20.dp, spring(0.6f, 600f), label = "handle")
+            val handleColor = scheme.primary
+            Canvas(Modifier.fillMaxWidth().height(28.dp)) {
+                val w = 4.dp.toPx()
+                val h = handle.toPx()
+                val x = (progress().coerceIn(0f, 1f) * size.width + 4.dp.toPx()).coerceIn(w / 2, size.width - w / 2)
+                drawRoundRect(handleColor, Offset(x - w / 2, (size.height - h) / 2), Size(w, h), CornerRadius(w / 2))
+            }
         }
         TimeText("-" + formatClock(duration - shown))
     }

@@ -54,8 +54,14 @@ Material 3 Expressive (1.5): `MaterialShapes`, golvende voortgang, button groups
   `adb shell cmd notification allow_listener nl.markmaaktmedia.drip.debug/nl.markmaaktmedia.drip.sources.DripListener`.
 - Notch testen op een emulator met cameragat: `adb shell am broadcast -a nl.markmaaktmedia.drip.DEMO -p nl.markmaaktmedia.drip.debug --es fit NOTCH`
   (terug met `--es fit AUTO`). Start de emulator met `-gpu host`, anders zijn opnames van de animatie schokkerig door de emulator.
+- **Xperia 1 VI nadoen:** `tools/xperia-corners/make-emulator.sh` maakt AVD `drip_xperia`: 1080 x 2340, 400 dpi, geen
+  cameragat, schermhoeken van 16 dp (Sony's eigen waarde uit de pdx245-firmware, als statische systeem-overlay). Daarna
+  starten met `emulator -avd drip_xperia -writable-system -gpu host -port 5602`. De statusbalk is daar 24 dp, zoals op het toestel.
+- Volledig scherm testen (debug): `adb shell am start -n nl.markmaaktmedia.drip.debug/nl.markmaaktmedia.drip.debug.FullscreenTestActivity`.
 - Animaties nakijken: `adb shell "screenrecord --time-limit 6 /sdcard/a.mp4 & sleep 1.5; input tap 540 60; sleep 2; input tap 540 1900; wait"`,
   dan de frames naast elkaar met ffmpeg (`-fps_mode passthrough -vf "crop=1080:900:0:0,scale=200:-1,tile=10x4"`).
+- Volledig scherm wordt herkend aan de vensterlijst (`getWindows`): geen systeemvenster als strook bovenaan is geen
+  statusbalk. Een overlay ligt boven de statusbalk en krijgt daarom zelf nooit te horen of die zichtbaar is.
 - Het eiland zit in twee vensters: een vast tekenvenster linksboven (alleen hoogte verandert, laat aanrakingen door) en een
   onzichtbaar aanraakvenster over het eiland. Een venster dat verschuift laat het eiland een frame verspringen.
 

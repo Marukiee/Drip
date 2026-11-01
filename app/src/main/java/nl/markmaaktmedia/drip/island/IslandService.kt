@@ -9,6 +9,7 @@ import android.content.IntentFilter
 import android.content.res.Configuration
 import android.view.WindowInsets
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityWindowInfo
 import androidx.compose.ui.platform.ComposeView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,10 +52,6 @@ class IslandService : AccessibilityService() {
         window = IslandWindow(this)
         window.onOutsideTouch = { controller.collapse() }
         window.onInsets = ::onInsets
-        window.onStatusBar = { shown ->
-            visibility = visibility.copy(statusBarShown = shown)
-            controller.setVisibility(visibility)
-        }
         fit.value = DeviceFit.read(this)
         window.show(ComposeView(this).apply {
             setContent {
@@ -77,17 +74,43 @@ class IslandService : AccessibilityService() {
             },
         )
         updateLocked()
+        checkStatusBar()
         scope.launch { graph.hub.demos.collect { Demos.play(applicationContext, it, controller) } }
         graph.hub.islandRunning.value = true
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+        event ?: return
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED || event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            checkStatusBar()
+        }
+        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val pkg = event.packageName?.toString() ?: return
         // The keyboard and the system's own panels are not the app in front.
         if (pkg == packageName || pkg == "com.android.systemui" || event.className?.contains("InputMethod") == true) return
         visibility = visibility.copy(foregroundPackage = pkg)
         controller.setVisibility(visibility)
+    }
+
+    /**
+     * Whether an app uses the full screen: the status bar is then gone from the windows on screen. Only the kind and the
+     * place of each window are looked at, never what is in it. An overlay cannot ask this any other way, because the
+     * island sits above the status bar and Android does not tell a window about bars that are below it.
+     */
+    private fun checkStatusBar() {
+        val list = runCatching { windows }.getOrNull() ?: return
+        val f = fit.value
+        val shown = list.any { w ->
+            if (w.type != AccessibilityWindowInfo.TYPE_SYSTEM) return@any false
+            val r = android.graphics.Rect().also(w::getBoundsInScreen)
+            // A strip along the top as wide as the screen and about as tall as the status bar. The shade, when it is
+            // pulled down, is far taller and does not count.
+            r.top <= 0 && r.width() >= f.screenWidth * 0.9f && r.height() in 1..(f.statusBarHeight * 2)
+        }
+        if (shown != visibility.statusBarShown) {
+            visibility = visibility.copy(statusBarShown = shown)
+            controller.setVisibility(visibility)
+        }
     }
 
     override fun onInterrupt() = Unit
