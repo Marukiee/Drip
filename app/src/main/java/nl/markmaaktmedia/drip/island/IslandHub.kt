@@ -27,6 +27,12 @@ class IslandHub {
      * microphone, but it is nearly always the one in front when it starts, so the privacy card names that one.
      */
     val foregroundApp = MutableStateFlow<String?>(null)
+    /** Whether the lyrics are open under the music card. Stays as it was left, so they are there the next time too. */
+    val lyricsOpen = MutableStateFlow(false)
+    /** The lyrics of the song that plays, while [lyricsOpen]. */
+    val lyrics = MutableStateFlow<LyricsState>(LyricsState.Off)
+    /** Tries again after the lyrics could not be fetched. Set by the lyrics source. */
+    @Volatile var retryLyrics: (() -> Unit)? = null
     /** The message whose card should open straight into typing a reply (its reply button in the notch was pressed). */
     val replyTo = MutableStateFlow<String?>(null)
 
@@ -63,6 +69,6 @@ class IslandHub {
 
 /** What the island can act out without a real song, call or charger. */
 enum class Demo {
-    MUSIC, CALL, INCOMING, CHARGING, TIMER, NAVIGATION, DOWNLOAD, DELIVERY, CALENDAR, INSTALL, ALERT, REPLY, VOLUME,
+    MUSIC, LYRICS, CALL, INCOMING, CHARGING, TIMER, NAVIGATION, DOWNLOAD, DELIVERY, CALENDAR, INSTALL, ALERT, REPLY, VOLUME,
     TORCH, EARBUDS, UNLOCK, PRIVACY, SECOND, EXPAND, COLLAPSE, CLEAR,
 }

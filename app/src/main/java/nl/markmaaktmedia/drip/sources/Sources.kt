@@ -34,7 +34,7 @@ class Sources(private val context: Context) {
             env = it
             parts = listOf(
                 BatteryPart(it), CameraPart(it), AudioPart(it), SignalsPart(it), CalendarPart(it), InstallPart(it),
-                EarbudsPart(it), UnlockPart(it), LocationPart(it),
+                EarbudsPart(it), UnlockPart(it), LocationPart(it), LyricsPart(it),
             )
         }
         parts.forEach { safely("start ${it.javaClass.simpleName}") { it.start() } }

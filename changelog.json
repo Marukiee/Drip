@@ -1,5 +1,29 @@
 [
   {
+    "version": "0.1.11",
+    "date": "2026-11-01",
+    "en": {
+      "title": "Lyrics",
+      "new": [
+        "Lyrics under the music card, following the song line by line; tap a line to jump there",
+        "They come from the player when it has them, or from lrclib.net once you allow it"
+      ],
+      "better": [
+        "The notification apps list is always there, with every app ticked when all apps are on"
+      ]
+    },
+    "nl": {
+      "title": "Songteksten",
+      "new": [
+        "Songteksten onder de muziekkaart, regel voor regel meelopend; tik op een regel om ernaartoe te springen",
+        "Ze komen van de speler als die ze heeft, of van lrclib.net als je dat toestaat"
+      ],
+      "better": [
+        "De lijst met apps bij Meldingen staat er altijd, met alles aangevinkt als alle apps aan staan"
+      ]
+    }
+  },
+  {
     "version": "0.1.10",
     "date": "2026-11-01",
     "en": {

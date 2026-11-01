@@ -65,6 +65,8 @@ data class NowPlaying(
     /** The title of what plays next, when the player tells. */
     val next: String? = null,
     val commands: MediaCommands,
+    /** Lyrics the player put in the song's metadata, plain or with LRC time stamps. Few players do. */
+    val embeddedLyrics: String? = null,
 ) {
     override fun equals(other: Any?): Boolean = other is NowPlaying && packageName == other.packageName &&
         title == other.title && artist == other.artist && album == other.album && art === other.art &&
@@ -215,3 +217,31 @@ data class Alert(
 
 /** One message of a conversation. [mine] is what the person sent themselves. */
 data class AlertMessage(val sender: String?, val text: String, val mine: Boolean)
+
+/** One line of a song's lyrics and when it is sung, in milliseconds from the start. */
+data class LyricLine(val timeMs: Long, val text: String)
+
+/** Where the lyrics of the song that plays stand. [key] says which song, so an answer for an old one is never shown. */
+sealed interface LyricsState {
+    val key: String?
+
+    /** Nothing asked: the lyrics are closed or nothing plays. */
+    data object Off : LyricsState { override val key: String? = null }
+    data class Loading(override val key: String) : LyricsState
+    /** [synced] lines have their time; plain ones are all at 0 and are shown without following the song. */
+    data class Found(override val key: String, val lines: List<LyricLine>, val synced: Boolean, val online: Boolean) : LyricsState
+    data class Missing(override val key: String, val instrumental: Boolean = false) : LyricsState
+    /** The player gave none and looking online is off: asks before anything leaves the phone. */
+    data class AskOnline(override val key: String) : LyricsState
+    data class Failed(override val key: String) : LyricsState
+}
+
+/** The line being sung at [positionMs]: the last one that has started, a moment early so it lights up on the beat. */
+fun currentLineIndex(lines: List<LyricLine>, positionMs: Long, leadMs: Long = 200L): Int {
+    val at = positionMs + leadMs
+    var found = -1
+    for (i in lines.indices) {
+        if (lines[i].timeMs <= at) found = i else break
+    }
+    return found
+}

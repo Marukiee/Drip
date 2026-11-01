@@ -188,7 +188,12 @@
     <string name="notif_which">Van welke apps</string>
     <string name="notif_all">Alle apps</string>
     <string name="notif_chosen">Gekozen apps</string>
-    <string name="notif_apps">Apps kiezen</string>
+    <string name="notif_apps">Apps</string>
+    <string name="notif_all_sub">Uit: alleen de apps die je aanvinkt</string>
+    <plurals name="apps_off_count">
+        <item quantity="one">Alle apps behalve %d</item>
+        <item quantity="other">Alle apps behalve %d</item>
+    </plurals>
     <plurals name="apps_count">
         <item quantity="one">%d app</item>
         <item quantity="other">%d apps</item>

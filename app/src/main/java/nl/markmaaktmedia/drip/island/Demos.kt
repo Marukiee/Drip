@@ -21,6 +21,11 @@ object Demos {
     fun play(context: Context, demo: Demo, controller: IslandController) {
         val hub = context.graph.hub
         when (demo) {
+            // A well-known song with no lyrics of its own, to try the lookup at lrclib.net.
+            Demo.LYRICS -> hub.nowPlaying.value = music(context).copy(
+                title = "Bohemian Rhapsody", artist = "Queen", album = "A Night At The Opera (2011 Remaster)",
+                durationMs = 354_000L, positionMs = 50_000L, positionAtElapsed = SystemClock.elapsedRealtime(), embeddedLyrics = null,
+            )
             Demo.MUSIC -> {
                 hub.nowPlaying.value = music(context)
                 if (hub.setMusicVolume == null) hub.musicVolume.value = 0.6f
@@ -199,7 +204,19 @@ object Demos {
             album = "Drip", art = art(context, 0xFFF2A65A.toInt(), 0xFF7A3E9D.toInt(), 360), durationMs = 4 * 60_000L + 21_000L,
             positionMs = 136_000L, positionAtElapsed = SystemClock.elapsedRealtime(), playing = true, canSeek = true,
             repeat = RepeatMode.OFF, shuffle = false, liked = false, commands = commands,
+            embeddedLyrics = DEMO_LYRICS,
         )
+    }
+
+    /** Made-up lines every four seconds around where the demo song starts, so the lyrics can be watched following it. */
+    private val DEMO_LYRICS = (0 until 40).joinToString("\n") { i ->
+        val ms = 120_000L + i * 4_000L
+        val words = listOf(
+            "The light comes low across the water", "And every window turns to gold", "I hold the moment while it lasts",
+            "", "Golden hour, golden hour", "Stay a little longer now", "The shadows stretch to reach the shore",
+            "And we forget that we are old",
+        )[i % 8]
+        "[%02d:%02d.%02d]%s".format(ms / 60_000, ms / 1000 % 60, ms % 1000 / 10, words)
     }
 
     private fun call(context: Context, incoming: Boolean): CallInfo {

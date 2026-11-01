@@ -71,8 +71,7 @@ internal fun rememberCategorySummaries(): Map<SettingsCategory, String> {
     val notifications = when {
         !access.listener -> stringResource(R.string.settings_sum_needs_listener)
         !island.showNotifications -> stringResource(R.string.settings_sum_all_off)
-        island.notifyAllApps -> stringResource(R.string.notif_all)
-        else -> pluralStringResource(R.plurals.apps_count, island.notifyApps.size, island.notifyApps.size)
+        else -> notifyAppsSummary(island)
     } + ", " + stringResource(R.string.set2_sum_duration, secondsText(island.alertDurationMs))
 
     val gestures = listOf(

@@ -62,6 +62,14 @@
     <string name="island_ringer_vibrate">Vibrate</string>
     <string name="island_ringer_silent">Silent</string>
     <string name="island_now">now</string>
+    <string name="island_lyrics">Lyrics</string>
+    <string name="island_lyrics_looking">Looking for the lyrics</string>
+    <string name="island_lyrics_none">No lyrics found for this song</string>
+    <string name="island_lyrics_instrumental">Instrumental, no lyrics</string>
+    <string name="island_lyrics_failed">Could not reach lrclib.net</string>
+    <string name="island_lyrics_retry">Try again</string>
+    <string name="island_lyrics_ask">This player gives no lyrics. Drip can look them up at lrclib.net, which gets the title and artist of the song.</string>
+    <string name="island_lyrics_online">Look up online</string>
     <string name="island_minutes_ago">%d min</string>
     <string name="island_privacy_title">In use</string>
     <string name="island_privacy_camera">Camera</string>

@@ -12,7 +12,6 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 
 ## Muziek
 
-- ★ Gesynchroniseerde songteksten op de kaart, regel voor regel meelopend (uit de speler, of optioneel online via LRCLIB).
 - Een equalizer die echt op de muziek beweegt (Visualizer, vraagt microfoonrecht, daarom een keuze).
 - ★Uitvoer kiezen vanaf de kaart: telefoon, koptelefoon, speaker (de uitvoerkiezer van Android openen). (wel met mooie animatie)
 - De hoes vervaagd als achtergrond van de geopende kaart.

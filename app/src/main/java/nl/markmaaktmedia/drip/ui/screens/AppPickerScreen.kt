@@ -49,6 +49,7 @@ import nl.markmaaktmedia.drip.ui.components.DripIconButton
 import nl.markmaaktmedia.drip.ui.components.EmptyState
 import nl.markmaaktmedia.drip.ui.components.GroupedRow
 import nl.markmaaktmedia.drip.ui.components.PillSpinner
+import nl.markmaaktmedia.drip.ui.components.SwitchRow
 import nl.markmaaktmedia.drip.ui.screens.settings.SettingsSearchField
 import nl.markmaaktmedia.drip.ui.screens.settings.rememberIsland
 import nl.markmaaktmedia.drip.ui.theme.DripIcons
@@ -62,11 +63,19 @@ import nl.markmaaktmedia.drip.ui.theme.DripIcons
 fun AppPickerScreen(kind: AppPickerKind, onBack: () -> Unit) {
     val context = LocalContext.current
     val (island, edit) = rememberIsland()
-    val chosen = when (kind) {
-        AppPickerKind.NOTIFY -> island.notifyApps
-        AppPickerKind.HIDE -> island.hiddenApps
+    // With every app allowed the list still shows, all on, and switching one off leaves it out; as in Tandem.
+    val everyApp = kind == AppPickerKind.NOTIFY && island.notifyAllApps
+    fun isOn(pkg: String) = when (kind) {
+        AppPickerKind.NOTIFY -> if (island.notifyAllApps) pkg !in island.notifyExcluded else pkg in island.notifyApps
+        AppPickerKind.HIDE -> pkg in island.hiddenApps
     }
-    val initialChosen = remember { chosen }
+    // The ones that differ from the rest go first: the chosen ones, or the ones switched off when all are on.
+    val initialChosen = remember {
+        when (kind) {
+            AppPickerKind.NOTIFY -> if (island.notifyAllApps) island.notifyExcluded else island.notifyApps
+            AppPickerKind.HIDE -> island.hiddenApps
+        }
+    }
     val apps by produceState<List<LauncherApp>?>(null) {
         value = withContext(Dispatchers.IO) { LauncherApps.chosenFirst(LauncherApps.load(context), initialChosen) }
     }
@@ -79,7 +88,11 @@ fun AppPickerScreen(kind: AppPickerKind, onBack: () -> Unit) {
 
     fun toggle(pkg: String, on: Boolean) = edit { settings ->
         when (kind) {
-            AppPickerKind.NOTIFY -> settings.copy(notifyApps = if (on) settings.notifyApps + pkg else settings.notifyApps - pkg)
+            AppPickerKind.NOTIFY -> if (settings.notifyAllApps) {
+                settings.copy(notifyExcluded = if (on) settings.notifyExcluded - pkg else settings.notifyExcluded + pkg)
+            } else {
+                settings.copy(notifyApps = if (on) settings.notifyApps + pkg else settings.notifyApps - pkg)
+            }
             AppPickerKind.HIDE -> settings.copy(hiddenApps = if (on) settings.hiddenApps + pkg else settings.hiddenApps - pkg)
         }
     }
@@ -107,6 +120,14 @@ fun AppPickerScreen(kind: AppPickerKind, onBack: () -> Unit) {
             hint = stringResource(R.string.picker_search),
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
         )
+        if (kind == AppPickerKind.NOTIFY) {
+            Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
+                SwitchRow(
+                    0, 1, DripIcons.Apps, stringResource(R.string.notif_all), stringResource(R.string.notif_all_sub),
+                    everyApp, { on -> edit { it.copy(notifyAllApps = on) } },
+                )
+            }
+        }
 
         val list = shown
         when {
@@ -120,7 +141,7 @@ fun AppPickerScreen(kind: AppPickerKind, onBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 itemsIndexed(list, key = { _, app -> app.packageName }) { index, app ->
-                    AppRow(index, list.size, app, app.packageName in chosen, { on -> toggle(app.packageName, on) }, Modifier.animateItem())
+                    AppRow(index, list.size, app, isOn(app.packageName), { on -> toggle(app.packageName, on) }, Modifier.animateItem())
                 }
             }
         }

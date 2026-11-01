@@ -188,7 +188,12 @@
     <string name="notif_which">From which apps</string>
     <string name="notif_all">All apps</string>
     <string name="notif_chosen">Chosen apps</string>
-    <string name="notif_apps">Choose the apps</string>
+    <string name="notif_apps">Apps</string>
+    <string name="notif_all_sub">Off: only the apps you tick</string>
+    <plurals name="apps_off_count">
+        <item quantity="one">All apps but %d</item>
+        <item quantity="other">All apps but %d</item>
+    </plurals>
     <plurals name="apps_count">
         <item quantity="one">%d app</item>
         <item quantity="other">%d apps</item>

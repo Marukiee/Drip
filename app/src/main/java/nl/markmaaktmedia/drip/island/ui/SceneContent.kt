@@ -91,7 +91,7 @@ fun SceneContent(scene: Scene, privacy: PrivacyInfo, controller: IslandControlle
         }
         Stage.EXPANDED -> Column(Modifier.fillMaxWidth().padding(top = m.topInset).padding(m.padding)) {
             when (val c = scene.content) {
-                is IslandContent.Music -> MusicCard(c.playing, hub)
+                is IslandContent.Music -> MusicCard(c.playing, hub, layout.settings)
                 is IslandContent.Call -> CallCard(c.call)
                 is IslandContent.Live -> LiveCard(c.live)
                 is IslandContent.Charging -> ChargingCard(c.battery)

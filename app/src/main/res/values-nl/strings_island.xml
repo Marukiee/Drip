@@ -62,6 +62,14 @@
     <string name="island_ringer_vibrate">Trillen</string>
     <string name="island_ringer_silent">Stil</string>
     <string name="island_now">nu</string>
+    <string name="island_lyrics">Songtekst</string>
+    <string name="island_lyrics_looking">Songtekst zoeken</string>
+    <string name="island_lyrics_none">Geen songtekst gevonden voor dit nummer</string>
+    <string name="island_lyrics_instrumental">Instrumentaal, zonder tekst</string>
+    <string name="island_lyrics_failed">Kon lrclib.net niet bereiken</string>
+    <string name="island_lyrics_retry">Opnieuw</string>
+    <string name="island_lyrics_ask">Deze speler geeft geen songtekst mee. Drip kan hem opzoeken bij lrclib.net, die dan de titel en artiest van het nummer krijgt.</string>
+    <string name="island_lyrics_online">Online opzoeken</string>
     <string name="island_minutes_ago">%d min</string>
     <string name="island_privacy_title">In gebruik</string>
     <string name="island_privacy_camera">Camera</string>

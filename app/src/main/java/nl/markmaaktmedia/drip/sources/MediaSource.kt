@@ -105,6 +105,7 @@ internal class MediaSource(
             liked = likedOf(s, m, rated, like, packageName, title),
             next = nextInQueue(s.queue, state?.activeQueueItemId ?: MediaSession.QueueItem.UNKNOWN_ID.toLong()),
             commands = s.commands,
+            embeddedLyrics = lyricsOf(m),
         )
     }
 
@@ -143,6 +144,11 @@ internal class MediaSource(
         return iconNames.getOrPut(packageName to id) {
             safely("icon name") { context.packageManager.getResourcesForApplication(packageName).getResourceEntryName(id) }
         }
+    }
+
+    /** Lyrics a player put in the metadata under a key of its own ("lyrics", "android.media.metadata.LYRICS"...). */
+    private fun lyricsOf(m: MediaMetadata): String? = safely("lyrics") {
+        m.keySet().firstOrNull { "lyric" in it.lowercase() }?.let { m.getText(it)?.toString() ?: m.getString(it) }?.takeIf { it.isNotBlank() }
     }
 
     private fun kindOf(a: PlaybackState.CustomAction): CustomKind? {

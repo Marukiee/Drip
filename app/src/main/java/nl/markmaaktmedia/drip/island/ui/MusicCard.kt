@@ -93,8 +93,10 @@ import nl.markmaaktmedia.drip.ui.theme.DripIcons
  * slowly turns while the song plays and settles a little smaller when it pauses.
  */
 @Composable
-fun MusicCard(np: NowPlaying, hub: IslandHub) {
+fun MusicCard(np: NowPlaying, hub: IslandHub, settings: nl.markmaaktmedia.drip.data.IslandSettings) {
     val c = np.commands
+    val lyricsOpen by hub.lyricsOpen.collectAsState()
+    val lyrics = settings.showLyrics && lyricsOpen
 
     // The cover and the title open the player itself (Spotify's now playing screen, say), and the island closes.
     val source = remember { MutableInteractionSource() }
@@ -152,7 +154,14 @@ fun MusicCard(np: NowPlaying, hub: IslandHub) {
         }
         TransportGroup(np.playing, c)
         Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            OutputButton(hub)
+            // The lyrics open under the card; where the sound plays is in the volume card, and here without lyrics.
+            if (settings.showLyrics) {
+                SideButton(DripIcons.Lyrics, R.string.island_lyrics, active = lyricsOpen) {
+                    hub.lyricsOpen.value = !lyricsOpen
+                }
+            } else {
+                OutputButton(hub)
+            }
             SideButton(
                 if (np.liked == true) DripIcons.FavoriteFilled else DripIcons.Favorite, R.string.island_like,
                 active = np.liked, onClick = c::toggleLike,
@@ -161,7 +170,18 @@ fun MusicCard(np: NowPlaying, hub: IslandHub) {
     }
 
     Spacer(Modifier.height(14.dp))
-    VolumeBar(hub)
+    VolumeBar(hub, concentric = !lyrics)
+    // Fades in at its full height at once, so the island grows to it in one movement instead of with every frame.
+    androidx.compose.animation.AnimatedVisibility(
+        visible = lyrics,
+        enter = fadeIn(tween(240, 120)),
+        exit = fadeOut(tween(160)),
+    ) {
+        Column {
+            Spacer(Modifier.height(10.dp))
+            LyricsPanel(np, hub)
+        }
+    }
 }
 
 /**
@@ -469,7 +489,7 @@ private fun TimeText(text: String) = Text(text, color = IslandInk.Secondary, fon
  * The volume is set off the main thread and only when it really changes.
  */
 @Composable
-private fun VolumeBar(hub: IslandHub) {
+private fun VolumeBar(hub: IslandHub, concentric: Boolean) {
     val volume by hub.musicVolume.collectAsState()
     val requests = remember { kotlinx.coroutines.flow.MutableStateFlow<Float?>(null) }
     LaunchedEffect(Unit) {
@@ -484,6 +504,6 @@ private fun VolumeBar(hub: IslandHub) {
         value = volume,
         onChange = { f, _ -> requests.value = f },
         icon = if (volume <= 0.001f) DripIcons.VolumeOff else DripIcons.VolumeUp,
-        concentric = true,
+        concentric = concentric,
     )
 }

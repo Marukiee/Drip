@@ -1,13 +1,7 @@
 package nl.markmaaktmedia.drip.ui.screens.settings
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -27,7 +21,6 @@ import nl.markmaaktmedia.drip.ui.routeBounds
 import nl.markmaaktmedia.drip.ui.routeKey
 import nl.markmaaktmedia.drip.ui.screens.rememberAccess
 import nl.markmaaktmedia.drip.ui.theme.DripIcons
-import nl.markmaaktmedia.drip.ui.theme.DripMotion
 
 /** Notifications: whether they open the island, from which apps, and how much of them it shows. */
 @Composable
@@ -71,31 +64,29 @@ internal fun NotificationsPage(onBack: () -> Unit, onOpen: (Route) -> Unit) {
         }
 
         SectionHeader(stringResource(R.string.notif_section_apps), top = 20.dp)
+        // Always the list, as in Tandem: with all apps on every app is ticked, and one switched off there stays quiet.
         SettingsGroup {
-            SettingsTarget(FocusKeys.NotifyWhich, 0, 1) {
-                SegmentedRow(
-                    0, 1, DripIcons.Apps, stringResource(R.string.notif_which),
-                    listOf(true, false), island.notifyAllApps,
-                    { stringResource(if (it) R.string.notif_all else R.string.notif_chosen) },
-                ) { all -> edit { it.copy(notifyAllApps = all) } }
-            }
-        }
-        AnimatedVisibility(
-            visible = !island.notifyAllApps,
-            enter = expandVertically(DripMotion.sizeSpring()) + fadeIn(DripMotion.fadeSpec()),
-            exit = shrinkVertically(DripMotion.sizeSpring()) + fadeOut(DripMotion.fadeSpec()),
-        ) {
-            val route = Route.AppPicker(AppPickerKind.NOTIFY)
-            SettingsGroup(Modifier.padding(top = 12.dp)) {
-                ActionRow(
-                    0, 1, DripIcons.Apps, stringResource(R.string.notif_apps),
-                    if (island.notifyApps.isEmpty()) stringResource(R.string.apps_none)
-                    else pluralStringResource(R.plurals.apps_count, island.notifyApps.size, island.notifyApps.size),
-                    { onOpen(route) }, modifier = Modifier.routeBounds(routeKey(route)),
+            SettingsTarget(FocusKeys.NotifyWhich, 0, 2) {
+                SwitchRow(
+                    0, 2, DripIcons.CheckCircle, stringResource(R.string.notif_all), stringResource(R.string.notif_all_sub),
+                    island.notifyAllApps, { on -> edit { it.copy(notifyAllApps = on) } },
                 )
             }
+            val route = Route.AppPicker(AppPickerKind.NOTIFY)
+            ActionRow(
+                1, 2, DripIcons.Apps, stringResource(R.string.notif_apps), notifyAppsSummary(island),
+                { onOpen(route) }, modifier = Modifier.routeBounds(routeKey(route)),
+            )
         }
         Spacer(Modifier.height(8.dp))
     }
 }
 
+/** All apps, all but a few, or the chosen few. */
+@Composable
+internal fun notifyAppsSummary(island: nl.markmaaktmedia.drip.data.IslandSettings): String = when {
+    island.notifyAllApps && island.notifyExcluded.isEmpty() -> stringResource(R.string.notif_all)
+    island.notifyAllApps -> pluralStringResource(R.plurals.apps_off_count, island.notifyExcluded.size, island.notifyExcluded.size)
+    island.notifyApps.isEmpty() -> stringResource(R.string.apps_none)
+    else -> pluralStringResource(R.plurals.apps_count, island.notifyApps.size, island.notifyApps.size)
+}

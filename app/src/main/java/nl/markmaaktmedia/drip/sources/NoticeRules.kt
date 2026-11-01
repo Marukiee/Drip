@@ -171,7 +171,7 @@ internal fun isSystemChatter(packageName: String): Boolean {
 internal fun alertKindFor(f: NoticeFacts, rank: RankFacts, s: IslandSettings, ownPackage: String): AlertKind? {
     if (f.packageName == ownPackage || !s.showNotifications) return null
     if (isSystemChatter(f.packageName)) return null
-    if (!s.notifyAllApps && f.packageName !in s.notifyApps) return null
+    if (if (s.notifyAllApps) f.packageName in s.notifyExcluded else f.packageName !in s.notifyApps) return null
     if (f.groupSummary || isMedia(f) || isCall(f)) return null
     val alarm = f.category == "alarm"
     // An alarm that goes off stays ongoing until it is stopped, so alarms are the one ongoing thing let through.

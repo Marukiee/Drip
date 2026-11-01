@@ -115,9 +115,10 @@ data class IslandSettings(
     val alertHeadphones: Boolean = true,
     /** How long a short announcement stays, in milliseconds. */
     val alertDurationMs: Long = 3500,
-    /** Notifications of every app, or only of [notifyApps]. */
+    /** Notifications of every app but [notifyExcluded], or only of [notifyApps]. */
     val notifyAllApps: Boolean = true,
     val notifyApps: Set<String> = emptySet(),
+    val notifyExcluded: Set<String> = emptySet(),
     /** Shows the text of a notification. Off keeps it to the app and the title. */
     val notifyShowText: Boolean = true,
     /** How long paused music stays on the island before it goes. */
@@ -327,6 +328,7 @@ class DripPrefs(private val context: Context) {
             alertDurationMs = this[longPreferencesKey("alert_duration")] ?: d.alertDurationMs,
             notifyAllApps = b("notify_all_apps", d.notifyAllApps),
             notifyApps = set("notify_apps"),
+            notifyExcluded = set("notify_excluded"),
             notifyShowText = b("notify_show_text", d.notifyShowText),
             hideSystemPopups = b("hide_system_popups", d.hideSystemPopups),
             pausedLingerMs = this[longPreferencesKey("paused_linger")] ?: d.pausedLingerMs,
@@ -420,6 +422,7 @@ class DripPrefs(private val context: Context) {
         longPreferencesKey("alert_duration").let { if (v.alertDurationMs == d.alertDurationMs) remove(it) else this[it] = v.alertDurationMs }
         b("notify_all_apps", v.notifyAllApps, d.notifyAllApps)
         set("notify_apps", v.notifyApps)
+        set("notify_excluded", v.notifyExcluded)
         b("notify_show_text", v.notifyShowText, d.notifyShowText)
         b("hide_system_popups", v.hideSystemPopups, d.hideSystemPopups)
         longPreferencesKey("paused_linger").let { if (v.pausedLingerMs == d.pausedLingerMs) remove(it) else this[it] = v.pausedLingerMs }
