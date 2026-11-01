@@ -34,8 +34,19 @@ class IslandHub {
         _alerts.tryEmit(alert)
     }
 
+    private val _demos = MutableSharedFlow<Demo>(extraBufferCapacity = 8, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    /** Asks the island to act something out, for the try buttons in the app and the debug broadcast. */
+    val demos: SharedFlow<Demo> = _demos.asSharedFlow()
+
+    fun demo(demo: Demo) {
+        _demos.tryEmit(demo)
+    }
+
     /** True while the notification listener is connected, so the app can tell whether it still needs the permission. */
     val listenerConnected = MutableStateFlow(false)
     /** True while the accessibility service, and so the island, is running. */
     val islandRunning = MutableStateFlow(false)
 }
+
+/** What the island can act out without a real song, call or charger. */
+enum class Demo { MUSIC, CALL, INCOMING, CHARGING, TIMER, ALERT, VOLUME, TORCH, EXPAND, COLLAPSE, CLEAR }
