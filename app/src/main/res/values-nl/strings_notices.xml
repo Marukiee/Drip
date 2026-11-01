@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notice_arrive">Aankomst %1$s</string>
+    <string name="notice_reply">Beantwoorden</string>
+    <string name="notice_tandem_connected">Verbonden</string>
+</resources>

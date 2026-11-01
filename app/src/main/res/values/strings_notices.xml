@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The arrival time of a route on the navigation card: "Arrive 14:32" -->
+    <string name="notice_arrive">Arrive %1$s</string>
+    <!-- A reply button whose app gave it no title -->
+    <string name="notice_reply">Reply</string>
+    <!-- Under the name of a computer Tandem just connected to -->
+    <string name="notice_tandem_connected">Connected</string>
+</resources>

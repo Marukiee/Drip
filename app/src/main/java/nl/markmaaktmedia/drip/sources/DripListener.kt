@@ -8,7 +8,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import nl.markmaaktmedia.drip.automation.isAutomationKey
 import nl.markmaaktmedia.drip.data.IslandSettings
 import nl.markmaaktmedia.drip.graph
 import nl.markmaaktmedia.drip.island.CallInfo
@@ -25,12 +27,14 @@ import nl.markmaaktmedia.drip.island.NowPlaying
 class DripListener : NotificationListenerService() {
 
     private class CallEntry(val postedAt: Long, val info: CallInfo)
-    private class LiveEntry(val firstSeen: Long, val info: LiveInfo)
+    /** [tandem] is a transfer of Tandem's, which has a switch of its own. */
+    private class LiveEntry(val firstSeen: Long, val info: LiveInfo, val tandem: Boolean)
 
     private val hub get() = graph.hub
     private lateinit var apps: Apps
     private lateinit var reader: NotificationReader
     private val memory = NotificationMemory()
+    private val tandem = TandemWatch()
     private val calls = HashMap<String, CallEntry>()
     private val live = HashMap<String, LiveEntry>()
     private var nowPlaying: NowPlaying? = null
@@ -91,6 +95,7 @@ class DripListener : NotificationListenerService() {
     override fun onNotificationRemoved(sbn: StatusBarNotification?, rankingMap: RankingMap?, reason: Int) {
         if (sbn == null || !connected) return
         memory.forget(sbn.key)
+        tandem.forget(sbn.key)
         if (calls.remove(sbn.key) != null) publishCall()
         if (live.remove(sbn.key) != null) publishLive()
     }
@@ -116,7 +121,7 @@ class DripListener : NotificationListenerService() {
         val liveChanged = if (isLive(f, packageName)) {
             // Ordered by when it first showed up, so a download that updates every second does not jump to the front.
             val first = live[key]?.firstSeen ?: sbn.postTime
-            live[key] = LiveEntry(first, reader.live(sbn, f))
+            live[key] = LiveEntry(first, reader.live(sbn, f), tandemRole(f) == TandemRole.TRANSFER)
             true
         } else {
             live.remove(key) != null
@@ -126,6 +131,22 @@ class DripListener : NotificationListenerService() {
             if (liveChanged) publishLive()
         }
         if (fresh) alert(sbn, f, rankingMap)
+        tandemNews(sbn, f, fresh, seed)
+    }
+
+    /** Tandem's connection and clipboard come as quiet notifications, which the plain alert rules let pass by. */
+    private fun tandemNews(sbn: StatusBarNotification, f: NoticeFacts, fresh: Boolean, seed: Boolean) {
+        val role = tandemRole(f) ?: return
+        val s = settings
+        when (role) {
+            TandemRole.CONNECTION -> {
+                // Recorded even while switched off, so switching on does not announce who was there all along.
+                val joined = tandem.joined(sbn.key, tandemConnectedTo(f.text), seed)
+                if (s?.showTandem == true) joined.forEach { hub.post(reader.tandemConnected(sbn, it, s)) }
+            }
+            TandemRole.CLIPBOARD -> if (fresh && s?.showTandem == true) hub.post(reader.tandemClipboard(sbn, f, s))
+            TandemRole.TRANSFER -> Unit
+        }
     }
 
     private fun alert(sbn: StatusBarNotification, f: NoticeFacts, rankingMap: RankingMap?) {
@@ -163,9 +184,15 @@ class DripListener : NotificationListenerService() {
         }
     }
 
+    /** What automation put in the live list stays there, in front: it was asked for on purpose. */
     private fun publishLive() {
         val s = settings ?: return
-        hub.live.value = if (s.showLive) live.values.sortedByDescending { it.firstSeen }.map { it.info } else emptyList()
+        val mine = if (s.showLive) {
+            live.values.filter { !it.tandem || s.showTandem }.sortedByDescending { it.firstSeen }.map { it.info }
+        } else {
+            emptyList()
+        }
+        hub.live.update { now -> now.filter { s.allowAutomation && isAutomationKey(it.key) } + mine }
     }
 
     private fun teardown() {
@@ -176,11 +203,12 @@ class DripListener : NotificationListenerService() {
         media = null
         settings = null
         memory.clear()
+        tandem.clear()
         calls.clear()
         live.clear()
         nowPlaying = null
         hub.nowPlaying.value = null
         hub.call.value = null
-        hub.live.value = emptyList()
+        hub.live.update { now -> now.filter { isAutomationKey(it.key) } }
     }
 }

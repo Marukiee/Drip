@@ -20,15 +20,23 @@ private fun words(vararg parts: String?): String {
 private fun String.hasWord(vararg w: String) = w.any { contains(" $it ") }
 private fun String.hasPart(vararg w: String) = w.any { contains(it) }
 
-private val likeParts = listOf("like", "favorite", "favourite", "favoriet", "heart", "thumbs up", "thumb up", "leuk")
+// Spotify never says like: its heart is "Add to collection", "Your Library" or "Opslaan in je bibliotheek".
+private val likeParts = listOf(
+    "like", "favorite", "favourite", "favoriet", "heart", "thumbs up", "thumb up", "leuk", "collection", "library",
+    "bibliotheek", "save", "opslaan",
+)
+/** Bare "add to" and "remove from" are the heart too, unless they name a playlist or the queue. */
+private val libraryMoves = listOf(" add to ", " remove from ", " toevoegen ", " verwijderen uit ")
+private val notTheHeart = listOf("playlist", "afspeellijst", "queue", "wachtrij")
 private val dislikeParts = listOf("dislike", "thumbs down", "thumb down", "niet leuk")
 
 internal fun customKindOf(action: String?, name: String?): CustomKind? {
     val t = words(action, name)
     return when {
         t.hasPart("shuffle", "willekeurig") -> CustomKind.SHUFFLE
-        t.hasPart("repeat", "herhaal", "herhalen") || t.hasWord("loop") -> CustomKind.REPEAT
-        likeParts.any { it in t } && dislikeParts.none { it in t } -> CustomKind.LIKE
+        t.hasPart("repeat", "herhaal", "herhal") || t.hasWord("loop") -> CustomKind.REPEAT
+        (likeParts.any { it in t } || libraryMoves.any { it in t }) && dislikeParts.none { it in t } &&
+            notTheHeart.none { it in t } -> CustomKind.LIKE
         else -> null
     }
 }
@@ -56,16 +64,28 @@ internal fun shuffleOnOf(action: String?, name: String?): Boolean {
     }
 }
 
-/** "Remove from liked songs" means the song is liked; "Add to liked songs" means it is not yet. */
+/**
+ * "Remove from liked songs" means the song is liked; "Add to liked songs" means it is not yet. Players offer the one
+ * of the pair that undoes the present state, so which of the two is there says it.
+ */
 internal fun likedOf(action: String?, name: String?): Boolean {
     val t = words(action, name)
     return when {
         t.hasPart("unlike", "remove", "unfavo", "unheart", "unsave", "verwijder", "undo") -> true
         t.hasWord("add", "toevoegen", "save", "opslaan") -> false
-        t.hasWord("liked", "added", "saved", "filled", "favorited", "favourited", "on") -> true
+        t.hasWord("liked", "added", "saved", "filled", "favorited", "favourited", "on") || t.hasPart(" leuk gevonden ") -> true
         else -> false
     }
 }
+
+/** Rating.RATING_HEART, Rating.RATING_THUMB_UP_DOWN and PlaybackState.ACTION_SET_RATING. */
+internal const val RATING_HEART = 1
+internal const val RATING_THUMB_UP_DOWN = 2
+private const val ACTION_SET_RATING = 128L
+
+/** Whether the player takes a heart or a thumb through the session's own rating, which wins over a custom action. */
+internal fun likesByRating(ratingType: Int, actions: Long): Boolean =
+    (ratingType == RATING_HEART || ratingType == RATING_THUMB_UP_DOWN) && actions and ACTION_SET_RATING != 0L
 
 /** What the picker needs to know of one media session. */
 data class SessionView(
@@ -86,4 +106,18 @@ internal fun pickSession(sessions: List<SessionView>): Int? {
     val known = sessions.withIndex().filter { it.value.hasMetadata }
     known.filter { it.value.playing }.maxWithOrNull(order)?.let { return it.index }
     return known.filter { it.value.usable }.maxWithOrNull(order)?.index
+}
+
+/** One song of a player's queue: MediaSession.QueueItem's id and the title of its description. */
+data class QueueEntry(val id: Long, val title: String?)
+
+/** MediaSession.QueueItem.UNKNOWN_ID: the player does not say which item plays. */
+private const val UNKNOWN_QUEUE_ID = -1L
+
+/** The title of what comes after the item that plays, or null without a queue, at its end, or when that is unknown. */
+internal fun nextInQueue(queue: List<QueueEntry>, activeId: Long): String? {
+    if (activeId == UNKNOWN_QUEUE_ID || queue.isEmpty()) return null
+    val at = queue.indexOfFirst { it.id == activeId }
+    if (at < 0) return null
+    return queue.getOrNull(at + 1)?.title?.trim()?.takeIf { it.isNotEmpty() }
 }
