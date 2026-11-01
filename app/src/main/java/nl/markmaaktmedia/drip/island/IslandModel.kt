@@ -71,7 +71,7 @@ data class NowPlaying(
         durationMs == other.durationMs && positionMs == other.positionMs && positionAtElapsed == other.positionAtElapsed &&
         speed == other.speed && playing == other.playing && canSkipNext == other.canSkipNext &&
         canSkipPrevious == other.canSkipPrevious && canSeek == other.canSeek && repeat == other.repeat &&
-        shuffle == other.shuffle && liked == other.liked
+        shuffle == other.shuffle && liked == other.liked && next == other.next
 
     override fun hashCode(): Int = (packageName.hashCode() * 31 + title.hashCode()) * 31 + playing.hashCode()
 }

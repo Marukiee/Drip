@@ -1,5 +1,39 @@
 [
   {
+    "version": "0.1.7",
+    "date": "2026-11-01",
+    "en": {
+      "title": "More on the island",
+      "new": [
+        "The heart works with Spotify",
+        "What plays next, routes with arrival time, scores, and Live Updates with their stops",
+        "Tandem's transfers on the island, and Tasker or any app can add its own (switch it on first)"
+      ],
+      "better": [
+        "Material 3 Expressive sliders for volume and torch",
+        "The island also shows on the lock screen"
+      ],
+      "fixed": [
+        "A screenshot no longer shows two announcements"
+      ]
+    },
+    "nl": {
+      "title": "Meer op het eiland",
+      "new": [
+        "Het hartje werkt met Spotify",
+        "Wat hierna komt, routes met aankomsttijd, uitslagen, en Live Updates met hun tussenstops",
+        "Overdrachten van Tandem op het eiland, en Tasker of andere apps kunnen er iets op zetten (eerst aanzetten)"
+      ],
+      "better": [
+        "Material 3 Expressive-schuiven voor volume en zaklamp",
+        "Het eiland staat ook op het vergrendelscherm"
+      ],
+      "fixed": [
+        "Een schermafbeelding geeft geen twee meldingen meer"
+      ]
+    }
+  },
+  {
     "version": "0.1.6",
     "date": "2026-11-01",
     "en": {
