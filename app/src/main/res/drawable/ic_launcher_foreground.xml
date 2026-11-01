@@ -8,17 +8,17 @@
     <!-- The notch as a drop forming on the top edge of the screen, in the rose of Tandem and Rushes, with a light catch
          so it reads as liquid. The shadow is the one of the pills of Tandem. -->
     <group android:translateY="1.6">
-        <path android:fillColor="#000000" android:fillAlpha="0.22" android:pathData="M33,0H75C69.48,0 65,4.48 65,10C65,36.95 76.5,37.62 76.5,59A22.5,22.5 0 0 1 31.5,59C31.5,37.62 43,36.95 43,10C43,4.48 38.52,0 33,0Z" />
+        <path android:fillColor="#000000" android:fillAlpha="0.22" android:pathData="M33,0H75C69.48,0 65,4.48 65,10C65,33.1 76.5,30.62 76.5,52A22.5,22.5 0 0 1 31.5,52C31.5,30.62 43,33.1 43,10C43,4.48 38.52,0 33,0Z" />
     </group>
-    <path android:pathData="M33,0H75C69.48,0 65,4.48 65,10C65,36.95 76.5,37.62 76.5,59A22.5,22.5 0 0 1 31.5,59C31.5,37.62 43,36.95 43,10C43,4.48 38.52,0 33,0Z">
+    <path android:pathData="M33,0H75C69.48,0 65,4.48 65,10C65,33.1 76.5,30.62 76.5,52A22.5,22.5 0 0 1 31.5,52C31.5,30.62 43,33.1 43,10C43,4.48 38.52,0 33,0Z">
         <aapt:attr name="android:fillColor">
-            <gradient android:startX="54" android:startY="81.5" android:endX="54" android:endY="18" android:type="linear">
+            <gradient android:startX="54" android:startY="74.5" android:endX="54" android:endY="18" android:type="linear">
                 <item android:offset="0" android:color="#E8779F" />
                 <item android:offset="1" android:color="#FFB0CB" />
             </gradient>
         </aapt:attr>
     </path>
-    <group android:pivotX="44" android:pivotY="55" android:rotation="30">
-        <path android:fillColor="#FFFFFF" android:fillAlpha="0.85" android:pathData="M44,47H44A3.25,3.25 0 0 1 47.25,50.25V59.75A3.25,3.25 0 0 1 44,63H44A3.25,3.25 0 0 1 40.75,59.75V50.25A3.25,3.25 0 0 1 44,47Z" />
+    <group android:pivotX="44" android:pivotY="48" android:rotation="30">
+        <path android:fillColor="#FFFFFF" android:fillAlpha="0.85" android:pathData="M44,40H44A3.25,3.25 0 0 1 47.25,43.25V52.75A3.25,3.25 0 0 1 44,56H44A3.25,3.25 0 0 1 40.75,52.75V43.25A3.25,3.25 0 0 1 44,40Z" />
     </group>
 </vector>
