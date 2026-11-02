@@ -1,5 +1,21 @@
 [
   {
+    "version": "0.1.16",
+    "date": "2026-11-02",
+    "en": {
+      "title": "Only real installs",
+      "fixed": [
+        "No more \"An app installing\": an install shows only when it is a real app with a name, once"
+      ]
+    },
+    "nl": {
+      "title": "Alleen echte installaties",
+      "fixed": [
+        "Geen \"An app installing\" meer: een installatie staat er alleen als het een echte app met een naam is, één keer"
+      ]
+    }
+  },
+  {
     "version": "0.1.15",
     "date": "2026-11-02",
     "en": {
