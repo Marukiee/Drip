@@ -324,7 +324,8 @@ class IslandController(
         // stay until they are closed by hand. The slim ones (volume, charging) still close by themselves.
         val reading = expandedKey == IslandContent.Music.KEY && settings.showLyrics && hub.lyricsOpen.value
         val message = (expandedFallback as? IslandContent.Notice)?.alert?.kind?.let { it !in MINI_KINDS } == true
-        if (expandedKey == null || typing || reading || message) return
+        val done = (expandedFallback as? IslandContent.Live)?.live?.finished == true
+        if (expandedKey == null || typing || reading || message || done) return
         expandJob = scope.launch {
             delay(EXPANDED_IDLE_MS)
             collapse()
@@ -372,13 +373,18 @@ class IslandController(
 
         val expanded = expandedKey?.let { key ->
             listOfNotNull(primary, second, alert?.let { IslandContent.Notice(it) }).firstOrNull { it.key == key }
-                ?: expandedFallback?.takeIf { it.key == key && it !is IslandContent.Call && it !is IslandContent.Live && it !is IslandContent.Privacy }
+                ?: expandedFallback?.takeIf {
+                    it.key == key && it !is IslandContent.Call && it !is IslandContent.Privacy &&
+                        (it !is IslandContent.Live || it.live.finished)
+                }
         }
         if (expandedKey != null && expanded == null) {
             // What was open has gone, a call that ended for instance: close quietly.
             expandedKey = null
             expandedFallback = null
         } else if (expanded != null) {
+            // A download that finished while its card was open: the card now waits for the person, like a message.
+            if ((expanded as? IslandContent.Live)?.live?.finished == true) expandJob?.cancel()
             expandedFallback = expanded
         }
 

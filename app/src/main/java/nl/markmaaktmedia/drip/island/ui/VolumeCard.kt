@@ -52,6 +52,7 @@ import nl.markmaaktmedia.drip.graph
 import nl.markmaaktmedia.drip.island.Haptics
 import nl.markmaaktmedia.drip.island.IslandHub
 import nl.markmaaktmedia.drip.ui.theme.DripIcons
+import androidx.compose.runtime.collectAsState
 
 /**
  * The opened volume: what the slim volume bar in the notch opens into. Media, ringer and alarm as bars under the finger,
@@ -77,6 +78,18 @@ fun VolumeCard(hub: IslandHub) {
     Spacer(Modifier.height(12.dp))
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // Music on a speaker elsewhere comes first: that is what the volume buttons move now.
+        val playing by hub.nowPlaying.collectAsState()
+        playing?.let { np ->
+            np.remote?.takeIf { it.adjustable }?.let { speaker ->
+                ExpressiveSlider(
+                    value = speaker.level,
+                    onChange = { f, _ -> np.commands.setRemoteVolume(f) },
+                    icon = DripIcons.SpeakerGroup, label = speaker.name ?: np.appLabel,
+                    height = 40.dp, steps = speaker.steps,
+                )
+            }
+        }
         StreamBar(audio, AudioManager.STREAM_MUSIC, DripIcons.Music, stringResource(R.string.island_media), tick, last = false)
         StreamBar(audio, AudioManager.STREAM_RING, DripIcons.Notifications, stringResource(R.string.island_ring), tick, last = false)
         StreamBar(audio, AudioManager.STREAM_ALARM, DripIcons.Alarm, stringResource(R.string.island_alarm), tick, last = true)

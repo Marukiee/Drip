@@ -160,9 +160,19 @@ class IslandService : AccessibilityService() {
             }
             else -> return false
         }
+        val direction = if (up) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER
+        // Music on a speaker elsewhere: the buttons move that speaker, as Android itself would.
+        val playing = graph.hub.nowPlaying.value
+        if (playing?.remote?.adjustable == true && (ui.content is IslandContent.Music || stream == AudioManager.USE_DEFAULT_STREAM_TYPE)) {
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                playing.commands.nudgeRemoteVolume(direction)
+                controller.poke()
+            }
+            return true
+        }
         val nudge = graph.hub.nudgeVolume ?: return false
         if (event.action == KeyEvent.ACTION_DOWN) {
-            nudge(stream, if (up) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER)
+            nudge(stream, direction)
             controller.poke()
         }
         return true

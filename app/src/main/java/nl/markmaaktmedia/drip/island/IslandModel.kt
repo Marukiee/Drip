@@ -38,7 +38,17 @@ interface MediaCommands {
     /** The heart: only there when the player offers a like or favourite action of its own. */
     fun toggleLike()
     fun openPlayer()
+    /** The volume of a speaker the player plays on ([NowPlaying.remote]), 0 to 1, without Android's own panel. */
+    fun setRemoteVolume(level: Float) {}
+    /** One step up or down (AudioManager.ADJUST_RAISE or ADJUST_LOWER) of that speaker. */
+    fun nudgeRemoteVolume(direction: Int) {}
 }
+
+/**
+ * The volume of a speaker the music plays on instead of the phone: a Sonos, a Chromecast, a Spotify Connect device. The
+ * player keeps it, not Android's media volume, which stays where it is. [name] is the speaker or group when known.
+ */
+data class RemoteVolume(val level: Float, val steps: Int, val name: String?, val adjustable: Boolean)
 
 enum class RepeatMode { OFF, ALL, ONE }
 
@@ -72,13 +82,16 @@ data class NowPlaying(
     /** The player's own id of the song and, when it says, where the file is; for reading lyrics out of the file. */
     val mediaId: String? = null,
     val mediaUri: String? = null,
+    /** Playing on a speaker elsewhere, with its own volume. Null when it plays on the phone. */
+    val remote: RemoteVolume? = null,
 ) {
     override fun equals(other: Any?): Boolean = other is NowPlaying && packageName == other.packageName &&
         title == other.title && artist == other.artist && album == other.album && art === other.art &&
         durationMs == other.durationMs && positionMs == other.positionMs && positionAtElapsed == other.positionAtElapsed &&
         speed == other.speed && playing == other.playing && canSkipNext == other.canSkipNext &&
         canSkipPrevious == other.canSkipPrevious && canSeek == other.canSeek && repeat == other.repeat &&
-        shuffle == other.shuffle && smartShuffle == other.smartShuffle && liked == other.liked && next == other.next
+        shuffle == other.shuffle && smartShuffle == other.smartShuffle && liked == other.liked && next == other.next &&
+        remote == other.remote
 
     override fun hashCode(): Int = (packageName.hashCode() * 31 + title.hashCode()) * 31 + playing.hashCode()
 }
@@ -138,6 +151,8 @@ data class LiveInfo(
     val detail: String? = null,
     val actions: List<IslandAction> = emptyList(),
     val open: (() -> Unit)? = null,
+    /** A download that is done: it stays a moment, and its card until it is closed, so the file can be opened. */
+    val finished: Boolean = false,
 )
 
 enum class PlugType { NONE, AC, USB, WIRELESS, DOCK }

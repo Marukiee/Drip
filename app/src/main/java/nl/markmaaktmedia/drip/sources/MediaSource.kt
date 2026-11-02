@@ -9,6 +9,7 @@ import android.media.session.MediaController
 import android.media.session.MediaSession
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -17,6 +18,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import nl.markmaaktmedia.drip.island.MediaCommands
 import nl.markmaaktmedia.drip.island.NowPlaying
+import nl.markmaaktmedia.drip.island.RemoteVolume
 import nl.markmaaktmedia.drip.island.RepeatMode
 import nl.markmaaktmedia.drip.island.ShuffleMode
 
@@ -30,6 +32,9 @@ internal class MediaSource(
     private val publish: (NowPlaying?) -> Unit,
 ) {
     private val handler = Handler(Looper.getMainLooper())
+
+    /** When Drip itself last moved a speaker's volume, so that is not announced as news. */
+    @Volatile var ownVolumeAt = 0L
     private val component = ComponentName(context, DripListener::class.java)
     private var manager: MediaSessionManager? = null
     private var sessions: List<Session> = emptyList()
@@ -144,6 +149,7 @@ internal class MediaSource(
             embeddedLyrics = lyricsOf(m),
             mediaId = m.getString(MediaMetadata.METADATA_KEY_MEDIA_ID),
             mediaUri = m.getString(MediaMetadata.METADATA_KEY_MEDIA_URI),
+            remote = remoteOf(s),
         )
     }
 
@@ -187,6 +193,24 @@ internal class MediaSource(
     /** Lyrics a player put in the metadata under a key of its own ("lyrics", "android.media.metadata.LYRICS"...). */
     private fun lyricsOf(m: MediaMetadata): String? = safely("lyrics") {
         m.keySet().firstOrNull { "lyric" in it.lowercase() }?.let { m.getText(it)?.toString() ?: m.getString(it) }?.takeIf { it.isNotBlank() }
+    }
+
+    /**
+     * Playing on a speaker elsewhere: the player tells Android its volume (a Sonos group, a Chromecast), which is then
+     * that speaker's and not the phone's. The name comes from the session's extras when the player gives it.
+     */
+    private fun remoteOf(s: Session): RemoteVolume? = safely("remote volume") {
+        val info = s.controller.playbackInfo ?: return@safely null
+        if (info.playbackType != MediaController.PlaybackInfo.PLAYBACK_TYPE_REMOTE || info.maxVolume <= 0) return@safely null
+        val extras = s.controller.extras
+        val name = (extras?.getString(EXTRA_REMOTE_NAME) ?: extras?.getString(EXTRA_REMOTE_NAME_SHORT))?.trim()?.takeIf { it.isNotEmpty() }
+            ?: (if (Build.VERSION.SDK_INT >= 30) info.volumeControlId?.trim()?.takeIf { it.isNotEmpty() && ' ' in it } else null)
+        RemoteVolume(
+            level = info.currentVolume.toFloat() / info.maxVolume,
+            steps = info.maxVolume,
+            name = name,
+            adjustable = info.volumeControl != android.media.VolumeProvider.VOLUME_CONTROL_FIXED,
+        )
     }
 
     private fun media3Icon(a: PlaybackState.CustomAction): Int? =
@@ -290,6 +314,12 @@ internal class MediaSource(
             readQueue(queue)
             update()
         }
+
+        // A speaker's volume moved: the buttons of the phone, the speaker itself, or Drip.
+        override fun onAudioInfoChanged(info: MediaController.PlaybackInfo) = update()
+
+        // The name of the speaker can come along in the session's extras.
+        override fun onExtrasChanged(extras: android.os.Bundle?) = update()
 
         private fun readRatingType() {
             ratingType = safely("rating type") { controller.ratingType } ?: Rating.RATING_NONE
@@ -396,6 +426,18 @@ internal class MediaSource(
             controls("rate") { it.setRating(rating) }
         }
 
+        override fun setRemoteVolume(level: Float) {
+            val info = safely("remote volume") { s.controller.playbackInfo } ?: return
+            if (info.maxVolume <= 0) return
+            ownVolumeAt = SystemClock.elapsedRealtime()
+            safely("set remote volume") { s.controller.setVolumeTo(Math.round(level.coerceIn(0f, 1f) * info.maxVolume), 0) }
+        }
+
+        override fun nudgeRemoteVolume(direction: Int) {
+            ownVolumeAt = SystemClock.elapsedRealtime()
+            safely("nudge remote volume") { s.controller.adjustVolume(direction, 0) }
+        }
+
         override fun openPlayer() {
             val activity = safely("session activity") { s.controller.sessionActivity }
             if (activity == null || !activity.sendFrom(context)) context.launchApp(s.controller.packageName)
@@ -411,6 +453,12 @@ internal class MediaSource(
 
     private companion object {
         const val ART_MAX_PX = 512
+        /**
+         * Where a player can name the speaker it plays on, in its session's extras: "Living room + Kitchen". Drip's own
+         * key, and a short one for players that would rather not carry a package name around.
+         */
+        const val EXTRA_REMOTE_NAME = "nl.markmaaktmedia.drip.REMOTE_NAME"
+        const val EXTRA_REMOTE_NAME_SHORT = "remote_name"
         /** PlaybackStateCompat's actions for the shuffle and repeat modes, which reach the framework state as bits. */
         const val ACTION_SET_SHUFFLE_MODE = PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE
         const val ACTION_SET_REPEAT_MODE = PlaybackStateCompat.ACTION_SET_REPEAT_MODE

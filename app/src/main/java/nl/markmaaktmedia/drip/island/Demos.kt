@@ -26,6 +26,10 @@ object Demos {
                 packageName = "com.android.music", title = "Drip Test", artist = "Mark Maakt Media", album = null,
                 durationMs = 60_000L, positionMs = 0L, positionAtElapsed = SystemClock.elapsedRealtime(), embeddedLyrics = null,
             )
+            // Music playing on a Sonos group, the way PixelPlayer plays on one: the speaker's own volume.
+            Demo.SPEAKER -> hub.nowPlaying.value = music(context).copy(
+                remote = RemoteVolume(level = 0.35f, steps = 100, name = "Living room + Kitchen", adjustable = true),
+            )
             // A well-known song with no lyrics of its own, to try the lookup at lrclib.net.
             Demo.LYRICS -> hub.nowPlaying.value = music(context).copy(
                 title = "Bohemian Rhapsody", artist = "Queen", album = "A Night At The Opera (2011 Remaster)",
@@ -62,7 +66,10 @@ object Demos {
                     actions = listOf(IslandAction(context.getString(R.string.demo_stop), ActionKind.OTHER) { hub.live.value = emptyList() }),
                 ),
             )
-            Demo.DOWNLOAD -> hub.live.value = listOf(
+            // Again while the demo download runs: it finishes, as a real one does.
+            Demo.DOWNLOAD -> hub.live.value = hub.live.value.firstOrNull { it.key == "demo-download" && !it.finished }?.let {
+                listOf(it.copy(finished = true, progress = 1f, text = "40 MB", shortText = context.getString(R.string.src_download_done), actions = emptyList(), open = {}))
+            } ?: listOf(
                 LiveInfo(
                     key = "demo-download", packageName = "com.android.chrome", appLabel = "Chrome", kind = LiveKind.DOWNLOAD,
                     title = "Rushes-v0.4.2.dmg", text = context.getString(R.string.demo_download_text), progress = 0.42f,
@@ -210,6 +217,12 @@ object Demos {
                 hub.nowPlaying.value = hub.nowPlaying.value?.let { it.copy(liked = it.liked != true) }
             }
             override fun openPlayer() = Unit
+            override fun setRemoteVolume(level: Float) {
+                hub.nowPlaying.value = hub.nowPlaying.value?.let { np -> np.copy(remote = np.remote?.copy(level = level)) }
+            }
+            override fun nudgeRemoteVolume(direction: Int) {
+                hub.nowPlaying.value?.remote?.let { setRemoteVolume((it.level + direction * 0.05f).coerceIn(0f, 1f)) }
+            }
         }
         return NowPlaying(
             packageName = context.packageName, appLabel = "Drip", title = "Golden Hour", artist = "Mark Maakt Media",

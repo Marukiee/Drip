@@ -167,6 +167,9 @@ private fun CompactContent(content: IslandContent?, privacy: PrivacyInfo, height
                             remember(live.picture) { live.picture.asImageBitmap() }, null,
                             modifier = start.padding(slot * 0.08f),
                         )
+                    live.finished -> Box(start, contentAlignment = Alignment.Center) {
+                        Icon(DripIcons.CheckCircleFilled, null, tint = color, modifier = Modifier.size(icon))
+                    }
                     live.kind == LiveKind.DOWNLOAD || live.kind == LiveKind.NAVIGATION ->
                         Box(start, contentAlignment = Alignment.Center) { Icon(liveIcon(live.kind), null, tint = color, modifier = Modifier.size(icon)) }
                     live.appIcon != null -> Picture(live.appIcon, slot, CircleShape, null, start)
@@ -175,6 +178,7 @@ private fun CompactContent(content: IslandContent?, privacy: PrivacyInfo, height
                 val base = live.chronometerBase
                 when {
                     live.kind == LiveKind.NAVIGATION -> (live.shortText ?: live.title).let { SlotText(it, IslandInk.Primary, endText) }
+                    live.finished && live.shortText != null -> SlotText(live.shortText, color, endText)
                     base != null -> {
                         val now = rememberNow()
                         SlotText(formatClock(if (live.countDown) base - now else now - base), color, endText)

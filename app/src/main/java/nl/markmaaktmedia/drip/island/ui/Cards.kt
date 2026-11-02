@@ -137,19 +137,30 @@ private fun RouteBody(live: LiveInfo, accent: Color) {
 private fun DownloadBody(live: LiveInfo, accent: Color) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         Box(Modifier.size(48.dp).clip(CircleShape).background(accent.copy(alpha = 0.22f)), contentAlignment = Alignment.Center) {
-            Icon(DripIcons.Download, null, tint = accent, modifier = Modifier.size(26.dp))
+            // Done, the arrow becomes a tick.
+            androidx.compose.animation.AnimatedContent(
+                live.finished,
+                transitionSpec = {
+                    (androidx.compose.animation.scaleIn(spring(0.55f, 450f), initialScale = 0.5f) + androidx.compose.animation.fadeIn(tween(160)))
+                        .togetherWith(androidx.compose.animation.scaleOut(tween(140), targetScale = 0.6f) + androidx.compose.animation.fadeOut(tween(120)))
+                },
+                label = "downloadDone",
+            ) { done ->
+                Icon(if (done) DripIcons.CheckCircleFilled else DripIcons.Download, null, tint = accent, modifier = Modifier.size(26.dp))
+            }
         }
         Column(Modifier.weight(1f)) {
             Title(live.title, size = 18)
             Subtitle(live.text ?: stringResource(R.string.island_downloading))
         }
-        live.progress?.let {
+        live.progress?.takeIf { !live.finished }?.let {
             Text("${(it * 100).toInt()}%", color = accent, fontSize = 24.sp, fontWeight = FontWeight.Bold)
         }
     }
     Spacer(Modifier.height(14.dp))
     val shown by animateFloatAsState(live.progress ?: 0f, spring(1f, 300f), label = "download")
-    nl.markmaaktmedia.drip.ui.components.WavyProgress(shown, accent, IslandInk.SurfaceHigh)
+    // Finished, the wave lies still at the end: nothing goes on any more.
+    nl.markmaaktmedia.drip.ui.components.WavyProgress(shown, accent, IslandInk.SurfaceHigh, moving = !live.finished)
 }
 
 @Composable

@@ -1,5 +1,27 @@
 [
   {
+    "version": "0.1.17",
+    "date": "2026-11-02",
+    "en": {
+      "title": "Speakers and downloads",
+      "new": [
+        "Music on a speaker (a Sonos group, a Chromecast): the island shows and sets its volume, with its name"
+      ],
+      "better": [
+        "A finished download stays a moment with Open, and its card stays until you close it"
+      ]
+    },
+    "nl": {
+      "title": "Speakers en downloads",
+      "new": [
+        "Muziek op een speaker (een Sonos-groep, een Chromecast): het eiland toont en regelt het volume ervan, met de naam"
+      ],
+      "better": [
+        "Een klare download blijft even staan met Openen, en de kaart tot je hem sluit"
+      ]
+    }
+  },
+  {
     "version": "0.1.16",
     "date": "2026-11-02",
     "en": {

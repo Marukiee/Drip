@@ -177,7 +177,7 @@ fun MusicCard(np: NowPlaying, hub: IslandHub, settings: nl.markmaaktmedia.drip.d
     }
 
     Spacer(Modifier.height(14.dp))
-    VolumeBar(hub, concentric = !lyrics)
+    VolumeBar(hub, np, concentric = !lyrics)
     // Fades in at its full height at once, so the island grows to it in one movement instead of with every frame.
     androidx.compose.animation.AnimatedVisibility(
         visible = lyrics,
@@ -514,21 +514,32 @@ private fun TimeText(text: String) = Text(text, color = IslandInk.Secondary, fon
  * The volume is set off the main thread and only when it really changes.
  */
 @Composable
-private fun VolumeBar(hub: IslandHub, concentric: Boolean) {
-    val volume by hub.musicVolume.collectAsState()
+private fun VolumeBar(hub: IslandHub, np: NowPlaying, concentric: Boolean) {
+    // On a speaker elsewhere (a Sonos, a Chromecast) the bar is that speaker's volume, with its name on it.
+    val remote = np.remote?.takeIf { it.adjustable }
+    val phone by hub.musicVolume.collectAsState()
+    val volume = remote?.level ?: phone
     val requests = remember { kotlinx.coroutines.flow.MutableStateFlow<Float?>(null) }
+    val target by androidx.compose.runtime.rememberUpdatedState(remote to np.commands)
     LaunchedEffect(Unit) {
         var last = -1f
         requests.collect { f ->
             if (f == null || kotlin.math.abs(f - last) < 0.01f) return@collect
             last = f
-            withContext(Dispatchers.Default) { hub.setMusicVolume?.invoke(f) }
+            val (speaker, commands) = target
+            withContext(Dispatchers.Default) { if (speaker != null) commands.setRemoteVolume(f) else hub.setMusicVolume?.invoke(f) }
         }
     }
     ExpressiveSlider(
         value = volume,
         onChange = { f, _ -> requests.value = f },
-        icon = if (volume <= 0.001f) DripIcons.VolumeOff else DripIcons.VolumeUp,
+        icon = when {
+            remote != null -> DripIcons.SpeakerGroup
+            volume <= 0.001f -> DripIcons.VolumeOff
+            else -> DripIcons.VolumeUp
+        },
+        label = remote?.name,
         concentric = concentric,
+        steps = remote?.steps ?: 0,
     )
 }
