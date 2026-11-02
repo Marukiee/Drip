@@ -192,8 +192,8 @@ fun MusicCard(np: NowPlaying, hub: IslandHub, settings: nl.markmaaktmedia.drip.d
 }
 
 /**
- * The cover as a Material 3 Expressive cookie. It turns slowly while the song plays and stands still, a little smaller,
- * when it pauses; a new song drops its cover in over the old one.
+ * The cover in a Material 3 Expressive cookie. The cookie's edge turns slowly while the song plays, the picture itself
+ * stays still; paused it all stands, a little smaller. A new song drops its cover in over the old one.
  */
 @Composable
 private fun Cover(np: NowPlaying) {
@@ -213,8 +213,16 @@ private fun Cover(np: NowPlaying) {
             },
             label = "cover",
         ) { art ->
-            Box(Modifier.graphicsLayer { scaleX = size; scaleY = size; rotationZ = turn.value }) {
-                Picture(art, 64.dp, MaterialShapes.Cookie9Sided.toShape(), DripIcons.Music)
+            // Only the cookie turns: the shape is turned and the cover inside it turned back just as far, so the
+            // picture stands still while its scalloped edge goes round.
+            val cookie = MaterialShapes.Cookie9Sided.toShape()
+            Box(
+                Modifier.size(64.dp).graphicsLayer {
+                    scaleX = size; scaleY = size; rotationZ = turn.value
+                    shape = cookie; clip = true
+                },
+            ) {
+                Picture(art, 64.dp, androidx.compose.ui.graphics.RectangleShape, DripIcons.Music, Modifier.graphicsLayer { rotationZ = -turn.value })
             }
         }
     }
