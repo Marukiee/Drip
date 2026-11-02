@@ -26,6 +26,7 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.io.File
 import java.security.MessageDigest
+import androidx.core.graphics.drawable.toBitmap
 
 /**
  * Checks the GitHub releases feed and, when the person asks, downloads the APK and
@@ -285,6 +286,10 @@ class UpdateRepository(
             val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
                 setSize(file.length())
                 if (Build.VERSION.SDK_INT >= 31) setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
+                // Who is being installed, so the island (and Android) can say "Drip" instead of "an app".
+                setAppPackageName(context.packageName)
+                setAppLabel(context.applicationInfo.loadLabel(context.packageManager))
+                runCatching { setAppIcon(context.packageManager.getApplicationIcon(context.packageName).toBitmap(192, 192)) }
             }
             val id = installer.createSession(params)
             installer.openSession(id).use { session ->

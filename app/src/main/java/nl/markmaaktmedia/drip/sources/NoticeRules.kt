@@ -82,8 +82,11 @@ internal fun isClockApp(packageName: String) = "clock" in packageName.lowercase(
  * silent by the app) only counts when it is something people follow: a route, a timer, a download, a delivery, a match.
  * A backup or a sync running in the background is no news.
  */
-internal fun isLive(f: NoticeFacts, ownPackage: String, quiet: Boolean = false): Boolean {
+internal fun isLive(f: NoticeFacts, ownPackage: String, quiet: Boolean = false, installsShown: Boolean = false): Boolean {
     if (f.packageName == ownPackage || f.packageName == "android") return false
+    // The install itself is already on the island, from Android's own list of installs, with its real progress; the
+    // installer's notification about it would be the same thing a second time.
+    if (installsShown && installerApps.any(f.packageName::startsWith) && liveKindFor(f) == LiveKind.DOWNLOAD) return false
     if (quiet && !f.promoted && liveKindFor(f) == LiveKind.GENERIC) return false
     if (!f.ongoing || f.groupSummary || isMedia(f) || isCall(f)) return false
     // Something that rings full screen (an alarm, a timer that ran out) is an alert, not a card that stays.
@@ -99,6 +102,12 @@ internal fun isLive(f: NoticeFacts, ownPackage: String, quiet: Boolean = false):
     }
     return true
 }
+
+/** Apps that install other apps and say so in a notification of their own. */
+private val installerApps = listOf(
+    "com.android.vending", "com.google.android.packageinstaller", "com.android.packageinstaller", "org.fdroid.fdroid",
+    "com.aurora.store", "com.looker.droidify", "dev.imranr.obtainium", "com.sec.android.app.samsungapps",
+)
 
 private val navigationApps = listOf(
     "com.google.android.apps.maps", "com.waze", "com.here.app", "com.sygic", "net.osmand", "app.organicmaps",

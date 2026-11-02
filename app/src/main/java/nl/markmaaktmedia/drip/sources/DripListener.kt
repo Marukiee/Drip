@@ -119,7 +119,8 @@ class DripListener : NotificationListenerService() {
         } else {
             calls.remove(key) != null
         }
-        val liveChanged = if (isLive(f, packageName, quiet = f.silent || importanceOf(key, rankingMap) < NotificationManager.IMPORTANCE_DEFAULT)) {
+        val quiet = f.silent || importanceOf(key, rankingMap) < NotificationManager.IMPORTANCE_DEFAULT
+        val liveChanged = if (isLive(f, packageName, quiet, installsShown = settings?.showInstalls == true)) {
             // Ordered by when it first showed up, so a download that updates every second does not jump to the front.
             val first = live[key]?.firstSeen ?: sbn.postTime
             live[key] = LiveEntry(first, reader.live(sbn, f), tandemRole(f) == TandemRole.TRANSFER)

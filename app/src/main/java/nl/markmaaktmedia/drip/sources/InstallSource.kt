@@ -78,6 +78,8 @@ internal class InstallPart(env: SourceEnv) : Part(env) {
         val shown = sessions.values
             .filter { installShown(it.info.isActive, it.info.progress, now - it.changedAt) }
             .sortedByDescending { it.info.sessionId }
+            // An installer that starts over opens a new session for the same app; only the newest is that install.
+            .distinctBy { it.info.appPackageName ?: "session ${it.info.sessionId}" }
         hub.putOwnLive(PREFIX, shown.map { toLive(it.info) })
         if (shown.any { !it.info.isActive }) env.handler.postDelayed(sweep, INSTALL_QUIET_MS)
     }
@@ -92,7 +94,8 @@ internal class InstallPart(env: SourceEnv) : Part(env) {
         val installerPkg = info.installerPackageName
         return LiveInfo(
             key = "$PREFIX${info.sessionId}",
-            packageName = pkg ?: installerPkg ?: context.packageName,
+            // Never Drip's own icon for an app nobody named: then the install symbol is shown instead.
+            packageName = pkg ?: installerPkg ?: "",
             appLabel = installerPkg?.let(apps::label) ?: label,
             appIcon = info.appIcon ?: pkg?.let(apps::icon),
             kind = LiveKind.INSTALL,
