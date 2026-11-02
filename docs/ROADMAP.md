@@ -16,6 +16,8 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 - ★Uitvoer kiezen vanaf de kaart: telefoon, koptelefoon, speaker (de uitvoerkiezer van Android openen). (wel met mooie animatie)
 - De hoes vervaagd als achtergrond van de geopende kaart.
 - ★Het volgende nummer in de wachtrij tonen, als de speler het geeft.
+- Meerdere spelers tegelijk, zoals Sonos die doorspeelt terwijl de telefoon zelf iets anders afspeelt: elke speler een
+  eigen activiteit (de tweede als kleine druppel), en in de geopende kaart opzij vegen naar de andere speler.
 
 ## Gesprekken
 
