@@ -77,6 +77,9 @@ internal class InstallPart(env: SourceEnv) : Part(env) {
         val now = SystemClock.elapsedRealtime()
         val shown = sessions.values
             .filter { installShown(it.info.isActive, it.info.progress, now - it.changedAt) }
+            // Android hides from other apps which app another installer is putting on the phone. "An app" is no news; the
+            // store's own notification, which does name it, shows instead.
+            .filter { it.info.appPackageName != null || !it.info.appLabel.isNullOrBlank() }
             .sortedByDescending { it.info.sessionId }
             // An installer that starts over opens a new session for the same app; only the newest is that install.
             .distinctBy { it.info.appPackageName ?: "session ${it.info.sessionId}" }

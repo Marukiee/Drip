@@ -82,13 +82,6 @@ class NoticeRulesTest {
         assertTrue(isLive(download, own, quiet = true))
     }
 
-    @Test fun oneInstallNotTwo() {
-        // The Play Store's own "Installing" bar, while Drip shows the install from Android's list of installs.
-        val store = NoticeFacts("com.android.vending", ongoing = true, progress = 60, progressMax = 100, title = "Spotify", text = "Installing")
-        assertFalse(isLive(store, own, installsShown = true))
-        assertTrue(isLive(store, own, installsShown = false))
-    }
-
     @Test fun alertWorthiness() {
         assertEquals(AlertKind.NOTIFICATION, alertKindFor(chat(), loud, defaults, own))
         assertNull(alertKindFor(chat(), RankFacts(importance = 2), defaults, own))

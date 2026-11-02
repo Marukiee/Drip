@@ -258,3 +258,21 @@ fun currentLineIndex(lines: List<LyricLine>, positionMs: Long, leadMs: Long = 20
 
 /** Off, on, or a player's third way of shuffling (Spotify's smart shuffle). */
 enum class ShuffleMode { OFF, ON, SMART }
+
+/**
+ * The same install can come twice: from Android's list of installs and from the store's own notification. They count
+ * once, as the one from the list of installs, which knows the progress best.
+ */
+fun withoutRepeats(live: List<LiveInfo>): List<LiveInfo> {
+    val installish = setOf(LiveKind.INSTALL, LiveKind.DOWNLOAD)
+    fun same(a: LiveInfo, b: LiveInfo) = a.kind in installish && b.kind in installish && a.title.trim().equals(b.title.trim(), ignoreCase = true)
+    val out = mutableListOf<LiveInfo>()
+    for (l in live) {
+        val at = out.indexOfFirst { same(it, l) }
+        when {
+            at < 0 -> out += l
+            l.kind == LiveKind.INSTALL && out[at].kind != LiveKind.INSTALL -> out[at] = l
+        }
+    }
+    return out
+}

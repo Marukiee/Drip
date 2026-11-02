@@ -201,7 +201,7 @@ class IslandController(
         if (s.music?.playing == true) lastPlayingAt = now
         val out = mutableListOf<IslandContent>()
         if (settings.showCalls && s.call != null) out += IslandContent.Call(s.call)
-        if (settings.showLive) s.live.take(2).forEach { out += IslandContent.Live(it) }
+        if (settings.showLive) withoutRepeats(s.live).take(2).forEach { out += IslandContent.Live(it) }
         if (settings.showMusic && s.music?.playing == true) out += IslandContent.Music(s.music)
         // After the music, so during a song or a video call the camera is the small drop beside it.
         if (privacy.any) out += IslandContent.Privacy(privacy)
