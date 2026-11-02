@@ -1,5 +1,31 @@
 [
   {
+    "version": "0.1.15",
+    "date": "2026-11-02",
+    "en": {
+      "title": "Quieter",
+      "better": [
+        "An opened message stays until you close it",
+        "The wave of a progress line moves",
+        "Silent notifications and background work like a backup stay off the island"
+      ],
+      "fixed": [
+        "An update says Drip instead of an app, and an install shows once"
+      ]
+    },
+    "nl": {
+      "title": "Rustiger",
+      "better": [
+        "Een geopend bericht blijft staan tot je het sluit",
+        "De golf van een voortgangslijn beweegt",
+        "Stille meldingen en achtergrondwerk zoals een back-up blijven buiten het eiland"
+      ],
+      "fixed": [
+        "Een update zegt Drip in plaats van een app, en een installatie staat er één keer"
+      ]
+    }
+  },
+  {
     "version": "0.1.14",
     "date": "2026-11-01",
     "en": {
