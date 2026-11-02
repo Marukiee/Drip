@@ -1,6 +1,7 @@
 package nl.markmaaktmedia.drip.sources
 
 import android.app.Notification
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -118,7 +119,7 @@ class DripListener : NotificationListenerService() {
         } else {
             calls.remove(key) != null
         }
-        val liveChanged = if (isLive(f, packageName)) {
+        val liveChanged = if (isLive(f, packageName, quiet = f.silent || importanceOf(key, rankingMap) < NotificationManager.IMPORTANCE_DEFAULT)) {
             // Ordered by when it first showed up, so a download that updates every second does not jump to the front.
             val first = live[key]?.firstSeen ?: sbn.postTime
             live[key] = LiveEntry(first, reader.live(sbn, f), tandemRole(f) == TandemRole.TRANSFER)
@@ -147,6 +148,13 @@ class DripListener : NotificationListenerService() {
             TandemRole.CLIPBOARD -> if (fresh && s?.showTandem == true) hub.post(reader.tandemClipboard(sbn, f, s))
             TandemRole.TRANSFER -> Unit
         }
+    }
+
+    /** How much the notification may interrupt, as the ranking says; as much as possible when it cannot be read. */
+    private fun importanceOf(key: String, rankingMap: RankingMap?): Int {
+        val map = rankingMap ?: safely("ranking") { currentRanking } ?: return NotificationManager.IMPORTANCE_DEFAULT
+        val r = Ranking()
+        return if (map.getRanking(key, r)) r.importance else NotificationManager.IMPORTANCE_DEFAULT
     }
 
     private fun alert(sbn: StatusBarNotification, f: NoticeFacts, rankingMap: RankingMap?) {

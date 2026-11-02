@@ -71,6 +71,17 @@ class NoticeRulesTest {
         assertFalse(isCall(NoticeFacts("com.example.voip", category = "call", title = "Missed call")))
     }
 
+    @Test fun silentStaysOut() {
+        // Made silent by the app, the way setSilent does it: no announcement.
+        assertNull(alertKindFor(chat().copy(silent = true), loud, defaults, own))
+        // A backup on a quiet channel is no news; a download on one still is.
+        val backup = NoticeFacts("com.stevesoltys.seedvault", ongoing = true, progress = 15, progressMax = 100, title = "Backup running", text = "Iconify")
+        assertFalse(isLive(backup, own, quiet = true))
+        assertTrue(isLive(backup, own, quiet = false))
+        val download = NoticeFacts("com.android.chrome", ongoing = true, progress = 40, progressMax = 100, title = "Rushes.dmg", text = "Downloading")
+        assertTrue(isLive(download, own, quiet = true))
+    }
+
     @Test fun alertWorthiness() {
         assertEquals(AlertKind.NOTIFICATION, alertKindFor(chat(), loud, defaults, own))
         assertNull(alertKindFor(chat(), RankFacts(importance = 2), defaults, own))

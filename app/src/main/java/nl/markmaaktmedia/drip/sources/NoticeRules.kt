@@ -37,6 +37,11 @@ data class NoticeFacts(
     val channelId: String? = null,
     /** The newest message of a conversation is the user's own, which is how an app shows a reply that was just sent. */
     val lastFromUser: Boolean = false,
+    /**
+     * Made silent by the app itself: a child of a group whose summary does the alerting, which is also how setSilent
+     * works. Android lets it in without a sound, so the island leaves it alone too.
+     */
+    val silent: Boolean = false,
 )
 
 /** What the ranking says about a notification. */
@@ -72,8 +77,14 @@ private val runningNotices = listOf(
 internal fun isClockApp(packageName: String) = "clock" in packageName.lowercase()
 
 /** An ongoing notification that has something to show: a bar, a clock, a promotion or a category made for it. */
-internal fun isLive(f: NoticeFacts, ownPackage: String): Boolean {
+/**
+ * Whether an ongoing notification is something going on worth the island. A [quiet] one (a silent channel, or made
+ * silent by the app) only counts when it is something people follow: a route, a timer, a download, a delivery, a match.
+ * A backup or a sync running in the background is no news.
+ */
+internal fun isLive(f: NoticeFacts, ownPackage: String, quiet: Boolean = false): Boolean {
     if (f.packageName == ownPackage || f.packageName == "android") return false
+    if (quiet && !f.promoted && liveKindFor(f) == LiveKind.GENERIC) return false
     if (!f.ongoing || f.groupSummary || isMedia(f) || isCall(f)) return false
     // Something that rings full screen (an alarm, a timer that ran out) is an alert, not a card that stays.
     if (f.hasFullScreenIntent) return false
@@ -177,6 +188,7 @@ internal fun alertKindFor(f: NoticeFacts, rank: RankFacts, s: IslandSettings, ow
     // An alarm that goes off stays ongoing until it is stopped, so alarms are the one ongoing thing let through.
     if (f.ongoing && !alarm) return null
     if (f.title.isNullOrBlank() && f.text.isNullOrBlank()) return null
+    if (f.silent) return null
     // The app posts the conversation again with the reply in it; that is no news to the one who sent it.
     if (f.lastFromUser) return null
     if (rank.importance < IMPORTANCE_DEFAULT || rank.ambient || !rank.matchesFilter || rank.suspended) return null

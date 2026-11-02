@@ -54,6 +54,8 @@ internal class NotificationReader(
             template = template,
             ongoing = promoted || n.flags and (Notification.FLAG_ONGOING_EVENT or Notification.FLAG_FOREGROUND_SERVICE) != 0,
             groupSummary = n.flags and Notification.FLAG_GROUP_SUMMARY != 0,
+            silent = n.group != null && n.flags and Notification.FLAG_GROUP_SUMMARY == 0 &&
+                n.groupAlertBehavior == Notification.GROUP_ALERT_SUMMARY,
             hasMediaSession = e.containsKey(Notification.EXTRA_MEDIA_SESSION),
             callType = if (e.containsKey(EXTRA_CALL_TYPE)) e.getInt(EXTRA_CALL_TYPE) else null,
             hasCallIntents = CALL_INTENTS.any(e::containsKey),
