@@ -8,13 +8,15 @@ import nl.markmaaktmedia.drip.island.LiveKind
 import kotlin.math.roundToInt
 
 /**
- * Whether an install session is worth showing. Installers open sessions ahead of time and leave abandoned ones behind, so
- * only one that is running, or that moved a moment ago, counts.
+ * Whether an install session is worth showing. Installers open sessions ahead of time and leave abandoned ones behind,
+ * and a system update waits for the next restart (staged), so only one that runs and moves, or moved a moment ago,
+ * counts. An active one that has not moved for minutes is stuck or waiting, and no news either.
  */
-fun installShown(active: Boolean, progress: Float, sinceChangeMs: Long): Boolean =
-    active || (progress > 0f && progress < 1f && sinceChangeMs < INSTALL_QUIET_MS)
+fun installShown(active: Boolean, progress: Float, sinceChangeMs: Long, staged: Boolean = false): Boolean =
+    !staged && ((active && sinceChangeMs < INSTALL_STUCK_MS) || (progress > 0f && progress < 1f && sinceChangeMs < INSTALL_QUIET_MS))
 
 internal const val INSTALL_QUIET_MS = 60_000L
+internal const val INSTALL_STUCK_MS = 3 * 60_000L
 
 /** Apps being installed or updated, by any installer, with their progress. */
 internal class InstallPart(env: SourceEnv) : Part(env) {
@@ -76,7 +78,7 @@ internal class InstallPart(env: SourceEnv) : Part(env) {
         }
         val now = SystemClock.elapsedRealtime()
         val shown = sessions.values
-            .filter { installShown(it.info.isActive, it.info.progress, now - it.changedAt) }
+            .filter { installShown(it.info.isActive, it.info.progress, now - it.changedAt, staged = it.info.isStaged) }
             // Android hides from other apps which app another installer is putting on the phone. "An app" is no news; the
             // store's own notification, which does name it, shows instead.
             .filter { it.info.appPackageName != null || !it.info.appLabel.isNullOrBlank() }
@@ -84,7 +86,8 @@ internal class InstallPart(env: SourceEnv) : Part(env) {
             // An installer that starts over opens a new session for the same app; only the newest is that install.
             .distinctBy { it.info.appPackageName ?: "session ${it.info.sessionId}" }
         hub.putOwnLive(PREFIX, shown.map { toLive(it.info) })
-        if (shown.any { !it.info.isActive }) env.handler.postDelayed(sweep, INSTALL_QUIET_MS)
+        // Looked at again in a while: what stopped moving, or went quiet, drops off by itself.
+        if (shown.isNotEmpty()) env.handler.postDelayed(sweep, INSTALL_QUIET_MS)
     }
 
     private fun toLive(info: PackageInstaller.SessionInfo): LiveInfo {

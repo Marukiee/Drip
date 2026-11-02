@@ -89,6 +89,9 @@ class InstallShownTest {
         assertTrue(installShown(active = false, progress = 0.4f, sinceChangeMs = 5_000))
         assertFalse(installShown(active = false, progress = 0.4f, sinceChangeMs = INSTALL_QUIET_MS))
         assertFalse(installShown(active = false, progress = 0f, sinceChangeMs = 0))
+        // A system update waiting for the restart, and an install that stopped moving long ago.
+        assertFalse(installShown(active = true, progress = 0.75f, sinceChangeMs = 0, staged = true))
+        assertFalse(installShown(active = true, progress = 0.75f, sinceChangeMs = INSTALL_STUCK_MS))
     }
 }
 
