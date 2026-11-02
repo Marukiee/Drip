@@ -1,9 +1,15 @@
 package nl.markmaaktmedia.drip.ui.components
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -16,9 +22,9 @@ import kotlin.math.PI
 import kotlin.math.sin
 
 /**
- * A progress bar in the shape of Material 3 Expressive: what is done is a wave, what is left is a straight line. The wave
- * does not move on its own, so nothing keeps drawing while a transfer waits; it follows the progress and nothing else.
- * The library has its own, but only in versions that are not out yet.
+ * A progress bar in the shape of Material 3 Expressive: what is done is a wave, what is left is a straight line. While
+ * [moving] the wave runs along the line, the way the library's own does, so it is clear the work goes on; it is only
+ * on screen while a card shows it, so it does not keep drawing in the background.
  */
 @Composable
 fun WavyProgress(
@@ -29,7 +35,11 @@ fun WavyProgress(
     stroke: Dp = 4.dp,
     amplitude: Dp = 2.5.dp,
     wavelength: Dp = 22.dp,
+    moving: Boolean = true,
 ) {
+    val travel = rememberInfiniteTransition(label = "wave")
+    // Read while drawing only, so the wave moves without the rest being built again every frame.
+    val phase by travel.animateFloat(0f, if (moving) 1f else 0f, infiniteRepeatable(tween(1600, easing = LinearEasing)), label = "wavePhase")
     Canvas(modifier.fillMaxWidth().height(stroke + amplitude * 2 + 2.dp)) {
         val width = size.width
         val middle = size.height / 2
@@ -47,7 +57,7 @@ fun WavyProgress(
         path.moveTo(0f, middle)
         while (x <= reach) {
             val edge = minOf(1f, minOf(x, reach - x) / (length / 2))
-            path.lineTo(x, middle + a * edge * sin(2 * PI * x / length).toFloat())
+            path.lineTo(x, middle + a * edge * sin(2 * PI * (x / length - phase)).toFloat())
             x += 2f
         }
         path.lineTo(reach, middle)
