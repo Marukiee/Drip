@@ -33,6 +33,9 @@ internal class MediaSource(
 ) {
     private val handler = Handler(Looper.getMainLooper())
 
+    /** One thread for covers that have to be read from a link, so the callbacks never wait on a file. */
+    private val artLoader = java.util.concurrent.Executors.newSingleThreadExecutor()
+
     /** When Drip itself last moved a speaker's volume, so that is not announced as news. */
     @Volatile var ownVolumeAt = 0L
     private val component = ComponentName(context, DripListener::class.java)
@@ -51,6 +54,7 @@ internal class MediaSource(
     }
 
     fun stop() {
+        artLoader.shutdown()
         safely("media stop") { manager?.removeOnActiveSessionsChangedListener(onSessions) }
         manager = null
         sessions.forEach { it.release() }
@@ -72,8 +76,37 @@ internal class MediaSource(
             SessionView(isActive(it.state), it.title() != null, isUsable(it.state), it.lastPlayingAt)
         }
         val chosen = pickSession(views)?.let { sessions[it] }
-        publish(chosen?.let { safely("now playing") { build(it) } })
+        if (chosen == null) {
+            publish(null)
+            return
+        }
+        // The same song in two sessions: a player that casts to a speaker whose own app shows it too (PixelPlayer on a
+        // Sonos, with the Sonos app alongside). The player leads, with its cover and its buttons; the speaker's app only
+        // lends what the player lacks, the speaker's volume above all.
+        val twin = sessions.firstOrNull { it !== chosen && sameSong(it, chosen) }
+        val (lead, mirror) = if (twin != null && chosen.isRemote() && !twin.isRemote()) twin to chosen else chosen to twin
+        lead.volumeVia = mirror?.takeIf { it.isRemote() && !lead.isRemote() }
+        var np = safely("now playing") { build(lead) }
+        if (np != null && mirror != null) {
+            if (np.art == null && mirror.art != null) np = np.copy(art = mirror.art)
+            // Without a name of its own, the speaker is called after its app: "Sonos".
+            if (np.remote == null) remoteOf(mirror)?.let { r -> np = np?.copy(remote = r.copy(name = r.name ?: apps.label(mirror.controller.packageName))) }
+        }
+        publish(np)
     }
+
+    /** Two sessions with one song: the same title, and the same artist when both say one. */
+    private fun sameSong(a: Session, b: Session): Boolean {
+        val ta = a.title()?.trim() ?: return false
+        val tb = b.title()?.trim() ?: return false
+        if (!ta.equals(tb, ignoreCase = true)) return false
+        val aa = a.metadata?.text(MediaMetadata.METADATA_KEY_ARTIST)?.lowercase()
+        val ab = b.metadata?.text(MediaMetadata.METADATA_KEY_ARTIST)?.lowercase()
+        return aa == null || ab == null || aa.contains(ab) || ab.contains(aa)
+    }
+
+    private fun Session.isRemote(): Boolean =
+        safely("playback info") { controller.playbackInfo?.playbackType } == MediaController.PlaybackInfo.PLAYBACK_TYPE_REMOTE
 
     private fun build(s: Session): NowPlaying? {
         val m = s.metadata ?: return null
@@ -260,7 +293,27 @@ internal class MediaSource(
         /** Kept from the callback: a long queue is a big binder call, too much to ask for on every state change. */
         var queue: List<QueueEntry> = emptyList()
         private var artSource: Bitmap? = null
+        private var artUri: String? = null
+
+        /** Loads a cover from a link off the main thread, and shows it if the song still has that link by then. */
+        private fun loadArt(uri: String) = safely("cover loader") {
+            artLoader.execute {
+                val bitmap = safely("cover from $uri") {
+                    context.contentResolver.openInputStream(android.net.Uri.parse(uri))?.use { input ->
+                        android.graphics.BitmapFactory.decodeStream(input)
+                    }?.fitWithin(ART_MAX_PX)
+                }
+                handler.post {
+                    if (artUri == uri && bitmap != null) {
+                        art = bitmap
+                        update()
+                    }
+                }
+            }
+        }
         val commands = Commands(this)
+        /** The speaker app's session that holds the volume while this player plays on that speaker. */
+        var volumeVia: Session? = null
 
         /** The same session seen through MediaControllerCompat, which also knows its shuffle and repeat modes. */
         var compat: MediaControllerCompat? = null
@@ -344,10 +397,21 @@ internal class MediaSource(
             val source = m?.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART) ?: m?.getBitmap(MediaMetadata.METADATA_KEY_ART)
                 ?: m?.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON)
             if (source == null) {
-                art = null
                 artSource = null
+                // No picture, but maybe a link to one on the phone: a player's own artwork provider, or a file.
+                val uri = listOf(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, MediaMetadata.METADATA_KEY_ART_URI, MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI)
+                    .firstNotNullOfOrNull { m?.getString(it)?.takeIf { u -> u.startsWith("content://") || u.startsWith("file://") } }
+                if (uri == null) {
+                    art = null
+                    artUri = null
+                } else if (uri != artUri) {
+                    artUri = uri
+                    art = null
+                    loadArt(uri)
+                }
                 return
             }
+            artUri = null
             val before = artSource
             if (before != null && (source === before || samePicture(source, before))) return
             artSource = source
@@ -426,16 +490,19 @@ internal class MediaSource(
             controls("rate") { it.setRating(rating) }
         }
 
+        /** The session that holds the speaker's volume: this one, or the speaker app's alongside it. */
+        private val volume get() = (s.volumeVia ?: s).controller
+
         override fun setRemoteVolume(level: Float) {
-            val info = safely("remote volume") { s.controller.playbackInfo } ?: return
+            val info = safely("remote volume") { volume.playbackInfo } ?: return
             if (info.maxVolume <= 0) return
             ownVolumeAt = SystemClock.elapsedRealtime()
-            safely("set remote volume") { s.controller.setVolumeTo(Math.round(level.coerceIn(0f, 1f) * info.maxVolume), 0) }
+            safely("set remote volume") { volume.setVolumeTo(Math.round(level.coerceIn(0f, 1f) * info.maxVolume), 0) }
         }
 
         override fun nudgeRemoteVolume(direction: Int) {
             ownVolumeAt = SystemClock.elapsedRealtime()
-            safely("nudge remote volume") { s.controller.adjustVolume(direction, 0) }
+            safely("nudge remote volume") { volume.adjustVolume(direction, 0) }
         }
 
         override fun openPlayer() {
