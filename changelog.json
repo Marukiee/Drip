@@ -1,5 +1,21 @@
 [
   {
+    "version": "0.1.20",
+    "date": "2026-11-04",
+    "en": {
+      "title": "Pause means pause",
+      "fixed": [
+        "The button on the card turns to play at once when you pause, also with a second player or the speaker's own app beside it"
+      ]
+    },
+    "nl": {
+      "title": "Pauze is pauze",
+      "fixed": [
+        "De knop op de kaart springt meteen op play als je pauzeert, ook met een tweede speler of de app van de speaker ernaast"
+      ]
+    }
+  },
+  {
     "version": "0.1.19",
     "date": "2026-11-04",
     "en": {
