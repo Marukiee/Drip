@@ -152,7 +152,7 @@ data class IslandSettings(
     val alertDnd: Boolean = true,
     val alertRotation: Boolean = true,
     val alertRinger: Boolean = true,
-    val alertVolume: Boolean = true,
+    val alertVolume: Boolean = false,
     val alertBrightness: Boolean = false,
     val alertHeadphones: Boolean = true,
     /** How long a short announcement stays, in milliseconds. */
