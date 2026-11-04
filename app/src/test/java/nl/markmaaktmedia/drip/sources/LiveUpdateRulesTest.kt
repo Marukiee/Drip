@@ -86,7 +86,7 @@ class LiveUpdateRulesTest {
     }
 
     @Test fun ownReplyIsNoNews() {
-        val chat = NoticeFacts("com.whatsapp", category = "msg", title = "Teun", text = "Ok")
+        val chat = NoticeFacts("com.whatsapp", category = "msg", title = "Alex", text = "Ok")
         assertNull(alertKindFor(chat.copy(lastFromUser = true), RankFacts(importance = 4), IslandSettings(), own))
     }
 

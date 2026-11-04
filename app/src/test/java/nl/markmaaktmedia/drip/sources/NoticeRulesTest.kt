@@ -15,7 +15,7 @@ class NoticeRulesTest {
     private val loud = RankFacts(importance = 4)
     private val defaults = IslandSettings()
 
-    private fun chat(pkg: String = "com.whatsapp") = NoticeFacts(pkg, category = "msg", title = "Teun", text = "Ben je er?")
+    private fun chat(pkg: String = "com.whatsapp") = NoticeFacts(pkg, category = "msg", title = "Alex", text = "Ben je er?")
 
     @Test fun liveKinds() {
         assertEquals(LiveKind.TIMER, liveKindFor(NoticeFacts("com.google.android.deskclock", ongoing = true, showsChronometer = true, countDown = true, title = "Timer")))

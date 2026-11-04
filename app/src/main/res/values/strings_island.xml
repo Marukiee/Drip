@@ -27,8 +27,8 @@
     <string name="demo_timer_title">Pasta</string>
     <string name="demo_timer_text">Timer</string>
     <string name="demo_stop">Stop</string>
-    <string name="demo_alert_title">Teun</string>
-    <string name="demo_alert_text">Are you coming to the sidequest tonight? Bring the laptop.</string>
+    <string name="demo_alert_title">Alex</string>
+    <string name="demo_alert_text">Are you coming over tonight? Bring the laptop.</string>
     <string name="demo_message_1">Hey! Did the new build work?</string>
     <string name="demo_message_2">Yes, the island looks great</string>
     <string name="demo_reply">Mark as read</string>

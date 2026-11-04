@@ -231,7 +231,7 @@ object Demos {
             }
         }
         return NowPlaying(
-            packageName = context.packageName, appLabel = "Drip", title = "Golden Hour", artist = "Mark Maakt Media",
+            packageName = context.packageName, appLabel = "Drip", title = "Golden Hour", artist = "Sunset Drive",
             album = "Drip", art = art(context, 0xFFF2A65A.toInt(), 0xFF7A3E9D.toInt(), 360), durationMs = 4 * 60_000L + 21_000L,
             positionMs = 136_000L, positionAtElapsed = SystemClock.elapsedRealtime(), playing = true, canSeek = true,
             repeat = RepeatMode.OFF, shuffle = false, liked = false, commands = commands,
@@ -294,7 +294,7 @@ object Demos {
         }
         return CallInfo(
             key = "demo-call", packageName = "com.android.dialer", appLabel = context.getString(R.string.demo_phone),
-            caller = "Teun", status = context.getString(if (incoming) R.string.demo_incoming else R.string.demo_ongoing),
+            caller = "Alex", status = context.getString(if (incoming) R.string.demo_incoming else R.string.demo_ongoing),
             incoming = incoming, startedAt = if (incoming) null else System.currentTimeMillis() - 34_000L, actions = actions,
         )
     }
