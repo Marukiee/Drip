@@ -10,18 +10,6 @@ English | [Nederlands](README.nl.md)
 
 The shape comes from your phone: its camera cutout, its status bar and the radius of its screen corners, so an opened island keeps an even gap to the rounded edge. On a phone with a camera hole, like the Pixel 10, it is a pill around the camera. On a phone without one, like the Sony Xperia 1 VI, it is a notch that hangs from the top edge.
 
-## Screenshots
-
-<p>
-  <img src="docs/screenshots/music.png" width="290" alt="Music as a pill around the camera">
-  <img src="docs/screenshots/open.png" width="290" alt="The opened music card">
-  <img src="docs/screenshots/call.png" width="290" alt="An incoming call">
-</p>
-<p>
-  <img src="docs/screenshots/timer.png" width="290" alt="An open timer">
-  <img src="docs/screenshots/charging.png" width="290" alt="A short notice when charging">
-</p>
-
 ## What it does
 
 - **Music.** Cover, a wavy progress line, controls and a volume bar

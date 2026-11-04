@@ -10,18 +10,6 @@
 
 De vorm komt van je telefoon: het cameragat, de statusbalk en de hoekstraal van je scherm, zodat een geopend eiland een gelijke rand houdt tot aan de ronde schermrand. Op een telefoon met cameragat, zoals de Pixel 10, is het een pil om de camera. Op een telefoon zonder gat, zoals de Sony Xperia 1 VI, is het een notch die aan de bovenrand hangt.
 
-## Screenshots
-
-<p>
-  <img src="docs/screenshots/music.png" width="290" alt="Muziek als pil om het cameragat">
-  <img src="docs/screenshots/open.png" width="290" alt="De geopende muziekkaart">
-  <img src="docs/screenshots/call.png" width="290" alt="Een inkomend gesprek">
-</p>
-<p>
-  <img src="docs/screenshots/timer.png" width="290" alt="Een geopende timer">
-  <img src="docs/screenshots/charging.png" width="290" alt="Een korte melding bij laden">
-</p>
-
 ## Wat het doet
 
 - **Muziek.** Hoes, een golvende voortgangslijn, bediening en een volumebalk
