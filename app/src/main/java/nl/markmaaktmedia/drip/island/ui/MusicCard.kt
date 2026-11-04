@@ -93,7 +93,16 @@ import nl.markmaaktmedia.drip.ui.theme.DripIcons
  * slowly turns while the song plays and settles a little smaller when it pauses.
  */
 @Composable
-fun MusicCard(np: NowPlaying, hub: IslandHub, settings: nl.markmaaktmedia.drip.data.IslandSettings) {
+fun MusicCard(
+    np: NowPlaying,
+    hub: IslandHub,
+    settings: nl.markmaaktmedia.drip.data.IslandSettings,
+    /** Every player on the island, this one among them; the others get a small cover to go to them. */
+    players: List<NowPlaying> = emptyList(),
+    onPlayer: (String) -> Unit = {},
+    /** A swipe sideways over the top of the card: 1 towards the next player, -1 back. */
+    onSwipe: (Int) -> Unit = {},
+) {
     val c = np.commands
     val lyricsOpen by hub.lyricsOpen.collectAsState()
     val lyrics = settings.showLyrics && lyricsOpen
@@ -103,9 +112,22 @@ fun MusicCard(np: NowPlaying, hub: IslandHub, settings: nl.markmaaktmedia.drip.d
     val pressed by source.collectIsPressedAsState()
     val dip by animateFloatAsState(if (pressed) 0.97f else 1f, spring(0.5f, 600f), label = "headerDip")
     val context = LocalContext.current
+    val swiped by androidx.compose.runtime.rememberUpdatedState(onSwipe)
     Row(
         Modifier
             .graphicsLayer { scaleX = dip; scaleY = dip }
+            .pointerInput(Unit) {
+                // Taken here because a swipe that stays on the header would otherwise count as a tap and open the player.
+                var travel = 0f
+                detectHorizontalDragGestures(
+                    onDragStart = { travel = 0f },
+                    onDragEnd = { if (kotlin.math.abs(travel) > 24.dp.toPx()) swiped(if (travel < 0) 1 else -1) },
+                    onHorizontalDrag = { change, dx ->
+                        change.consume()
+                        travel += dx
+                    },
+                )
+            }
             .clickable(source, null) {
                 context.graph.haptics.play(Haptics.Kind.TAP)
                 c.openPlayer()
@@ -136,7 +158,12 @@ fun MusicCard(np: NowPlaying, hub: IslandHub, settings: nl.markmaaktmedia.drip.d
                 )
             }
         }
-        AppIcon(null, np.packageName, 22.dp)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AppIcon(null, np.packageName, 22.dp)
+            players.filter { it.packageName != np.packageName }.forEach { other ->
+                OtherPlayer(other) { onPlayer(other.packageName) }
+            }
+        }
     }
 
     Spacer(Modifier.height(14.dp))
@@ -225,6 +252,32 @@ private fun Cover(np: NowPlaying) {
                 Picture(art, 64.dp, androidx.compose.ui.graphics.RectangleShape, DripIcons.Music, Modifier.graphicsLayer { rotationZ = -turn.value })
             }
         }
+    }
+}
+
+/**
+ * Another player going on at the same time: its cover, small and a little dimmed, round like the drop it is on the
+ * closed island. A tap goes to its card; swiping the card sideways does too.
+ */
+@Composable
+private fun OtherPlayer(np: NowPlaying, onClick: () -> Unit) {
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    val dip by animateFloatAsState(if (pressed) 0.85f else 1f, spring(0.5f, 600f), label = "otherDip")
+    val label = stringResource(R.string.island_other_player, np.appLabel)
+    Box(
+        Modifier
+            .size(36.dp)
+            .clickable(source, null, onClickLabel = label, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Picture(
+            np.art, 24.dp, androidx.compose.foundation.shape.CircleShape, DripIcons.Music,
+            Modifier.graphicsLayer {
+                scaleX = dip; scaleY = dip
+                alpha = if (np.playing) 0.8f else 0.5f
+            },
+        )
     }
 }
 
@@ -395,6 +448,8 @@ private fun PlayButton(playing: Boolean, onClick: () -> Unit) {
 private fun SeekBar(np: NowPlaying) {
     val scheme = MaterialTheme.colorScheme
     val duration = np.durationMs.coerceAtLeast(1)
+    // A radio or other stream has no length: the wave runs the whole way, without a handle or times that mean nothing.
+    val live = np.durationMs <= 0
     val clock = remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
     val phase = remember { mutableFloatStateOf(0f) }
     LaunchedEffect(np.playing, np.positionAtElapsed) {
@@ -471,7 +526,7 @@ private fun SeekBar(np: NowPlaying) {
             if (restTo > restFrom) drawLine(track, Offset(restFrom, mid), Offset(restTo, mid), h, StrokeCap.Round)
 
             val playedFrom = h / 2
-            val playedTo = cx - handleW / 2 - gap - h / 2
+            val playedTo = if (live) size.width - h / 2 else cx - handleW / 2 - gap - h / 2
             if (playedTo > playedFrom) {
                 val height = amplitude.coerceAtLeast(0f) * WaveAmplitude.toPx()
                 if (height < 0.05f) {
@@ -492,14 +547,18 @@ private fun SeekBar(np: NowPlaying) {
                     drawPath(wave, fill, style = Stroke(h, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
                 }
             }
-            drawRoundRect(fill, Offset(cx - handleW / 2, mid - handleH / 2), Size(handleW, handleH), CornerRadius(handleW / 2))
+            if (!live) drawRoundRect(fill, Offset(cx - handleW / 2, mid - handleH / 2), Size(handleW, handleH), CornerRadius(handleW / 2))
         }
         rememberNow(1000)
         val at = (drag ?: hold?.first)?.let { (it * duration).toLong() } ?: position(SystemClock.elapsedRealtime())
         Row(Modifier.fillMaxWidth()) {
-            TimeText(formatClock(at))
-            Spacer(Modifier.weight(1f))
-            TimeText("-" + formatClock(duration - at))
+            if (live) {
+                TimeText(stringResource(R.string.island_live))
+            } else {
+                TimeText(formatClock(at))
+                Spacer(Modifier.weight(1f))
+                TimeText("-" + formatClock(duration - at))
+            }
         }
     }
 }

@@ -225,6 +225,16 @@ internal fun pickSession(sessions: List<SessionView>): Int? {
     return known.filter { it.value.usable }.maxWithOrNull(order)?.index
 }
 
+/**
+ * The sessions beside [lead] that could show as players of their own: the ones that play first, then the ones that
+ * stopped playing most recently. Never one without a song, or a stopped one.
+ */
+internal fun otherSessions(sessions: List<SessionView>, lead: Int): List<Int> =
+    sessions.withIndex()
+        .filter { it.index != lead && it.value.hasMetadata && it.value.usable }
+        .sortedWith(compareByDescending<IndexedValue<SessionView>> { it.value.playing }.thenByDescending { it.value.lastPlayingAt })
+        .map { it.index }
+
 /** One song of a player's queue: MediaSession.QueueItem's id and the title of its description. */
 data class QueueEntry(val id: Long, val title: String?)
 

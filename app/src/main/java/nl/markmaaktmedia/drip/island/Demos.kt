@@ -35,6 +35,11 @@ object Demos {
                 title = "Bohemian Rhapsody", artist = "Queen", album = "A Night At The Opera (2011 Remaster)",
                 durationMs = 354_000L, positionMs = 50_000L, positionAtElapsed = SystemClock.elapsedRealtime(), embeddedLyrics = null,
             )
+            // A speaker that plays on while the phone plays something else: two players at once.
+            Demo.PLAYERS -> {
+                hub.nowPlaying.value = music(context)
+                hub.otherPlayers.value = listOf(otherMusic(context))
+            }
             Demo.MUSIC -> {
                 hub.nowPlaying.value = music(context)
                 if (hub.setMusicVolume == null) hub.musicVolume.value = 0.6f
@@ -103,6 +108,7 @@ object Demos {
             Demo.CLEAR -> {
                 controller.collapse()
                 hub.nowPlaying.value = null
+                hub.otherPlayers.value = emptyList()
                 hub.call.value = null
                 hub.live.value = emptyList()
                 hub.torch.value = TorchInfo()
@@ -230,6 +236,31 @@ object Demos {
             positionMs = 136_000L, positionAtElapsed = SystemClock.elapsedRealtime(), playing = true, canSeek = true,
             repeat = RepeatMode.OFF, shuffle = false, liked = false, commands = commands,
             embeddedLyrics = DEMO_LYRICS,
+        )
+    }
+
+    /** A radio on a speaker in another room, as a second player beside [music]. Only its play button does something. */
+    private fun otherMusic(context: Context): NowPlaying {
+        val hub = context.graph.hub
+        fun change(how: (NowPlaying) -> NowPlaying) {
+            hub.otherPlayers.value = hub.otherPlayers.value.map(how)
+        }
+        val commands = object : MediaCommands {
+            override fun playPause() = change { it.copy(playing = !it.playing, positionAtElapsed = SystemClock.elapsedRealtime()) }
+            override fun next() = Unit
+            override fun previous() = Unit
+            override fun seekTo(positionMs: Long) = Unit
+            override fun cycleRepeat() = Unit
+            override fun toggleShuffle() = Unit
+            override fun toggleLike() = Unit
+            override fun openPlayer() = Unit
+            override fun setRemoteVolume(level: Float) = change { it.copy(remote = it.remote?.copy(level = level)) }
+        }
+        return NowPlaying(
+            packageName = "com.android.chrome", appLabel = "Radio", title = "Night Drive", artist = "Kitchen radio",
+            album = null, art = art(context, 0xFF4FC3F7.toInt(), 0xFF1A237E.toInt(), 360), durationMs = 0L,
+            positionMs = 0L, positionAtElapsed = SystemClock.elapsedRealtime(), playing = true, canSeek = false,
+            commands = commands, remote = RemoteVolume(level = 0.5f, steps = 100, name = "Kitchen", adjustable = true),
         )
     }
 

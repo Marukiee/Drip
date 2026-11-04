@@ -1,5 +1,37 @@
 [
   {
+    "version": "0.1.18",
+    "date": "2026-11-04",
+    "en": {
+      "title": "Two players at once",
+      "new": [
+        "Several players at once, each its own activity: swipe the card or tap the small cover to go to the other",
+        "Pull down on a message to open it"
+      ],
+      "better": [
+        "Live updates show their steps and stops, and a route its arrival time",
+        "A player on a speaker keeps its own cover",
+        "Only the edge of the cover turns now, the picture stays still",
+        "Radio and other streams say Live instead of times",
+        "The lock on unlocking is off by default"
+      ]
+    },
+    "nl": {
+      "title": "Twee spelers tegelijk",
+      "new": [
+        "Meerdere spelers tegelijk, elk een eigen activiteit: veeg de kaart of tik op het kleine hoesje om te wisselen",
+        "Veeg een melding omlaag om hem te openen"
+      ],
+      "better": [
+        "Live updates tonen hun stappen en stops, en een route de aankomsttijd",
+        "Een speler op een speaker houdt zijn eigen hoes",
+        "Alleen de rand van de hoes draait nu, het plaatje staat stil",
+        "Radio en andere streams zeggen Live in plaats van tijden",
+        "Het slotje bij ontgrendelen staat standaard uit"
+      ]
+    }
+  },
+  {
     "version": "0.1.17",
     "date": "2026-11-02",
     "en": {

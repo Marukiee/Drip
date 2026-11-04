@@ -7,6 +7,8 @@
     <string name="island_shuffle">Shuffle</string>
     <string name="island_previous">Previous</string>
     <string name="island_next">Next</string>
+    <string name="island_other_player">Switch to %1$s</string>
+    <string name="island_live">Live</string>
     <string name="island_like">Like</string>
     <string name="island_play">Play</string>
     <string name="island_pause">Pause</string>

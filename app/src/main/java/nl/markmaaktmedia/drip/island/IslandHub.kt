@@ -13,7 +13,12 @@ import kotlinx.coroutines.flow.asSharedFlow
  * where a value came from, which is what lets the debug demo stand in for a real phone call.
  */
 class IslandHub {
+    /** The player that matters most. */
     val nowPlaying = MutableStateFlow<NowPlaying?>(null)
+    /** Other players at the same time, each with its own app: the one that played last first. */
+    val otherPlayers = MutableStateFlow<List<NowPlaying>>(emptyList())
+    /** The app of the player the island shows, opened or closed, when that is not [nowPlaying]. Set by the island. */
+    val playerInFocus = MutableStateFlow<String?>(null)
     val call = MutableStateFlow<CallInfo?>(null)
     /** Newest first. */
     val live = MutableStateFlow<List<LiveInfo>>(emptyList())
@@ -71,6 +76,6 @@ class IslandHub {
 
 /** What the island can act out without a real song, call or charger. */
 enum class Demo {
-    MUSIC, LYRICS, FILE_LYRICS, SPEAKER, CALL, INCOMING, CHARGING, TIMER, NAVIGATION, DOWNLOAD, DELIVERY, CALENDAR, INSTALL, ALERT, REPLY, VOLUME,
+    MUSIC, LYRICS, FILE_LYRICS, SPEAKER, PLAYERS, CALL, INCOMING, CHARGING, TIMER, NAVIGATION, DOWNLOAD, DELIVERY, CALENDAR, INSTALL, ALERT, REPLY, VOLUME,
     TORCH, EARBUDS, UNLOCK, PRIVACY, SECOND, EXPAND, COLLAPSE, CLEAR,
 }

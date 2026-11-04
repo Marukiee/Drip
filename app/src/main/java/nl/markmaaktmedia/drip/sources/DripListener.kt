@@ -42,6 +42,7 @@ class DripListener : NotificationListenerService() {
     private val live = HashMap<String, LiveEntry>()
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     private var nowPlaying: NowPlaying? = null
+    private var otherPlayers: List<NowPlaying> = emptyList()
     private var media: MediaSource? = null
     private var scope: CoroutineScope? = null
     private var settings: IslandSettings? = null
@@ -71,9 +72,11 @@ class DripListener : NotificationListenerService() {
         safely("active notifications") {
             activeNotifications?.forEach { sbn -> safely("read ${sbn.key}") { take(sbn, null, seed = true) } }
         }
-        media = MediaSource(this, apps) { np ->
-            announceRemote(nowPlaying?.remote, np)
+        media = MediaSource(this, apps) { players ->
+            val np = players.firstOrNull()
+            announceRemote(nowPlaying?.takeIf { it.packageName == np?.packageName }?.remote, np)
             nowPlaying = np
+            otherPlayers = players.drop(1)
             publishMedia()
         }.also { it.start() }
         publishAll()
@@ -249,6 +252,7 @@ class DripListener : NotificationListenerService() {
     private fun publishMedia() {
         val s = settings ?: return
         hub.nowPlaying.value = nowPlaying.takeIf { s.showMusic }
+        hub.otherPlayers.value = if (s.showMusic) otherPlayers else emptyList()
     }
 
     /** A ringing call wins over one on hold; otherwise the newest. */
@@ -291,7 +295,9 @@ class DripListener : NotificationListenerService() {
         calls.clear()
         live.clear()
         nowPlaying = null
+        otherPlayers = emptyList()
         hub.nowPlaying.value = null
+        hub.otherPlayers.value = emptyList()
         hub.call.value = null
         hub.live.update { now -> now.filter { isAutomationKey(it.key) || it.key.startsWith(OWN_LIVE_PREFIX) } }
     }

@@ -91,7 +91,11 @@ fun SceneContent(scene: Scene, privacy: PrivacyInfo, controller: IslandControlle
         }
         Stage.EXPANDED -> Column(Modifier.fillMaxWidth().padding(top = m.topInset).padding(m.padding)) {
             when (val c = scene.content) {
-                is IslandContent.Music -> MusicCard(c.playing, hub, layout.settings)
+                is IslandContent.Music -> MusicCard(
+                    c.playing, hub, layout.settings, controller.players.collectAsState().value,
+                    onPlayer = { controller.showPlayer(it, step = playerStep(controller.players.value, c.playing.packageName, it)) },
+                    onSwipe = { controller.switchPlayer(it) },
+                )
                 is IslandContent.Call -> CallCard(c.call)
                 is IslandContent.Live -> LiveCard(c.live)
                 is IslandContent.Charging -> ChargingCard(c.battery)
@@ -108,6 +112,13 @@ fun SceneContent(scene: Scene, privacy: PrivacyInfo, controller: IslandControlle
             }
         }
     }
+}
+
+/** Which way the card slides going from the player of [from] to that of [to]: on through the list, or back. */
+private fun playerStep(players: List<nl.markmaaktmedia.drip.island.NowPlaying>, from: String, to: String): Int {
+    val a = players.indexOfFirst { it.packageName == from }
+    val b = players.indexOfFirst { it.packageName == to }
+    return if (b < a) -1 else 1
 }
 
 /**

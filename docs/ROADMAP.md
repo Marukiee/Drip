@@ -9,15 +9,13 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 - Echte apps en gesprekken op het toestel: mediasessies, het hartje in Spotify en PixelPlayer, welke app de camera heeft.
 - De equalizer en de springs: batterij en framerate op 120 Hz.
 - Installeren via de browser (beperkte instellingen voor toegankelijkheid).
+- Twee spelers tegelijk met de echte Sonos: de druppel, het hoesje in de kaart en opzij vegen naar de andere speler.
+- Live updates van echte apps: de stappen en stops van een bezorging of rit, en de aankomsttijd van Maps.
 
 ## Muziek
 
 - Een equalizer die echt op de muziek beweegt (Visualizer, vraagt microfoonrecht, daarom een keuze).
-- ★Uitvoer kiezen vanaf de kaart: telefoon, koptelefoon, speaker (de uitvoerkiezer van Android openen). (wel met mooie animatie)
 - De hoes vervaagd als achtergrond van de geopende kaart.
-- ★Het volgende nummer in de wachtrij tonen, als de speler het geeft.
-- Meerdere spelers tegelijk, zoals Sonos die doorspeelt terwijl de telefoon zelf iets anders afspeelt: elke speler een
-  eigen activiteit (de tweede als kleine druppel), en in de geopende kaart opzij vegen naar de andere speler.
 
 ## Gesprekken
 
@@ -26,10 +24,8 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 
 ## Systeem en apparaten
 
-- ★ Bluetooth-oordopjes verbonden: naam, batterij van links, rechts en het hoesje, zoals de pop-up van AirPods.
 - ★ Opladen als druppel die zich vult: de handtekening van Drip, met snelladen als snellere golf, en Battery Care van Sony
   ("houdt op 80%").
-- ★ Ontgrendelen: een slotje dat in de notch openklikt, met haptiek.
 - Schermafbeelding en schermopname: miniatuur in de notch met delen en verwijderen, en een rode stip met tijd tijdens
   het opnemen.
 - Wekker die afgaat: snoozen en uitzetten in de notch.
@@ -37,31 +33,22 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 
 ## Tijd en planning
 
-- ★ Volgende afspraak uit de agenda: aftellen in de notch vanaf 10 minuten ervoor, met "deelnemen" voor een videogesprek.
 - Snelle timer, stopwatch en pomodoro starten vanuit de notch.
 - Spraakmemo opnemen vanuit de notch, met de duur erin.
 
 ## Live updates
 
-- ★Live Updates van Android 16 volledig: de stappen en punten van ProgressStyle (bezorging, rit) als lijn met tussenpunten.
-- ★Navigatie: aankomsttijd en rijstrookadvies erbij.
-- ★Sportuitslagen en andere live activiteiten die apps als live update sturen.
-- ★Installaties uit de Play Store met voortgang.
+- ★Navigatie: rijstrookadvies erbij.
 
 ## Meldingen
 
-- ★ Antwoorden vanuit de notch (inline, met toetsenbord), voor apps die het toestaan.
 - Meerdere meldingen gestapeld, met kleine bolletjes van de apps die wachten.
-- ★Een tweede activiteit als bolletje naast het eiland (muziek en een timer tegelijk).
 - Per app een eigen haptiek en kleur.
 
 ## Bediening en uitbreiden
 
 - Een widget van je startscherm in de geopende notch (agenda, weer, notities), zoals Shima dat kan.
-- ★ Tasker en automatisering: een open intent waarmee elke app of taak eigen inhoud in de notch zet.
-- ★ Tandem-koppeling: overdrachten, het klembord en de verbonden computer van Tandem in de notch.
 - Een mini-bedieningspaneel bij een lege notch (vegen langs de bovenrand): zaklamp, wifi, bluetooth, draaien, niet storen.
-- ★Dubbeltikken als extra gebaar, en gebaren per soort inhoud (anders bij muziek dan bij een timer). (zorg dus dat je gebaren kan instellen, zoals het swipen over de notch/island vor volgend nummer ofz. aanpasbaar)
 
 ## Uiterlijk
 

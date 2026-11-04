@@ -23,13 +23,14 @@ import nl.markmaaktmedia.drip.island.RepeatMode
 import nl.markmaaktmedia.drip.island.ShuffleMode
 
 /**
- * Follows every active media session and tells [publish] what the island should show. Each session gets its own
- * callback, so a second player that starts takes over without waiting for the session list to change.
+ * Follows every active media session and tells [publish] what the island should show: the player that matters most
+ * first, then the others going on at the same time. Each session gets its own callback, so a second player that starts
+ * takes over without waiting for the session list to change.
  */
 internal class MediaSource(
     private val context: Context,
     private val apps: Apps,
-    private val publish: (NowPlaying?) -> Unit,
+    private val publish: (List<NowPlaying>) -> Unit,
 ) {
     private val handler = Handler(Looper.getMainLooper())
 
@@ -59,7 +60,7 @@ internal class MediaSource(
         manager = null
         sessions.forEach { it.release() }
         sessions = emptyList()
-        publish(null)
+        publish(emptyList())
     }
 
     private fun follow(controllers: List<MediaController>) {
@@ -75,16 +76,36 @@ internal class MediaSource(
         val views = sessions.map {
             SessionView(isActive(it.state), it.title() != null, isUsable(it.state), it.lastPlayingAt)
         }
-        val chosen = pickSession(views)?.let { sessions[it] }
+        val chosen = pickSession(views)
         if (chosen == null) {
-            publish(null)
+            publish(emptyList())
             return
         }
-        // The same song in two sessions: a player that casts to a speaker whose own app shows it too (PixelPlayer on a
-        // Sonos, with the Sonos app alongside). The player leads, with its cover and its buttons; the speaker's app only
-        // lends what the player lacks, the speaker's volume above all.
-        val twin = sessions.firstOrNull { it !== chosen && sameSong(it, chosen) }
-        val (lead, mirror) = if (twin != null && chosen.isRemote() && !twin.isRemote()) twin to chosen else chosen to twin
+        sessions.forEach { it.volumeVia = null }
+        val taken = HashSet<Session>()
+        val players = ArrayList<NowPlaying>()
+        // Other players at the same time each get their own activity: a speaker that plays on while the phone plays
+        // something else. Paused ones come along too; the island decides how long those stay.
+        for (i in listOf(chosen) + otherSessions(views, chosen)) {
+            if (players.size == MAX_PLAYERS) break
+            val s = sessions[i]
+            if (s in taken) continue
+            val np = player(s, taken) ?: continue
+            if (players.none { it.packageName == np.packageName }) players += np
+        }
+        publish(players)
+    }
+
+    /**
+     * [s] as one player. The same song can be in two sessions: a player that casts to a speaker whose own app shows it
+     * too (PixelPlayer on a Sonos, with the Sonos app alongside). The player leads, with its cover and its buttons; the
+     * speaker's app only lends what the player lacks, the speaker's volume above all. Both count as [taken].
+     */
+    private fun player(s: Session, taken: MutableSet<Session>): NowPlaying? {
+        val twin = sessions.firstOrNull { it !== s && it !in taken && sameSong(it, s) }
+        taken += s
+        twin?.let { taken += it }
+        val (lead, mirror) = if (twin != null && s.isRemote() && !twin.isRemote()) twin to s else s to twin
         lead.volumeVia = mirror?.takeIf { it.isRemote() && !lead.isRemote() }
         var np = safely("now playing") { build(lead) }
         if (np != null && mirror != null) {
@@ -92,7 +113,7 @@ internal class MediaSource(
             // Without a name of its own, the speaker is called after its app: "Sonos".
             if (np.remote == null) remoteOf(mirror)?.let { r -> np = np?.copy(remote = r.copy(name = r.name ?: apps.label(mirror.controller.packageName))) }
         }
-        publish(np)
+        return np
     }
 
     /** Two sessions with one song: the same title, and the same artist when both say one. */
@@ -520,6 +541,8 @@ internal class MediaSource(
 
     private companion object {
         const val ART_MAX_PX = 512
+        /** More players than this at once is a phone full of forgotten sessions, not music. */
+        const val MAX_PLAYERS = 3
         /**
          * Where a player can name the speaker it plays on, in its session's extras: "Living room + Kitchen". Drip's own
          * key, and a short one for players that would rather not carry a package name around.

@@ -17,6 +17,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -241,7 +243,7 @@ fun IslandOverlay(
                     val longPress = viewConfig.longPressTimeoutMillis
                     val swipe = 24.dp.toPx()
                     // Pulling the shade down must feel as if the island were not there: it opens as soon as the finger
-                    // heads down, not when it lets go.
+                    // heads down, not when it lets go. A message opening into its card goes along with the finger the same way.
                     val pull = 10.dp.toPx()
                     val start = down.uptimeMillis
                     while (true) {
@@ -260,11 +262,12 @@ fun IslandOverlay(
                         if (change.isConsumed) handled = true
                         travel += change.positionChange()
                         val downAction = s.actionFor(scopeOf, Gesture.SWIPE_DOWN)
-                        if (!handled && !longPressed && stage != Stage.EXPANDED && downAction == GestureAction.NOTIFICATIONS &&
+                        if (!handled && !longPressed && stage != Stage.EXPANDED &&
+                            (downAction == GestureAction.NOTIFICATIONS || downAction == GestureAction.EXPAND) &&
                             travel.y > pull && travel.y > abs(travel.x)
                         ) {
                             handled = true
-                            onGesture(GestureAction.NOTIFICATIONS, current)
+                            onGesture(downAction, current)
                         }
                         if (!change.pressed) {
                             if (!handled && !longPressed) {
@@ -297,6 +300,10 @@ fun IslandOverlay(
                                     }
                                     abs(travel.y) > abs(travel.x) && travel.y > 0 -> if (stage != Stage.EXPANDED) swipeAction(downAction, current, onGesture, context)
                                     abs(travel.y) > abs(travel.x) -> if (stage == Stage.EXPANDED) controller.collapse() else Unit
+                                    // The opened card has its own buttons for the songs, so sideways goes to another
+                                    // player when there is one.
+                                    stage == Stage.EXPANDED && current is IslandContent.Music &&
+                                        controller.switchPlayer(if (travel.x < 0) 1 else -1) -> Unit
                                     travel.x < 0 -> swipeAction(s.actionFor(scopeOf, Gesture.SWIPE_LEFT), current, onGesture, context)
                                     else -> swipeAction(s.actionFor(scopeOf, Gesture.SWIPE_RIGHT), current, onGesture, context)
                                 }
@@ -354,6 +361,14 @@ fun IslandOverlay(
                             // runs with the shape, so there is never a moment of empty black in between.
                             fadeIn(tween(260, easing = androidx.compose.animation.core.LinearOutSlowInEasing))
                                 .togetherWith(fadeOut(tween(200)))
+                                .using(SizeTransform(clip = false) { _, _ -> snap() })
+                        } else if (initialState.stage == Stage.EXPANDED && targetState.stage == Stage.EXPANDED &&
+                            initialState.content is IslandContent.Music && targetState.content is IslandContent.Music
+                        ) {
+                            // From one player's card to another's: the cards lie side by side and slide over, like pages.
+                            val step = if (controller.playerStep < 0) -1 else 1
+                            (slideInHorizontally(spring(0.85f, 380f)) { it * step } + fadeIn(tween(180, delayMillis = 40)))
+                                .togetherWith(slideOutHorizontally(spring(0.85f, 380f)) { -it * step } + fadeOut(tween(160)))
                                 .using(SizeTransform(clip = false) { _, _ -> snap() })
                         } else {
                             (fadeIn(tween(200, delayMillis = 70)) + scaleIn(spring(0.8f, 500f), initialScale = 0.92f))
@@ -466,7 +481,8 @@ private fun gestureScope(content: IslandContent?): GestureScope = when (content)
         else -> GestureScope.DEFAULT
     }
     is IslandContent.Charging -> GestureScope.CHARGING
-    is IslandContent.Notice -> GestureScope.NOTICE
+    // The slim announcements (the volume, charging) are no messages: pulling on those still opens the shade.
+    is IslandContent.Notice -> if (content.alert.kind in IslandController.MINI_KINDS) GestureScope.DEFAULT else GestureScope.NOTICE
     else -> GestureScope.DEFAULT
 }
 

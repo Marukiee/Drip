@@ -86,7 +86,7 @@ class IslandService : AccessibilityService() {
             }
         }
         graph.hub.islandRunning.value = true
-        graph.hub.openOutput = { openOutputSwitcher(graph.hub.nowPlaying.value?.packageName) }
+        graph.hub.openOutput = { openOutputSwitcher(graph.hub.playerInFocus.value ?: graph.hub.nowPlaying.value?.packageName) }
         graph.hub.setTyping = { on ->
             window.setTyping(on)
             controller.setTyping(on)
@@ -162,7 +162,7 @@ class IslandService : AccessibilityService() {
         }
         val direction = if (up) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER
         // Music on a speaker elsewhere: the buttons move that speaker, as Android itself would.
-        val playing = graph.hub.nowPlaying.value
+        val playing = (ui.content as? IslandContent.Music)?.playing ?: graph.hub.nowPlaying.value
         if (playing?.remote?.adjustable == true && (ui.content is IslandContent.Music || stream == AudioManager.USE_DEFAULT_STREAM_TYPE)) {
             if (event.action == KeyEvent.ACTION_DOWN) {
                 playing.commands.nudgeRemoteVolume(direction)

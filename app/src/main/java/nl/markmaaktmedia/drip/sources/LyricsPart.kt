@@ -50,7 +50,11 @@ internal class LyricsPart(env: SourceEnv) : Part(env) {
             retry.value++
         }
         s.launch {
-            val song = hub.nowPlaying.map { it?.let(::songOf) }.distinctUntilChanged()
+            // With two players at once, the one whose card is open.
+            val shown = combine(hub.nowPlaying, hub.otherPlayers, hub.playerInFocus) { lead, others, focus ->
+                others.firstOrNull { it.packageName == focus } ?: lead
+            }
+            val song = shown.map { it?.let(::songOf) }.distinctUntilChanged()
             combine(song, hub.lyricsOpen, wanted, retry) { np, open, w, _ -> Triple(np, open, w) }
                 .collectLatest { (np, open, w) -> resolve(np, open, w) }
         }

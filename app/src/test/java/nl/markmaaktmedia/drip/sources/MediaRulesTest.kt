@@ -122,6 +122,19 @@ class MediaRulesTest {
         assertEquals(0, pickSession(sessions))
     }
 
+    @Test fun otherPlayersBesideTheLead() {
+        val sessions = listOf(
+            SessionView(playing = false, hasMetadata = true, lastPlayingAt = 40),
+            SessionView(playing = true, hasMetadata = true, lastPlayingAt = 50),
+            SessionView(playing = true, hasMetadata = true, lastPlayingAt = 10),
+            SessionView(playing = true, hasMetadata = false, lastPlayingAt = 90),
+            SessionView(playing = false, hasMetadata = true, usable = false, lastPlayingAt = 80),
+            SessionView(playing = false, hasMetadata = true, lastPlayingAt = 60),
+        )
+        assertEquals(listOf(2, 5, 0), otherSessions(sessions, lead = 1))
+        assertEquals(emptyList<Int>(), otherSessions(listOf(SessionView(playing = true, hasMetadata = true)), lead = 0))
+    }
+
     @Test fun nothingToShow() {
         assertNull(pickSession(emptyList()))
         assertNull(pickSession(listOf(SessionView(playing = true, hasMetadata = false))))

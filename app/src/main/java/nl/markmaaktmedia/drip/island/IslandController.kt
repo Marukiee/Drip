@@ -17,11 +17,12 @@ sealed interface IslandContent {
     /** Stable per thing shown, so a song that moves on keeps its card and a different thing gets a new one. */
     val key: String
 
+    /** One per player, so two players at once are two things going on. */
     data class Music(val playing: NowPlaying) : IslandContent {
-        override val key get() = KEY
+        override val key get() = PREFIX + playing.packageName
 
         companion object {
-            const val KEY = "music"
+            const val PREFIX = "music:"
         }
     }
     data class Call(val call: CallInfo) : IslandContent { override val key get() = "call:" + call.key }
@@ -89,8 +90,20 @@ class IslandController(
     /** A ringing call the person closed by hand stays closed. */
     private var dismissedRinging: String? = null
 
-    /** When the music last played, so paused music lingers for a while and then gives way. */
-    private var lastPlayingAt = 0L
+    /** When each player last played or paused, so paused music lingers for a while and then gives way. */
+    private val playedAt = HashMap<String, Long>()
+    private val wasPlaying = HashSet<String>()
+
+    /** Everything going on, most important first: [primary] and [second] are the first two. */
+    private var picked: List<IslandContent> = emptyList()
+
+    private val _players = MutableStateFlow<List<NowPlaying>>(emptyList())
+    /** The players on the island, in its order, so the opened card can go from one to the next. */
+    val players: StateFlow<List<NowPlaying>> = _players.asStateFlow()
+
+    /** Which way the card last went to another player: 1 to the next, -1 back. For the slide it makes. */
+    var playerStep = 0
+        private set
 
     fun start(settingsFlow: kotlinx.coroutines.flow.Flow<IslandSettings>) {
         scope.launch {
@@ -103,7 +116,8 @@ class IslandController(
             }
         }
         scope.launch {
-            combine(hub.call, hub.live, hub.nowPlaying, hub.torch, hub.battery) { call, live, music, torch, battery ->
+            val players = combine(hub.nowPlaying, hub.otherPlayers) { lead, others -> listOfNotNull(lead) + others }
+            combine(hub.call, hub.live, players, hub.torch, hub.battery) { call, live, music, torch, battery ->
                 Sources5(call, live, music, torch, battery)
             }.collect { s ->
                 val wasRinging = (primary as? IslandContent.Call)?.call?.incoming == true
@@ -148,7 +162,8 @@ class IslandController(
     private data class Sources5(
         val call: CallInfo?,
         val live: List<LiveInfo>,
-        val music: NowPlaying?,
+        /** The player that matters most first. */
+        val music: List<NowPlaying>,
         val torch: TorchInfo,
         val battery: BatteryInfo,
     )
@@ -161,18 +176,22 @@ class IslandController(
             // A call still comes first; whatever was swapped forward waits behind it.
             pinned > 0 && picked.first() !is IslandContent.Call -> picked.add(0, picked.removeAt(pinned))
         }
+        this.picked = picked
         primary = picked.firstOrNull()
         second = picked.getOrNull(1)
+        // In the order the sources give, which a tap on the drop leaves alone, so going round reaches every player.
+        val shown = picked.mapNotNull { (it as? IslandContent.Music)?.playing?.packageName }.toSet()
+        _players.value = sources?.music.orEmpty().filter { it.packageName in shown }
         // Paused music goes the moment its time is up, not at the next check.
         lingerJob?.cancel()
-        val music = sources?.music
-        if (music != null && !music.playing) {
-            val left = lastPlayingAt + settings.pausedLingerMs - SystemClock.elapsedRealtime()
-            if (left > 0) lingerJob = scope.launch {
-                delay(left + 50)
-                repick()
-                refresh()
-            }
+        val now = SystemClock.elapsedRealtime()
+        val left = sources?.music.orEmpty().filter { !it.playing }
+            .mapNotNull { p -> playedAt[p.packageName]?.let { it + settings.pausedLingerMs - now } }
+            .filter { it > 0 }.minOrNull()
+        if (left != null) lingerJob = scope.launch {
+            delay(left + 50)
+            repick()
+            refresh()
         }
     }
 
@@ -195,14 +214,51 @@ class IslandController(
         return true
     }
 
+    /**
+     * The opened music card goes to the next player ([step] 1) or back (-1), round the ones on the island. Like a tap on
+     * the small drop, the player gone to stays the island once the card closes.
+     */
+    fun switchPlayer(step: Int): Boolean {
+        val players = _players.value
+        val at = players.indexOfFirst { IslandContent.Music.PREFIX + it.packageName == expandedKey }
+        if (at < 0 || players.size < 2) return false
+        return showPlayer(players[Math.floorMod(at + step, players.size)].packageName, step)
+    }
+
+    /** Opens the card of the player of [packageName], for its icon on another player's card. */
+    fun showPlayer(packageName: String, step: Int = 1): Boolean {
+        val content = picked.firstOrNull { it is IslandContent.Music && it.playing.packageName == packageName } ?: return false
+        if (content.key == expandedKey) return false
+        playerStep = step
+        pinnedKey = content.key
+        repick()
+        expandedKey = content.key
+        expandedFallback = content
+        haptics.play(Haptics.Kind.SWIPE)
+        poke()
+        refresh()
+        return true
+    }
+
     /** Everything worth showing, most important first. The first is the island, the second its small drop. */
     private fun pick(s: Sources5): List<IslandContent> {
         val now = SystemClock.elapsedRealtime()
-        if (s.music?.playing == true) lastPlayingAt = now
+        // The moment a player pauses counts too, so its time starts then and not at whenever it was last looked at.
+        val present = s.music.map { it.packageName }.toSet()
+        playedAt.keys.retainAll(present)
+        wasPlaying.retainAll(present)
+        for (p in s.music) {
+            if (p.playing) {
+                playedAt[p.packageName] = now
+                wasPlaying += p.packageName
+            } else if (wasPlaying.remove(p.packageName)) {
+                playedAt[p.packageName] = now
+            }
+        }
         val out = mutableListOf<IslandContent>()
         if (settings.showCalls && s.call != null) out += IslandContent.Call(s.call)
         if (settings.showLive) withoutRepeats(s.live).take(2).forEach { out += IslandContent.Live(it) }
-        if (settings.showMusic && s.music?.playing == true) out += IslandContent.Music(s.music)
+        if (settings.showMusic) s.music.filter { it.playing }.forEach { out += IslandContent.Music(it) }
         // After the music, so during a song or a video call the camera is the small drop beside it.
         if (privacy.any) out += IslandContent.Privacy(privacy)
         if (settings.showTorch && s.torch.on) out += IslandContent.Torch(s.torch)
@@ -210,7 +266,10 @@ class IslandController(
         val plugged = s.battery.charging || (s.battery.limit != null && s.battery.plug != PlugType.NONE)
         // Plugging in is announced for a moment either way; only when asked does charging stay on the island.
         if (settings.showCharging && settings.chargingStays && plugged) out += IslandContent.Charging(s.battery)
-        if (settings.showMusic && s.music != null && !s.music.playing && now - lastPlayingAt < settings.pausedLingerMs) out += IslandContent.Music(s.music)
+        if (settings.showMusic) {
+            s.music.filter { p -> !p.playing && playedAt[p.packageName]?.let { now - it < settings.pausedLingerMs } == true }
+                .forEach { out += IslandContent.Music(it) }
+        }
         return out
     }
 
@@ -322,7 +381,7 @@ class IslandController(
         expandJob?.cancel()
         // Lyrics are read along with the song, and an opened message may be kept to read or answer later: those cards
         // stay until they are closed by hand. The slim ones (volume, charging) still close by themselves.
-        val reading = expandedKey == IslandContent.Music.KEY && settings.showLyrics && hub.lyricsOpen.value
+        val reading = expandedKey?.startsWith(IslandContent.Music.PREFIX) == true && settings.showLyrics && hub.lyricsOpen.value
         val message = (expandedFallback as? IslandContent.Notice)?.alert?.kind?.let { it !in MINI_KINDS } == true
         val done = (expandedFallback as? IslandContent.Live)?.live?.finished == true
         if (expandedKey == null || typing || reading || message || done) return
@@ -372,7 +431,8 @@ class IslandController(
             ))
 
         val expanded = expandedKey?.let { key ->
-            listOfNotNull(primary, second, alert?.let { IslandContent.Notice(it) }).firstOrNull { it.key == key }
+            // All of what is going on, not only the island and its drop: a third player can be gone to from the card.
+            (picked + listOfNotNull(alert?.let { IslandContent.Notice(it) })).firstOrNull { it.key == key }
                 ?: expandedFallback?.takeIf {
                     it.key == key && it !is IslandContent.Call && it !is IslandContent.Privacy &&
                         (it !is IslandContent.Live || it.live.finished)
@@ -401,6 +461,8 @@ class IslandController(
             settings.idleVisible -> IslandUi(Stage.IDLE, null, dots)
             else -> IslandUi(Stage.HIDDEN, null, dots)
         }
+        // The lyrics and the output picker follow the player that is shown, which need not be the one that played last.
+        hub.playerInFocus.value = ((expanded ?: primary) as? IslandContent.Music)?.playing?.packageName
         _ui.value = ui
     }
 

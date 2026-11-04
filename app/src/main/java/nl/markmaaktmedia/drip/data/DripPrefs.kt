@@ -195,7 +195,7 @@ data class IslandSettings(
     val showLyrics: Boolean = true,
     /** Looks lyrics up at lrclib.net when the player has none. Sends the title and artist there, so off by default. */
     val lyricsOnline: Boolean = false,
-    val showUnlock: Boolean = true,
+    val showUnlock: Boolean = false,
     val showCalendar: Boolean = true,
     /** Minutes before an appointment that its countdown appears. */
     val calendarLeadMinutes: Int = 10,
@@ -211,6 +211,8 @@ data class IslandSettings(
             val prefix = "${scope.name}:${gesture.name}="
             gestureOverrides.firstOrNull { it.startsWith(prefix) }?.let { return GestureAction.from(it.removePrefix(prefix), GestureAction.NONE) }
         }
+        // A message that comes in opens when pulled down, the notch becoming its card. Everywhere else that opens the shade.
+        if (scope == GestureScope.NOTICE && gesture == Gesture.SWIPE_DOWN && gestureSwipeDown == GestureAction.NOTIFICATIONS) return GestureAction.EXPAND
         return when (gesture) {
             Gesture.TAP -> gestureTap
             Gesture.DOUBLE_TAP -> gestureDoubleTap

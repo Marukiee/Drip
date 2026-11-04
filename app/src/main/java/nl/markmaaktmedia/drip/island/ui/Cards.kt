@@ -128,7 +128,12 @@ private fun RouteBody(live: LiveInfo, accent: Color) {
         Column(Modifier.weight(1f)) {
             Text(live.shortText ?: live.title, color = IslandInk.Primary, fontSize = 30.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             (live.text ?: live.title.takeIf { live.shortText != null && it != live.shortText })?.let { Subtitle(it, lines = 2) }
+            live.detail?.let { Subtitle(it) }
         }
+    }
+    if (live.hasBar) {
+        Spacer(Modifier.height(12.dp))
+        LiveBar(live, accent)
     }
 }
 
@@ -167,6 +172,7 @@ private fun DownloadBody(live: LiveInfo, accent: Color) {
 private fun LiveBody(live: LiveInfo, accent: Color) {
     Title(live.title, size = 20)
     live.text?.let { Subtitle(it, lines = 2) }
+    live.detail?.let { Subtitle(it) }
     val base = live.chronometerBase
     if (base != null) {
         val now = rememberNow()
@@ -175,10 +181,61 @@ private fun LiveBody(live: LiveInfo, accent: Color) {
             Modifier.padding(top = 4.dp), FontWeight.Bold, countingDown = live.countDown,
         )
     }
-    val progress = live.progress
-    if (progress != null) {
+    if (live.hasBar) {
         Spacer(Modifier.height(12.dp))
-        nl.markmaaktmedia.drip.ui.components.WavyProgress(progress, accent, IslandInk.SurfaceHigh)
+        LiveBar(live, accent)
+    }
+}
+
+private val LiveInfo.hasSteps get() = segments.isNotEmpty() || points.isNotEmpty() || tracker != null
+private val LiveInfo.hasBar get() = progress != null || hasSteps
+
+/**
+ * The bar of a live update: the plain wave, or what the app made of it (Android 16's ProgressStyle): stretches in their
+ * own colours, stops along the way, and its little picture riding on the spot it has reached.
+ */
+@Composable
+private fun LiveBar(live: LiveInfo, accent: Color) {
+    val progress = live.progress
+    if (!live.hasSteps) {
+        if (progress != null) nl.markmaaktmedia.drip.ui.components.WavyProgress(progress, accent, IslandInk.SurfaceHigh)
+        return
+    }
+    val reached by animateFloatAsState((progress ?: 0f).coerceIn(0f, 1f), spring(0.9f, 200f), label = "liveBar")
+    val tracker = live.tracker?.let { remember(it) { it.asImageBitmap() } }
+    Canvas(Modifier.fillMaxWidth().height(if (tracker != null) 30.dp else 14.dp)) {
+        val mid = size.height / 2
+        val line = 6.dp.toPx()
+        val gap = 3.dp.toPx()
+        val at = reached * size.width
+        var from = 0f
+        live.segments.ifEmpty { listOf(nl.markmaaktmedia.drip.island.ProgressSegment(1f)) }.forEach { part ->
+            val to = from + part.length
+            val left = from * size.width + (if (from > 0f) gap / 2 else 0f) + line / 2
+            val right = to * size.width - (if (to < 0.999f) gap / 2 else 0f) - line / 2
+            val color = part.color?.let { Color(it) } ?: accent
+            if (right >= left) {
+                drawLine(color.copy(alpha = 0.3f), Offset(left, mid), Offset(right, mid), line, androidx.compose.ui.graphics.StrokeCap.Round)
+                if (at > left) drawLine(color, Offset(left, mid), Offset(minOf(at, right), mid), line, androidx.compose.ui.graphics.StrokeCap.Round)
+            }
+            from = to
+        }
+        val stop = 5.dp.toPx()
+        live.points.forEach { point ->
+            val color = point.color?.let { Color(it) } ?: accent
+            val center = Offset((point.position * size.width).coerceIn(stop, size.width - stop), mid)
+            // A ring of the card's black around it, so a stop stands out from a bar of the same colour.
+            drawCircle(Color.Black, stop + 2.dp.toPx(), center)
+            drawCircle(if (point.position * size.width <= at) color else color.copy(alpha = 0.45f), stop, center)
+        }
+        tracker?.let { picture ->
+            val side = size.height.toInt()
+            val x = (at - side / 2f).coerceIn(0f, size.width - side).toInt()
+            drawImage(
+                picture, dstOffset = androidx.compose.ui.unit.IntOffset(x, 0),
+                dstSize = androidx.compose.ui.unit.IntSize(side, side),
+            )
+        }
     }
 }
 
