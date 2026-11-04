@@ -1,5 +1,27 @@
 [
   {
+    "version": "0.1.21",
+    "date": "2026-11-04",
+    "en": {
+      "title": "Less in the way",
+      "better": [
+        "Volume is off on the island by default, you can switch it on in the settings"
+      ],
+      "fixed": [
+        "The pill no longer pops up over your player after the notification shade, or in PixelPlayer's device panel"
+      ]
+    },
+    "nl": {
+      "title": "Minder in de weg",
+      "better": [
+        "Volume staat standaard uit op het eiland, je kunt het aanzetten in de instellingen"
+      ],
+      "fixed": [
+        "De pil komt niet meer tevoorschijn over je speler na het meldingenpaneel, of in het apparatenpaneel van PixelPlayer"
+      ]
+    }
+  },
+  {
     "version": "0.1.20",
     "date": "2026-11-04",
     "en": {
