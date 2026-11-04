@@ -181,13 +181,32 @@ class MediaRulesTest {
 
     @Test fun thePlayerLeadsOverTheSpeakersOwnApp() {
         // The speaker's app came first, the player is local on the phone.
-        assertTrue(twinLeads(remote = true, twinRemote = false, namesSpeaker = false, twinNamesSpeaker = false))
+        assertTrue(twinLeads(remote = true, twinRemote = false, namesSpeaker = false, twinNamesSpeaker = false, twinKeeps = false))
         // Both on the speaker: the player is the one that names it.
-        assertTrue(twinLeads(remote = true, twinRemote = true, namesSpeaker = false, twinNamesSpeaker = true))
-        // The player came first already.
-        assertFalse(twinLeads(remote = true, twinRemote = true, namesSpeaker = true, twinNamesSpeaker = false))
-        assertFalse(twinLeads(remote = false, twinRemote = true, namesSpeaker = false, twinNamesSpeaker = false))
-        // Nothing to tell them apart: the one picked stays.
-        assertFalse(twinLeads(remote = true, twinRemote = true, namesSpeaker = false, twinNamesSpeaker = false))
+        assertTrue(twinLeads(remote = true, twinRemote = true, namesSpeaker = false, twinNamesSpeaker = true, twinKeeps = false))
+        // The player came first already, and who led before does not change that.
+        assertFalse(twinLeads(remote = true, twinRemote = true, namesSpeaker = true, twinNamesSpeaker = false, twinKeeps = true))
+        assertFalse(twinLeads(remote = false, twinRemote = true, namesSpeaker = false, twinNamesSpeaker = false, twinKeeps = true))
+        // Nothing to tell them apart: whoever led stays, otherwise the one picked.
+        assertTrue(twinLeads(remote = true, twinRemote = true, namesSpeaker = false, twinNamesSpeaker = false, twinKeeps = true))
+        assertFalse(twinLeads(remote = true, twinRemote = true, namesSpeaker = false, twinNamesSpeaker = false, twinKeeps = false))
+        assertTrue(twinLeads(remote = false, twinRemote = false, namesSpeaker = false, twinNamesSpeaker = false, twinKeeps = true))
+    }
+
+    @Test fun aPauseDoesNotMoveTheLeadToTheSessionThatLagsBehind() {
+        // Paused here, the other still says it plays for a moment.
+        assertTrue(twinKeepsLead(twinLed = true, led = false, playing = true, twinPlaying = false, twinStoppedForMs = 800))
+        // Both paused, for however long: the other paused last, but nothing changed.
+        assertTrue(twinKeepsLead(twinLed = true, led = false, playing = false, twinPlaying = false, twinStoppedForMs = 60_000))
+        assertTrue(twinKeepsLead(twinLed = true, led = false, playing = true, twinPlaying = true, twinStoppedForMs = 60_000))
+    }
+
+    @Test fun aSessionThatPlaysLongAfterTheLeadStoppedTakesOver() {
+        assertFalse(twinKeepsLead(twinLed = true, led = false, playing = true, twinPlaying = false, twinStoppedForMs = 60_000))
+    }
+
+    @Test fun withoutAHistoryTheLeadStaysWithTheOnePicked() {
+        assertFalse(twinKeepsLead(twinLed = false, led = false, playing = true, twinPlaying = false, twinStoppedForMs = 800))
+        assertFalse(twinKeepsLead(twinLed = false, led = true, playing = true, twinPlaying = false, twinStoppedForMs = 800))
     }
 }

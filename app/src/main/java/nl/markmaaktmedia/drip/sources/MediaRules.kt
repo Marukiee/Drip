@@ -228,10 +228,24 @@ internal fun pickSession(sessions: List<SessionView>): Int? {
 /**
  * Two sessions with one song, the first picked as the one that matters: whether the second should lead instead. The player
  * is the one to show, not the app of the speaker it plays on. That app is remote; a player that is local while the speaker
- * plays leads for that. When both are remote, the player is the one that says which speaker it is.
+ * plays leads for that. When both are remote, the player is the one that says which speaker it is. With nothing to tell
+ * them apart it is [twinKeeps], see [twinKeepsLead].
  */
-internal fun twinLeads(remote: Boolean, twinRemote: Boolean, namesSpeaker: Boolean, twinNamesSpeaker: Boolean): Boolean =
-    remote && (!twinRemote || (twinNamesSpeaker && !namesSpeaker))
+internal fun twinLeads(remote: Boolean, twinRemote: Boolean, namesSpeaker: Boolean, twinNamesSpeaker: Boolean, twinKeeps: Boolean): Boolean = when {
+    remote != twinRemote -> remote
+    remote && namesSpeaker != twinNamesSpeaker -> twinNamesSpeaker
+    else -> twinKeeps
+}
+
+/**
+ * Of two sessions with one song that nothing tells apart, whether the one that led stays in front. A pause reaches the
+ * pressed one first and the other plays on for a moment; a lead that moved with that would take the card's player away
+ * from under the press. Only when it stopped a while ago, and the other plays on, is that other really the music now.
+ */
+internal fun twinKeepsLead(twinLed: Boolean, led: Boolean, playing: Boolean, twinPlaying: Boolean, twinStoppedForMs: Long): Boolean =
+    twinLed && !led && (!playing || twinPlaying || twinStoppedForMs < TWIN_LAG_MS)
+
+private const val TWIN_LAG_MS = 5_000L
 
 /**
  * The sessions beside [lead] that could show as players of their own: the ones that play first, then the ones that

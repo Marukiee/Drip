@@ -105,8 +105,15 @@ internal class MediaSource(
         val twin = sessions.firstOrNull { it !== s && it !in taken && sameSong(it, s) }
         taken += s
         twin?.let { taken += it }
-        val twinLeads = twin != null && twinLeads(s.isRemote(), twin.isRemote(), s.namesSpeaker(), twin.namesSpeaker())
+        val twinLeads = twin != null && twinLeads(
+            s.isRemote(), twin.isRemote(), s.namesSpeaker(), twin.namesSpeaker(),
+            twinKeepsLead(twin.led, s.led, isActive(s.state), isActive(twin.state), SystemClock.elapsedRealtime() - twin.lastPlayingAt),
+        )
         val (lead, mirror) = if (twinLeads) twin to s else s to twin
+        if (mirror != null) {
+            lead.led = true
+            mirror.led = false
+        }
         lead.volumeVia = mirror?.takeIf { it.isRemote() && !lead.isRemote() }
         var np = safely("now playing") { build(lead) }
         if (np != null && mirror != null) {
@@ -314,6 +321,8 @@ internal class MediaSource(
         var metadata: MediaMetadata? = null
         var state: PlaybackState? = null
         var lastPlayingAt = 0L
+        /** Led the last time this session shared its song with another one. Kept when the two part for a moment. */
+        var led = false
         var art: Bitmap? = null
         /** Rating.RATING_NONE and the like. Read with the song, since a podcast in the same app may take no heart. */
         var ratingType = Rating.RATING_NONE

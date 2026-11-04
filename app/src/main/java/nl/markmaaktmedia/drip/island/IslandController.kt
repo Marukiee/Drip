@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import nl.markmaaktmedia.drip.data.IslandSettings
 
 /** What the island is showing. One of these is drawn closed, opened or as a short announcement. */
@@ -118,7 +119,12 @@ class IslandController(
             }
         }
         scope.launch {
-            val players = combine(hub.nowPlaying, hub.otherPlayers) { lead, others -> listOfNotNull(lead) + others }
+            // The source writes these two one after the other. Read between them a new lead looks as if the old one went
+            // away, and the island would forget when that one paused.
+            val players = combine(hub.nowPlaying, hub.otherPlayers) { _, _ ->
+                yield()
+                listOfNotNull(hub.nowPlaying.value) + hub.otherPlayers.value
+            }
             combine(hub.call, hub.live, players, hub.torch, hub.battery) { call, live, music, torch, battery ->
                 Sources5(call, live, music, torch, battery)
             }.collect { s ->
@@ -418,6 +424,16 @@ class IslandController(
         }
     }
 
+    /**
+     * An opened card outlives what the island shows: paused music past its time, a player behind its own big screen. That
+     * player still changes, so the card keeps following it. One that is gone altogether plays nothing any more.
+     */
+    private fun asItIsNow(card: IslandContent): IslandContent {
+        val music = card as? IslandContent.Music ?: return card
+        val player = sources?.music.orEmpty().firstOrNull { it.packageName == music.playing.packageName }
+        return IslandContent.Music(player ?: music.playing.copy(playing = false))
+    }
+
     private fun refresh() {
         val ringing = (primary as? IslandContent.Call)?.call?.incoming == true
         val hidden = !settings.enabled || (!ringing && (
@@ -435,7 +451,7 @@ class IslandController(
                 ?: expandedFallback?.takeIf {
                     it.key == key && it !is IslandContent.Call && it !is IslandContent.Privacy &&
                         (it !is IslandContent.Live || it.live.finished)
-                }
+                }?.let(::asItIsNow)
         }
         if (expandedKey != null && expanded == null) {
             // What was open has gone, a call that ended for instance: close quietly.
