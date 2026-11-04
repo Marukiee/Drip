@@ -18,15 +18,20 @@ internal object PlayerScreen {
     /** A screen of a music app is a few hundred items. Far more is something else, and not worth the walk. */
     private const val MAX_NODES = 1500
 
-    /** [title] is the song to look for as well, or null when only a seek bar counts. */
-    fun isOpen(windows: List<AccessibilityWindowInfo>, packageName: String, screenWidth: Int, screenHeight: Int, title: String?): Boolean {
+    /**
+     * [title] is the song to look for as well, or null when only a seek bar counts. Null when no window of the app is
+     * there to look in: Android leaves out what the shade covers, and that says nothing about the screen below it.
+     */
+    fun isOpen(windows: List<AccessibilityWindowInfo>, packageName: String, screenWidth: Int, screenHeight: Int, title: String?): Boolean? {
         var left = MAX_NODES
+        var seen = false
         val box = Rect()
         val stack = ArrayDeque<AccessibilityNodeInfo>()
         for (window in windows) {
             if (window.type != AccessibilityWindowInfo.TYPE_APPLICATION) continue
             val root = window.root ?: continue
             if (root.packageName?.toString() != packageName) continue
+            seen = true
             stack.clear()
             stack.addLast(root)
             while (stack.isNotEmpty() && left-- > 0) {
@@ -47,7 +52,7 @@ internal object PlayerScreen {
                 for (i in 0 until node.childCount) node.getChild(i)?.let(stack::addLast)
             }
         }
-        return false
+        return if (seen) false else null
     }
 
     /** Android answers from a cache that can lag behind: asked again, what closed a moment ago turns out to be gone. */

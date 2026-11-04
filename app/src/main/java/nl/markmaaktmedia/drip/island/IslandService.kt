@@ -108,7 +108,7 @@ class IslandService : AccessibilityService() {
         }
         scope.launch {
             combine(graph.hub.nowPlaying, graph.hub.otherPlayers) { lead, others ->
-                (listOfNotNull(lead) + others).map { it.packageName }.toSet()
+                (listOfNotNull(lead) + others).map { it.packageName to it.hidesIsland }.toSet()
             }.distinctUntilChanged().collect { watchPlayer() }
         }
         graph.hub.islandRunning.value = true
@@ -170,6 +170,8 @@ class IslandService : AccessibilityService() {
             serviceInfo = serviceInfo?.apply { eventTypes = if (watch) eventTypes or changes else eventTypes and changes.inv() }
         }
         if (watch) {
+            // The app says so itself: nothing to read and no reason to wait for a look.
+            if (front?.let(::playerOf)?.hidesIsland == true) setPlayerScreen(front)
             lookForPlayerScreen()
         } else {
             playerLook?.cancel()
@@ -192,18 +194,21 @@ class IslandService : AccessibilityService() {
                 val front = visibility.foregroundPackage ?: break
                 var open = readPlayerScreen(front)
                 // The bar can drop out for a moment while the next song comes in: the pill should not flash up for that.
-                if (!open && visibility.playerScreen == front) {
+                if (open == false && visibility.playerScreen == front) {
                     delay(PLAYER_LEAVE_MS)
                     open = readPlayerScreen(front)
                 }
-                setPlayerScreen(front.takeIf { open })
+                // Out of sight, under the shade: what was so before it came still is, or the pill would flash up after it.
+                if (open != null) setPlayerScreen(front.takeIf { open })
             }
         }
     }
 
-    private suspend fun readPlayerScreen(front: String): Boolean {
+    private suspend fun readPlayerScreen(front: String): Boolean? {
+        val player = playerOf(front)
+        if (player?.hidesIsland == true) return true
         // The title only counts for a screen that is already open: a song on top of a list is no player.
-        val title = playerOf(front)?.title?.takeIf { visibility.playerScreen == front }
+        val title = player?.title?.takeIf { visibility.playerScreen == front }
         return withContext(Dispatchers.Default) {
             val f = fit.value
             runCatching { PlayerScreen.isOpen(windows, front, f.screenWidth, f.screenHeight, title) }.getOrDefault(false)

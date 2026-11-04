@@ -15,6 +15,7 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 - Sonos via PixelPlayer: de groepsnaam op het eiland, de hoes van PixelPlayer en één kaart naast de Sonos-app.
 - De verversing van het scherm met de equalizer op halve snelheid: zakt die nu onder de 60 Hz?
 - Pauze op de kaart met de echte Sonos-app ernaast: het icoon draait meteen om (nagespeeld met nep-spelers, niet met de Sonos).
+- De pil in de echte PixelPlayer: geen flits na het meldingenpaneel, en weg in het Connect device-paneel (`HIDE_ISLAND`, vanaf mod.16).
 
 ## Muziek
 

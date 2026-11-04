@@ -84,6 +84,8 @@ data class NowPlaying(
     val mediaUri: String? = null,
     /** Playing on a speaker elsewhere, with its own volume. Null when it plays on the phone. */
     val remote: RemoteVolume? = null,
+    /** The app asks to be left alone while it is in front, for a panel of its own that covers its player. */
+    val hidesIsland: Boolean = false,
 ) {
     override fun equals(other: Any?): Boolean = other is NowPlaying && packageName == other.packageName &&
         title == other.title && artist == other.artist && album == other.album && art === other.art &&
@@ -91,7 +93,7 @@ data class NowPlaying(
         speed == other.speed && playing == other.playing && canSkipNext == other.canSkipNext &&
         canSkipPrevious == other.canSkipPrevious && canSeek == other.canSeek && repeat == other.repeat &&
         shuffle == other.shuffle && smartShuffle == other.smartShuffle && liked == other.liked && next == other.next &&
-        remote == other.remote
+        remote == other.remote && hidesIsland == other.hidesIsland
 
     override fun hashCode(): Int = (packageName.hashCode() * 31 + title.hashCode()) * 31 + playing.hashCode()
 }

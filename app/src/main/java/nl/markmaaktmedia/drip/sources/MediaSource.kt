@@ -217,6 +217,7 @@ internal class MediaSource(
             mediaId = m.getString(MediaMetadata.METADATA_KEY_MEDIA_ID),
             mediaUri = m.getString(MediaMetadata.METADATA_KEY_MEDIA_URI),
             remote = remoteOf(s),
+            hidesIsland = safely("session extras") { s.controller.extras?.getBoolean(EXTRA_HIDE_ISLAND) } == true,
         )
     }
 
@@ -360,13 +361,14 @@ internal class MediaSource(
         }
 
         fun attach() {
+            // Before the reads: a player that has just started tells its song right now, and would go unnoticed in between.
+            safely("media callback") { controller.registerCallback(this, handler) }
             metadata = safely("metadata") { controller.metadata }
             state = safely("playback state") { controller.playbackState }
             if (isActive(state)) lastPlayingAt = SystemClock.elapsedRealtime()
             readQueue(safely("queue") { controller.queue })
             readRatingType()
             readArt()
-            safely("media callback") { controller.registerCallback(this, handler) }
             compat = safely("compat controller") {
                 MediaControllerCompat(context, MediaSessionCompat.Token.fromToken(controller.sessionToken)).also {
                     it.registerCallback(compatCallback, handler)
@@ -407,7 +409,7 @@ internal class MediaSource(
         // A speaker's volume moved: the buttons of the phone, the speaker itself, or Drip.
         override fun onAudioInfoChanged(info: MediaController.PlaybackInfo) = update()
 
-        // The name of the speaker can come along in the session's extras.
+        // The name of the speaker can come along in the session's extras, and the wish to hide the island.
         override fun onExtrasChanged(extras: android.os.Bundle?) = update()
 
         private fun readRatingType() {
@@ -564,6 +566,7 @@ internal class MediaSource(
          */
         const val EXTRA_REMOTE_NAME = "nl.markmaaktmedia.drip.REMOTE_NAME"
         const val EXTRA_REMOTE_NAME_SHORT = "remote_name"
+        const val EXTRA_HIDE_ISLAND = "nl.markmaaktmedia.drip.HIDE_ISLAND"
         /** PlaybackStateCompat's actions for the shuffle and repeat modes, which reach the framework state as bits. */
         const val ACTION_SET_SHUFFLE_MODE = PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE
         const val ACTION_SET_REPEAT_MODE = PlaybackStateCompat.ACTION_SET_REPEAT_MODE
