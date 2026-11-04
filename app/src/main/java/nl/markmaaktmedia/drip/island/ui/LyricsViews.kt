@@ -137,7 +137,7 @@ private fun SyncedLines(lines: List<LyricLine>, np: NowPlaying) {
     LaunchedEffect(np.playing) {
         while (true) {
             now = SystemClock.elapsedRealtime()
-            delay(100)
+            tickAfter(100)
         }
     }
     val current = currentLineIndex(lines, positionOf(np, now))

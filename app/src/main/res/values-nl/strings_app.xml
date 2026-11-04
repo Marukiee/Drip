@@ -67,7 +67,7 @@
 
     <!-- Rechten -->
     <string name="perm_island">Het eiland</string>
-    <string name="perm_island_why">Zet Drip aan onder Toegankelijkheid. Het tekent het eiland, doet je gebaren en kijkt waar vensters staan, zodat het opzij gaat bij apps op volledig scherm. Het leest nooit wat erin staat.</string>
+    <string name="perm_island_why">Zet Drip aan onder Toegankelijkheid. Het tekent het eiland, doet je gebaren en kijkt waar vensters staan, zodat het opzij gaat bij apps op volledig scherm. In een muziek-app die speelt kijkt het ook naar de schuifbalk en de titel van het nummer. Verder leest het niets.</string>
     <string name="perm_listener">Toegang tot meldingen</string>
     <string name="perm_listener_why">Zodat het eiland muziek, gesprekken, timers en meldingen kan laten zien. Er gaat niets van je telefoon af.</string>
     <string name="perm_post">Updatemeldingen</string>
@@ -241,6 +241,8 @@
     <string name="hide_landscape_sub">Zolang de telefoon op zijn kant ligt</string>
     <string name="hide_lock">Op het vergrendelscherm</string>
     <string name="hide_lock_sub">Tot de telefoon ontgrendeld is</string>
+    <string name="hide_player">In de speler van een muziek-app</string>
+    <string name="hide_player_sub">Geen muziek op het eiland zolang die app zijn volledige speler of lyrics toont</string>
     <string name="hide_apps">In gekozen apps</string>
 
     <!-- Uiterlijk -->

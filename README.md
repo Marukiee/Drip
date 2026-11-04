@@ -18,8 +18,9 @@ Download `Drip.apk` from the [latest release](https://github.com/Marukiee/Drip/r
 from there.
 
 Drip asks for two things: the accessibility service, which is the only way an app may draw above the status bar and is used
-for the island, its gestures and to see where windows are so it can step aside in full screen apps (it never reads what is
-in them), and notification access, for music, calls and live updates.
+for the island, its gestures and to see where windows are so it can step aside in full screen apps. In a music app that plays
+it also looks for the seek bar and the song's title, so the music on the island can make way for that app's own player; it
+reads nothing else on screen and keeps nothing. The second is notification access, for music, calls and live updates.
 Nothing leaves the phone.
 
 ## Build

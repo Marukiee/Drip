@@ -8,6 +8,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
 import android.os.Build
+import android.os.PowerManager
+import android.os.SystemClock
 import android.media.AudioManager
 import android.view.KeyEvent
 import android.view.WindowInsets
@@ -16,10 +18,15 @@ import android.view.accessibility.AccessibilityWindowInfo
 import androidx.compose.ui.platform.ComposeView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import nl.markmaaktmedia.drip.data.GestureAction
 import nl.markmaaktmedia.drip.engine.SystemPopups
 import nl.markmaaktmedia.drip.graph
@@ -31,7 +38,7 @@ import nl.markmaaktmedia.drip.sources.Sources
  * without a notification of its own, and only such a service may draw where the status bar is.
  *
  * It reads one kind of event: which app came to the front, so the island can step aside in the apps chosen for that.
- * It never reads what is on the screen.
+ * What is on the screen stays unread, except in a music app that plays: see [PlayerScreen].
  */
 class IslandService : AccessibilityService() {
 
@@ -43,8 +50,17 @@ class IslandService : AccessibilityService() {
     private var visibility = Visibility()
 
     private val screenReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) = updateLocked()
+        override fun onReceive(context: Context, intent: Intent) {
+            updateLocked()
+            updateAwake()
+        }
     }
+
+    private var hideInPlayer = true
+    private var followsContent: Boolean? = null
+    private var playerLook: Job? = null
+    private var lookAgain = false
+    private var lastLookAt = 0L
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -78,12 +94,22 @@ class IslandService : AccessibilityService() {
             },
         )
         updateLocked()
+        updateAwake()
         checkStatusBar()
         scope.launch { graph.hub.demos.collect { Demos.play(applicationContext, it, controller) } }
         scope.launch {
             graph.prefs.island.collect { s ->
                 SystemPopups.apply(applicationContext, s.enabled && s.showNotifications && s.hideSystemPopups)
+                if (s.hideInPlayer != hideInPlayer) {
+                    hideInPlayer = s.hideInPlayer
+                    watchPlayer()
+                }
             }
+        }
+        scope.launch {
+            combine(graph.hub.nowPlaying, graph.hub.otherPlayers) { lead, others ->
+                (listOfNotNull(lead) + others).map { it.packageName }.toSet()
+            }.distinctUntilChanged().collect { watchPlayer() }
         }
         graph.hub.islandRunning.value = true
         graph.hub.openOutput = { openOutputSwitcher(graph.hub.playerInFocus.value ?: graph.hub.nowPlaying.value?.packageName) }
@@ -95,6 +121,14 @@ class IslandService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event ?: return
+        // Started while an app is open, after an update for instance: nothing says which one until the next switch, so ask.
+        if (visibility.foregroundPackage == null) {
+            runCatching { rootInActiveWindow?.packageName?.toString() }.getOrNull()?.let { if (isApp(it)) setFrontApp(it) }
+        }
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+            if (event.packageName?.toString() == visibility.foregroundPackage) lookForPlayerScreen()
+            return
+        }
         if (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED || event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             checkStatusBar()
         }
@@ -103,14 +137,87 @@ class IslandService : AccessibilityService() {
         val className = event.className?.toString().orEmpty()
         // A screenshot was taken: its preview and editor have their buttons along the top, right where an open card is.
         if ("screenshot" in className.lowercase() || "screenshot" in pkg || "markup" in pkg) controller.stepAside()
-        // The keyboard, the system's own panels and Android asking for a permission are not the app in front.
-        if (pkg == packageName || pkg == "com.android.systemui" || "InputMethod" in className || "permissioncontroller" in pkg) return
+        if (!isApp(pkg) || "InputMethod" in className) return
+        setFrontApp(pkg)
+    }
+
+    private fun setFrontApp(pkg: String) {
         if (pkg != visibility.foregroundPackage) {
             // Not the first app seen after a start: that is no switch, only the service catching up.
             if (visibility.foregroundPackage != null) controller.stepAside()
             graph.hub.foregroundApp.value = pkg.takeIf { it != homePackage() }
         }
-        visibility = visibility.copy(foregroundPackage = pkg)
+        // Another app in front: the music of the one left comes back at once, not after a look.
+        visibility = visibility.copy(foregroundPackage = pkg, playerScreen = visibility.playerScreen.takeIf { it == pkg })
+        controller.setVisibility(visibility)
+        watchPlayer()
+    }
+
+    /** The keyboard, the system's own panels and Android asking for a permission are not the app in front. */
+    private fun isApp(pkg: String) = pkg != packageName && pkg != "com.android.systemui" && "permissioncontroller" !in pkg
+
+    /**
+     * Follows what is on screen only while a player is the app in front. Changes in every other app stay out of this
+     * service altogether, since those would wake it many times a second for nothing.
+     */
+    private fun watchPlayer() {
+        val front = visibility.foregroundPackage
+        val watch = hideInPlayer && !visibility.locked && front != null && playerOf(front) != null
+        // Android remembers this over a restart of the service, so the first time here always says it.
+        if (watch != followsContent) {
+            followsContent = watch
+            val changes = AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+            serviceInfo = serviceInfo?.apply { eventTypes = if (watch) eventTypes or changes else eventTypes and changes.inv() }
+        }
+        if (watch) {
+            lookForPlayerScreen()
+        } else {
+            playerLook?.cancel()
+            setPlayerScreen(null)
+        }
+    }
+
+    /** One look after a short while, however many changes come in meanwhile, and off the main thread the island moves on. */
+    private fun lookForPlayerScreen() {
+        lookAgain = true
+        if (playerLook?.isActive == true) return
+        playerLook = scope.launch {
+            while (lookAgain) {
+                // Quick after a quiet moment, so the pill goes as the player slides up. A screen that keeps changing (a
+                // list that scrolls, lyrics that move on) gets a look now and then, not one for every change.
+                val quiet = SystemClock.uptimeMillis() - lastLookAt > PLAYER_QUIET_MS
+                delay(if (quiet) PLAYER_LOOK_MS else PLAYER_LOOK_BUSY_MS)
+                lastLookAt = SystemClock.uptimeMillis()
+                lookAgain = false
+                val front = visibility.foregroundPackage ?: break
+                var open = readPlayerScreen(front)
+                // The bar can drop out for a moment while the next song comes in: the pill should not flash up for that.
+                if (!open && visibility.playerScreen == front) {
+                    delay(PLAYER_LEAVE_MS)
+                    open = readPlayerScreen(front)
+                }
+                setPlayerScreen(front.takeIf { open })
+            }
+        }
+    }
+
+    private suspend fun readPlayerScreen(front: String): Boolean {
+        // The title only counts for a screen that is already open: a song on top of a list is no player.
+        val title = playerOf(front)?.title?.takeIf { visibility.playerScreen == front }
+        return withContext(Dispatchers.Default) {
+            val f = fit.value
+            runCatching { PlayerScreen.isOpen(windows, front, f.screenWidth, f.screenHeight, title) }.getOrDefault(false)
+        }
+    }
+
+    private fun playerOf(pkg: String): NowPlaying? {
+        val hub = applicationContext.graph.hub
+        return hub.nowPlaying.value?.takeIf { it.packageName == pkg } ?: hub.otherPlayers.value.firstOrNull { it.packageName == pkg }
+    }
+
+    private fun setPlayerScreen(player: String?) {
+        if (visibility.playerScreen == player) return
+        visibility = visibility.copy(playerScreen = player)
         controller.setVisibility(visibility)
     }
 
@@ -195,7 +302,10 @@ class IslandService : AccessibilityService() {
         val locked = getSystemService(KeyguardManager::class.java).isKeyguardLocked
         visibility = visibility.copy(locked = locked)
         controller.setVisibility(visibility)
+        watchPlayer()
     }
+
+    private fun updateAwake() = window.setAwake(getSystemService(PowerManager::class.java).isInteractive)
 
     /** Carries out what a gesture on the island was set to do. */
     private fun runGesture(action: GestureAction, content: IslandContent?) {
@@ -280,5 +390,12 @@ class IslandService : AccessibilityService() {
         sources.stop()
         window.hide()
         scope.cancel()
+    }
+
+    private companion object {
+        const val PLAYER_LOOK_MS = 150L
+        const val PLAYER_LOOK_BUSY_MS = 500L
+        const val PLAYER_QUIET_MS = 1_000L
+        const val PLAYER_LEAVE_MS = 300L
     }
 }

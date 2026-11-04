@@ -1,6 +1,11 @@
 package nl.markmaaktmedia.drip.island.ui
 
-import androidx.compose.animation.core.RepeatMode
+import android.os.SystemClock
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.withFrameMillis
+import kotlinx.coroutines.delay
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
@@ -9,9 +14,6 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -316,23 +318,46 @@ fun LevelBar(level: Float, color: Color, modifier: Modifier) {
  */
 @Composable
 private fun Equalizer(color: Color, playing: Boolean, modifier: Modifier) {
-    val t = rememberInfiniteTransition(label = "eq")
-    val phases = listOf(0, 180, 90, 270).mapIndexed { i, offset ->
-        t.animateFloat(0.25f, 1f, infiniteRepeatable(tween(420 + i * 70), RepeatMode.Reverse, initialStartOffset = androidx.compose.animation.core.StartOffset(offset)), label = "bar$i")
+    // This runs for as long as a song plays, so it is the island's biggest cost. Bars this small lose nothing at half the
+    // frame rate; while paused it stops asking for frames at all, once the bars have sunk.
+    val clock = remember { mutableLongStateOf(0L) }
+    LaunchedEffect(playing) {
+        val end = if (playing) Long.MAX_VALUE else SystemClock.uptimeMillis() + EqSinkMs
+        while (SystemClock.uptimeMillis() < end) {
+            withFrameMillis { clock.longValue = it }
+            delay(EqFrameMs)
+        }
     }
-    val lift = (0 until 4).map { i ->
+    val lift = (0 until EqBars).map { i ->
         animateFloatAsState(if (playing) 1f else 0f, spring(0.6f, 260f - i * 30f), label = "lift$i")
     }
     val tint by animateColorAsState(if (playing) color else IslandInk.Secondary, tween(300), label = "eqTint")
-    Canvas(modifier) {
-        val bars = phases.size
+    // A layer of its own, so a frame of the bars leaves the rest of the island alone.
+    Canvas(modifier.graphicsLayer { }) {
         val gap = size.width * 0.12f
-        val w = (size.width - gap * (bars - 1)) / bars
-        phases.forEachIndexed { i, p ->
-            val h = w + (size.height * p.value - w) * lift[i].value
+        val w = (size.width - gap * (EqBars - 1)) / EqBars
+        for (i in 0 until EqBars) {
+            val h = w + (size.height * eqLevel(clock.longValue, i) - w) * lift[i].value
             drawRoundRect(tint, Offset(i * (w + gap), (size.height - h) / 2), Size(w, h), CornerRadius(w / 2, w / 2))
         }
     }
+}
+
+private const val EqBars = 4
+
+/** Waits this long for the next frame: every second one at 60 Hz, every third at 120 Hz. */
+private const val EqFrameMs = 24L
+
+/** About how long the slowest bar takes to sink when the music pauses. */
+private const val EqSinkMs = 900L
+private val EqOffsets = longArrayOf(0, 180, 90, 270)
+
+/** How high bar [i] stands at [t]: up and down in its own time, so the four never move as one. */
+private fun eqLevel(t: Long, i: Int): Float {
+    val stroke = 420L + i * 70L
+    val at = (t + EqOffsets[i]) % (stroke * 2)
+    val x = if (at < stroke) at.toFloat() / stroke else 2f - at.toFloat() / stroke
+    return 0.25f + 0.75f * FastOutSlowInEasing.transform(x)
 }
 
 @Composable

@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
+import androidx.compose.runtime.withFrameMillis
 import kotlinx.coroutines.delay
 import nl.markmaaktmedia.drip.graph
 import nl.markmaaktmedia.drip.island.Haptics
@@ -178,6 +179,15 @@ fun AppIcon(bitmap: Bitmap?, packageName: String?, size: Dp = 20.dp) {
     if (icon != null) Picture(icon, size, CircleShape)
 }
 
+/**
+ * Waits [ms] and then for the next frame. With the screen off no frames come ([nl.markmaaktmedia.drip.island.IslandWindow.setAwake]),
+ * so a clock that ticks with this rests until the screen is back.
+ */
+suspend fun tickAfter(ms: Long) {
+    delay(ms)
+    withFrameMillis { }
+}
+
 /** The wall clock, ticking every [stepMs], for timers and call durations. */
 @Composable
 fun rememberNow(stepMs: Long = 1000L): Long {
@@ -185,7 +195,7 @@ fun rememberNow(stepMs: Long = 1000L): Long {
     LaunchedEffect(stepMs) {
         while (true) {
             now = System.currentTimeMillis()
-            delay(stepMs - (now % stepMs).coerceAtMost(stepMs - 1))
+            tickAfter(stepMs - (now % stepMs).coerceAtMost(stepMs - 1))
         }
     }
     return now

@@ -5,14 +5,20 @@ import android.content.Context
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.os.Build
+import android.provider.Settings
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.FrameLayout
+import androidx.compose.runtime.MonotonicFrameClock
+import androidx.compose.runtime.PausableMonotonicFrameClock
+import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.Lifecycle
@@ -26,6 +32,8 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * The windows the island lives in: accessibility overlays, the one kind of window an app may put above the status bar
@@ -69,6 +77,15 @@ class IslandWindow(private val context: Context) {
     private var attached = false
     private var touchable = true
 
+    private val clock = PausableMonotonicFrameClock(AndroidUiDispatcher.CurrentThread[MonotonicFrameClock]!!)
+    private var recomposer: Recomposer? = null
+
+    /** Android's animation speed setting, which a window's own recomposer would pass on. */
+    private val motionScale = object : MotionDurationScale {
+        override val scaleFactor: Float
+            get() = Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+    }
+
     private fun overlayParams(flags: Int, width: Int, height: Int, name: String) = WindowManager.LayoutParams(
         width, height, 0, 0,
         WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
@@ -93,6 +110,7 @@ class IslandWindow(private val context: Context) {
         root.setViewTreeSavedStateRegistryOwner(owner)
         root.setViewTreeViewModelStoreOwner(owner)
         content.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+        content.setParentCompositionContext(startRecomposer())
         root.addView(content, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
         runCatching { windowManager.addView(root, drawParams) }.onSuccess { attached = true }
         runCatching { windowManager.addView(touch, touchParams) }
@@ -104,6 +122,7 @@ class IslandWindow(private val context: Context) {
         runCatching { windowManager.removeViewImmediate(touch) }
         root.removeAllViews()
         attached = false
+        recomposer?.cancel()
         owner.stop()
     }
 
@@ -154,6 +173,24 @@ class IslandWindow(private val context: Context) {
         drawParams.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING or
             (if (on) WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE else WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN)
         if (attached) runCatching { windowManager.updateViewLayout(root, drawParams) }
+    }
+
+    /**
+     * With the screen off nobody sees the island, yet music keeps the processor awake and the island would go on working
+     * out frames. This stops its clock until the screen is back, and everything that runs on it with it.
+     */
+    fun setAwake(awake: Boolean) = if (awake) clock.resume() else clock.pause()
+
+    /**
+     * Its own recomposer, because the one a window normally gets only pauses animations when it is stopped and keeps on
+     * recomposing every frame. This one waits for [clock] with everything it does.
+     */
+    private fun startRecomposer(): Recomposer {
+        val context = AndroidUiDispatcher.CurrentThread + clock + motionScale
+        val started = Recomposer(context)
+        CoroutineScope(context).launch { started.runRecomposeAndApplyChanges() }
+        recomposer = started
+        return started
     }
 
     /** Asks for the fastest refresh rate while the island moves, and lets the phone save power when it rests. */

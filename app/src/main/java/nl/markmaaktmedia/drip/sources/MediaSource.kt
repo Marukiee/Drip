@@ -105,7 +105,8 @@ internal class MediaSource(
         val twin = sessions.firstOrNull { it !== s && it !in taken && sameSong(it, s) }
         taken += s
         twin?.let { taken += it }
-        val (lead, mirror) = if (twin != null && s.isRemote() && !twin.isRemote()) twin to s else s to twin
+        val twinLeads = twin != null && twinLeads(s.isRemote(), twin.isRemote(), s.namesSpeaker(), twin.namesSpeaker())
+        val (lead, mirror) = if (twinLeads) twin to s else s to twin
         lead.volumeVia = mirror?.takeIf { it.isRemote() && !lead.isRemote() }
         var np = safely("now playing") { build(lead) }
         if (np != null && mirror != null) {
@@ -128,6 +129,11 @@ internal class MediaSource(
 
     private fun Session.isRemote(): Boolean =
         safely("playback info") { controller.playbackInfo?.playbackType } == MediaController.PlaybackInfo.PLAYBACK_TYPE_REMOTE
+
+    private fun Session.namesSpeaker(): Boolean = safely("session extras") {
+        val extras = controller.extras
+        !extras?.getString(EXTRA_REMOTE_NAME).isNullOrBlank() || !extras?.getString(EXTRA_REMOTE_NAME_SHORT).isNullOrBlank()
+    } == true
 
     private fun build(s: Session): NowPlaying? {
         val m = s.metadata ?: return null

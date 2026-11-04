@@ -120,6 +120,7 @@ internal object FocusKeys {
     const val HideFullscreen = "hide.fullscreen"
     const val HideLandscape = "hide.landscape"
     const val HideLock = "hide.lock"
+    const val HidePlayer = "hide.player"
 
     const val LookCard = "look.card"
     const val LookAccent = "look.accent"
@@ -275,6 +276,7 @@ internal object SettingsCatalog {
         row("hide_fullscreen", R.string.hide_fullscreen, R.string.settings_kw_hide, SettingsCategory.Hide, FocusKeys.HideFullscreen, { DripIcons.OpenInFull }, R.string.hide_fullscreen_sub),
         row("hide_landscape", R.string.hide_landscape, R.string.settings_kw_hide, SettingsCategory.Hide, FocusKeys.HideLandscape, { DripIcons.ScreenRotation }, R.string.hide_landscape_sub),
         row("hide_lock", R.string.hide_lock, R.string.settings_kw_hide, SettingsCategory.Hide, FocusKeys.HideLock, { DripIcons.Lock }, R.string.hide_lock_sub),
+        row("hide_player", R.string.hide_player, R.string.settings_kw_hide, SettingsCategory.Hide, FocusKeys.HidePlayer, { DripIcons.Music }, R.string.hide_player_sub),
         SettingsEntry(
             "hide_apps", R.string.picker_hide_title, R.string.settings_kw_hide, SettingsCategory.Hide,
             Route.AppPicker(AppPickerKind.HIDE), { DripIcons.Apps }, page = R.string.hide_apps, via = hide,

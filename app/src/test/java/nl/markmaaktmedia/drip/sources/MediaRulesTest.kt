@@ -178,4 +178,16 @@ class MediaRulesTest {
         assertFalse(likesByRating(3, 128L))
         assertFalse(likesByRating(0, 128L))
     }
+
+    @Test fun thePlayerLeadsOverTheSpeakersOwnApp() {
+        // The speaker's app came first, the player is local on the phone.
+        assertTrue(twinLeads(remote = true, twinRemote = false, namesSpeaker = false, twinNamesSpeaker = false))
+        // Both on the speaker: the player is the one that names it.
+        assertTrue(twinLeads(remote = true, twinRemote = true, namesSpeaker = false, twinNamesSpeaker = true))
+        // The player came first already.
+        assertFalse(twinLeads(remote = true, twinRemote = true, namesSpeaker = true, twinNamesSpeaker = false))
+        assertFalse(twinLeads(remote = false, twinRemote = true, namesSpeaker = false, twinNamesSpeaker = false))
+        // Nothing to tell them apart: the one picked stays.
+        assertFalse(twinLeads(remote = true, twinRemote = true, namesSpeaker = false, twinNamesSpeaker = false))
+    }
 }

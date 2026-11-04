@@ -67,7 +67,7 @@
 
     <!-- Permissions -->
     <string name="perm_island">The island</string>
-    <string name="perm_island_why">Switch Drip on under Accessibility. It draws the island, does your gestures and looks where windows are, so it can step aside in full screen apps. It never reads what is in them.</string>
+    <string name="perm_island_why">Switch Drip on under Accessibility. It draws the island, does your gestures and looks where windows are, so it can step aside in full screen apps. In a music app that plays it also looks for the seek bar and the song\'s title. It reads nothing else.</string>
     <string name="perm_listener">Notification access</string>
     <string name="perm_listener_why">So the island can show music, calls, timers and notifications. Nothing leaves your phone.</string>
     <string name="perm_post">Update notices</string>
@@ -241,6 +241,8 @@
     <string name="hide_landscape_sub">While the phone lies on its side</string>
     <string name="hide_lock">On the lock screen</string>
     <string name="hide_lock_sub">Until the phone is unlocked</string>
+    <string name="hide_player">In a music app\'s own player</string>
+    <string name="hide_player_sub">No music on the island while that app shows its full player or lyrics</string>
     <string name="hide_apps">In chosen apps</string>
 
     <!-- Look -->

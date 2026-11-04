@@ -457,7 +457,7 @@ private fun SeekBar(np: NowPlaying) {
         if (!np.playing) return@LaunchedEffect
         var last = SystemClock.uptimeMillis()
         while (true) {
-            kotlinx.coroutines.delay(WaveFrameMs)
+            tickAfter(WaveFrameMs)
             val tick = SystemClock.uptimeMillis()
             phase.floatValue = (phase.floatValue + (tick - last) * WaveCyclesPerMs) % 1f
             clock.longValue = SystemClock.elapsedRealtime()

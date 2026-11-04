@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Window changes only: which app is in front and whether the status bar is on screen, so the island can step
      aside in full screen apps and in the apps you chose. Android only hands out the list of windows to a service that
-     may read window content; Drip looks at where the windows are and never at what is in them. The volume buttons are
+     may read window content; Drip looks at where the windows are, and only in a music app that plays at its seek bar and
+     the song's title (IslandService follows that app's changes for this while it is in front). The volume buttons are
      only taken while an opened volume or music card shows the volume itself, so Android's panel does not open on top
      of it; at any other moment they go on to Android untouched. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"

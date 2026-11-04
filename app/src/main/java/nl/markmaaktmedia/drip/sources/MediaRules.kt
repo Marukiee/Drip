@@ -226,6 +226,14 @@ internal fun pickSession(sessions: List<SessionView>): Int? {
 }
 
 /**
+ * Two sessions with one song, the first picked as the one that matters: whether the second should lead instead. The player
+ * is the one to show, not the app of the speaker it plays on. That app is remote; a player that is local while the speaker
+ * plays leads for that. When both are remote, the player is the one that says which speaker it is.
+ */
+internal fun twinLeads(remote: Boolean, twinRemote: Boolean, namesSpeaker: Boolean, twinNamesSpeaker: Boolean): Boolean =
+    remote && (!twinRemote || (twinNamesSpeaker && !namesSpeaker))
+
+/**
  * The sessions beside [lead] that could show as players of their own: the ones that play first, then the ones that
  * stopped playing most recently. Never one without a song, or a stopped one.
  */

@@ -44,7 +44,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import nl.markmaaktmedia.drip.R
@@ -64,7 +63,7 @@ fun VolumeCard(hub: IslandHub) {
     val audio = remember { context.getSystemService(AudioManager::class.java) }
     // Read again and again while the card is open, so a volume button shows at once.
     var tick by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) { while (true) { delay(100); tick++ } }
+    LaunchedEffect(Unit) { while (true) { tickAfter(100); tick++ } }
 
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Icon(DripIcons.VolumeUp, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))

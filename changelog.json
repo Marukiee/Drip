@@ -1,5 +1,27 @@
 [
   {
+    "version": "0.1.19",
+    "date": "2026-11-04",
+    "en": {
+      "title": "Out of the way in your player",
+      "new": [
+        "No music on the island while a music app shows its own player or lyrics"
+      ],
+      "better": [
+        "Uses less battery: nothing is drawn while paused, and the island rests with the screen off"
+      ]
+    },
+    "nl": {
+      "title": "Uit de weg in je speler",
+      "new": [
+        "Geen muziek op het eiland zolang een muziek-app zijn eigen speler of lyrics toont"
+      ],
+      "better": [
+        "Zuiniger: er wordt niets getekend tijdens een pauze, en het eiland rust als het scherm uit is"
+      ]
+    }
+  },
+  {
     "version": "0.1.18",
     "date": "2026-11-04",
     "en": {

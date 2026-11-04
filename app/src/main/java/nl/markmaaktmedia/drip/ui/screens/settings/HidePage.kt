@@ -26,22 +26,28 @@ internal fun HidePage(onBack: () -> Unit, onOpen: (Route) -> Unit) {
     SettingsPageFrame(stringResource(R.string.settings_cat_hide), onBack) {
         SectionHeader(stringResource(R.string.hide_section), top = 20.dp)
         SettingsGroup {
-            SettingsTarget(FocusKeys.HideFullscreen, 0, 3) {
+            SettingsTarget(FocusKeys.HideFullscreen, 0, 4) {
                 SwitchRow(
-                    0, 3, DripIcons.OpenInFull, stringResource(R.string.hide_fullscreen), stringResource(R.string.hide_fullscreen_sub),
+                    0, 4, DripIcons.OpenInFull, stringResource(R.string.hide_fullscreen), stringResource(R.string.hide_fullscreen_sub),
                     island.hideFullscreen, { on -> edit { it.copy(hideFullscreen = on) } },
                 )
             }
-            SettingsTarget(FocusKeys.HideLandscape, 1, 3) {
+            SettingsTarget(FocusKeys.HideLandscape, 1, 4) {
                 SwitchRow(
-                    1, 3, DripIcons.ScreenRotation, stringResource(R.string.hide_landscape), stringResource(R.string.hide_landscape_sub),
+                    1, 4, DripIcons.ScreenRotation, stringResource(R.string.hide_landscape), stringResource(R.string.hide_landscape_sub),
                     island.hideLandscape, { on -> edit { it.copy(hideLandscape = on) } },
                 )
             }
-            SettingsTarget(FocusKeys.HideLock, 2, 3) {
+            SettingsTarget(FocusKeys.HideLock, 2, 4) {
                 SwitchRow(
-                    2, 3, DripIcons.Lock, stringResource(R.string.hide_lock), stringResource(R.string.hide_lock_sub),
+                    2, 4, DripIcons.Lock, stringResource(R.string.hide_lock), stringResource(R.string.hide_lock_sub),
                     island.hideOnLockscreen, { on -> edit { it.copy(hideOnLockscreen = on) } },
+                )
+            }
+            SettingsTarget(FocusKeys.HidePlayer, 3, 4) {
+                SwitchRow(
+                    3, 4, DripIcons.Music, stringResource(R.string.hide_player), stringResource(R.string.hide_player_sub),
+                    island.hideInPlayer, { on -> edit { it.copy(hideInPlayer = on) } },
                 )
             }
         }

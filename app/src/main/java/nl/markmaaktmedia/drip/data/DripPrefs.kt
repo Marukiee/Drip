@@ -186,6 +186,7 @@ data class IslandSettings(
     val hideFullscreen: Boolean = true,
     val hideLandscape: Boolean = true,
     val hideOnLockscreen: Boolean = false,
+    val hideInPlayer: Boolean = true,
     val hiddenApps: Set<String> = emptySet(),
 
     // The second round.
@@ -394,6 +395,7 @@ class DripPrefs(private val context: Context) {
             hideFullscreen = b("hide_fullscreen", d.hideFullscreen),
             hideLandscape = b("hide_landscape", d.hideLandscape),
             hideOnLockscreen = b("hide_on_lockscreen", d.hideOnLockscreen),
+            hideInPlayer = b("hide_in_player", d.hideInPlayer),
             hiddenApps = set("hidden_apps"),
             gestureDoubleTap = GestureAction.from(s("gesture_double_tap"), d.gestureDoubleTap),
             gestureOverrides = set("gesture_overrides"),
@@ -499,6 +501,7 @@ class DripPrefs(private val context: Context) {
         b("hide_fullscreen", v.hideFullscreen, d.hideFullscreen)
         b("hide_landscape", v.hideLandscape, d.hideLandscape)
         b("hide_on_lockscreen", v.hideOnLockscreen, d.hideOnLockscreen)
+        b("hide_in_player", v.hideInPlayer, d.hideInPlayer)
         set("hidden_apps", v.hiddenApps)
         s("gesture_double_tap", v.gestureDoubleTap.name, d.gestureDoubleTap.name)
         set("gesture_overrides", v.gestureOverrides)

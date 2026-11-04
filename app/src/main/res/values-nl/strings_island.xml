@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="island_service_summary">Tekent het eiland bovenaan het scherm</string>
-    <string name="island_service_description">Drip gebruikt dit om het eiland boven de statusbalk te tekenen, waar je erop kunt tikken, en om de gebaren uit te voeren die je instelt (terug, startscherm, meldingen, schermafbeelding en meer). Het kijkt ook welke vensters er op het scherm staan, zodat het eiland opzij kan gaan in apps op volledig scherm en in de apps die je kiest. Het leest nooit wat erin staat.</string>
+    <string name="island_service_description">Drip gebruikt dit om het eiland boven de statusbalk te tekenen, waar je erop kunt tikken, en om de gebaren uit te voeren die je instelt (terug, startscherm, meldingen, schermafbeelding en meer). Het kijkt ook welke vensters er op het scherm staan, zodat het eiland opzij kan gaan in apps op volledig scherm en in de apps die je kiest. In een muziek-app die speelt kijkt het naar de schuifbalk en de titel van het nummer, zodat de muziek op het eiland plaatsmaakt voor de eigen speler van die app. Verder leest het niets van het scherm en het bewaart niets.</string>
     <string name="tile_label">Eiland</string>
     <string name="island_repeat">Herhalen</string>
     <string name="island_shuffle">Shuffle</string>

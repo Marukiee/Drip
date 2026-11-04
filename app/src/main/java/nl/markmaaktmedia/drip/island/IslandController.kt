@@ -40,6 +40,8 @@ data class Visibility(
     val landscape: Boolean = false,
     val locked: Boolean = false,
     val foregroundPackage: String? = null,
+    /** The player whose own big screen is open. Only its music steps aside, the rest of the island stays. */
+    val playerScreen: String? = null,
 )
 
 data class IslandUi(
@@ -149,14 +151,6 @@ class IslandController(
             // Opening or closing the lyrics stops or starts the card's own time again.
             hub.lyricsOpen.collect { poke() }
         }
-        scope.launch {
-            // Paused music gives way after a while even when nothing else changes.
-            while (true) {
-                delay(30_000)
-                repick()
-                refresh()
-            }
-        }
     }
 
     private data class Sources5(
@@ -172,7 +166,8 @@ class IslandController(
         val picked = pick(sources ?: return).toMutableList()
         val pinned = picked.indexOfFirst { it.key == pinnedKey }
         when {
-            pinned < 0 -> pinnedKey = null
+            // A player only out of sight behind its own big screen stays the island for when that closes.
+            pinned < 0 -> if (pinnedKey != visibility.playerScreen?.let { IslandContent.Music.PREFIX + it }) pinnedKey = null
             // A call still comes first; whatever was swapped forward waits behind it.
             pinned > 0 && picked.first() !is IslandContent.Call -> picked.add(0, picked.removeAt(pinned))
         }
@@ -255,10 +250,12 @@ class IslandController(
                 playedAt[p.packageName] = now
             }
         }
+        // Who has its own big screen open is already in full view; the time above still counts for it.
+        val music = s.music.filter { it.packageName != visibility.playerScreen }
         val out = mutableListOf<IslandContent>()
         if (settings.showCalls && s.call != null) out += IslandContent.Call(s.call)
         if (settings.showLive) withoutRepeats(s.live).take(2).forEach { out += IslandContent.Live(it) }
-        if (settings.showMusic) s.music.filter { it.playing }.forEach { out += IslandContent.Music(it) }
+        if (settings.showMusic) music.filter { it.playing }.forEach { out += IslandContent.Music(it) }
         // After the music, so during a song or a video call the camera is the small drop beside it.
         if (privacy.any) out += IslandContent.Privacy(privacy)
         if (settings.showTorch && s.torch.on) out += IslandContent.Torch(s.torch)
@@ -267,7 +264,7 @@ class IslandController(
         // Plugging in is announced for a moment either way; only when asked does charging stay on the island.
         if (settings.showCharging && settings.chargingStays && plugged) out += IslandContent.Charging(s.battery)
         if (settings.showMusic) {
-            s.music.filter { p -> !p.playing && playedAt[p.packageName]?.let { now - it < settings.pausedLingerMs } == true }
+            music.filter { p -> !p.playing && playedAt[p.packageName]?.let { now - it < settings.pausedLingerMs } == true }
                 .forEach { out += IslandContent.Music(it) }
         }
         return out
@@ -275,7 +272,9 @@ class IslandController(
 
     fun setVisibility(value: Visibility) {
         if (value == visibility) return
+        val playerMoved = value.playerScreen != visibility.playerScreen
         visibility = value
+        if (playerMoved) repick()
         refresh()
     }
 

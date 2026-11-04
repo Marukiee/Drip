@@ -11,11 +11,15 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 - Installeren via de browser (beperkte instellingen voor toegankelijkheid).
 - Twee spelers tegelijk met de echte Sonos: de druppel, het hoesje in de kaart en opzij vegen naar de andere speler.
 - Live updates van echte apps: de stappen en stops van een bezorging of rit, en de aankomsttijd van Maps.
+- De pil weg in de eigen speler: Spotify (speler, lyrics, minispeler) en andere muziek-apps.
+- Sonos via PixelPlayer: de groepsnaam op het eiland, de hoes van PixelPlayer en één kaart naast de Sonos-app.
+- De verversing van het scherm met de equalizer op halve snelheid: zakt die nu onder de 60 Hz?
 
 ## Muziek
 
 - Een equalizer die echt op de muziek beweegt (Visualizer, vraagt microfoonrecht, daarom een keuze).
 - De hoes vervaagd als achtergrond van de geopende kaart.
+- De pil ook weg als er een venster over de eigen speler ligt (wachtrij, uitvoer kiezen).
 
 ## Gesprekken
 

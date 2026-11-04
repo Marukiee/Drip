@@ -79,7 +79,7 @@ internal fun rememberCategorySummaries(): Map<SettingsCategory, String> {
         stringResource(R.string.gesture_hold).lowercase(locale) + ": " + stringResource(gestureLabel(island.gestureLongPress)).lowercase(locale),
     ).joinToString(", ")
 
-    val hideSwitches = listOf(island.hideFullscreen, island.hideLandscape, island.hideOnLockscreen)
+    val hideSwitches = listOf(island.hideFullscreen, island.hideLandscape, island.hideOnLockscreen, island.hideInPlayer)
     val hide = when {
         hideSwitches.none { it } && island.hiddenApps.isEmpty() -> stringResource(R.string.settings_sum_never)
         island.hiddenApps.isEmpty() -> summaryOnOf(hideSwitches.count { it }, hideSwitches.size)
