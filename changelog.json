@@ -1,5 +1,21 @@
 [
   {
+    "version": "0.1.22",
+    "date": "2026-11-06",
+    "en": {
+      "title": "Room for the camera",
+      "fixed": [
+        "On a phone with a camera hole, a long song title no longer runs through the hole"
+      ]
+    },
+    "nl": {
+      "title": "Ruimte voor de camera",
+      "fixed": [
+        "Op een telefoon met cameragat loopt een lange titel niet meer door het gat"
+      ]
+    }
+  },
+  {
     "version": "0.1.21",
     "date": "2026-11-04",
     "en": {
