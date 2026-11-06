@@ -337,7 +337,7 @@ fun IslandOverlay(
                 Box(
                     Modifier.layout { measurable, _ ->
                         val p = measurable.measure(Constraints(minWidth = width, maxWidth = width, minHeight = 0, maxHeight = Constraints.Infinity))
-                        measured[unmeasured.key] = p.height.toFloat()
+                        measured[unmeasured.key] = p.height - layout.cardTopInset
                         layout(0, 0) {}
                     },
                 ) {
@@ -394,7 +394,9 @@ fun IslandOverlay(
                             .blurWhileMoving(this)
                             .placedIn(shape, press, window, sceneTarget, scene.stage == Stage.EXPANDED) { height ->
                                 val key = scene.content?.key
-                                if (scene.stage == Stage.EXPANDED && key != null && measured[key] != height) measured[key] = height
+                                // The card measures its top inset along with the rest; geometry() adds that itself.
+                                val content = height - layout.cardTopInset
+                                if (scene.stage == Stage.EXPANDED && key != null && measured[key] != content) measured[key] = content
                             },
                     ) {
                         SceneContent(scene, ui.privacy, controller, hub, layout)

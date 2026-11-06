@@ -50,6 +50,7 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 
 - Meerdere meldingen gestapeld, met kleine bolletjes van de apps die wachten.
 - Per app een eigen haptiek en kleur.
+- Meldingsbanner op een telefoon met cameragat: een lange afzendernaam loopt nog door het gat. De open kaarten beginnen al onder het gat; de banner zou daarvoor ongeveer 20 dp hoger worden.
 
 ## Bediening en uitbreiden
 

@@ -166,8 +166,16 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
      */
     private val hangs: Boolean get() = notch && shoulder > 0f
 
-    /** Room the content of an opened card leaves at the top, so a notch phone's status bar stays readable above it. */
-    val cardTopInset: Float get() = if (notch && settings.expandedAttached) fit.statusBarHeight.toFloat() else 0f
+    /**
+     * Room the content of an opened card leaves at the top: a notch phone's status bar stays readable above it, and around
+     * a camera the text starts below the lens. Always, not per title: from the cover to a centred hole there is room for
+     * only one short word, and a card that changes height with every song would be restless.
+     */
+    val cardTopInset: Float get() = if (notch && settings.expandedAttached) {
+        fit.statusBarHeight.toFloat()
+    } else {
+        fit.cutout?.let { max(it.bottom + dp(settings.cutoutPaddingDp) - margin - cardPadding, 0f) } ?: 0f
+    }
 
     /**
      * Where a pill centres itself: the middle of the camera hole, or the middle of the status bar when pill is chosen on a

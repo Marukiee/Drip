@@ -46,6 +46,33 @@ class IslandLayoutTest {
         assertTrue(idle.topCorner < 0f)
     }
 
+    @Test fun openedCardTextStartsBelowTheCamera() {
+        val hole = Hole(507, 33, 573, 99)
+        val pixel = DeviceFit(1080, 2400, 2.625f, 132, hole, 110, false)
+        val layout = IslandLayout(pixel, IslandSettings(expandedMarginDp = 8f, cutoutPaddingDp = 3f))
+        val open = layout.geometry(Stage.EXPANDED, 400f)
+        val textTop = open.top + layout.cardTopInset + layout.cardPadding
+        assertEquals(hole.bottom + 3f * pixel.density, textTop, 0.01f)
+        // The card grows by what it leaves free, so nothing at the bottom is cut off.
+        assertEquals(400f + layout.cardTopInset, open.height, 0.01f)
+    }
+
+    @Test fun aSmallHoleHighUpTakesNoRoomFromTheCard() {
+        val hole = Hole(530, 4, 550, 24)
+        val pixel = DeviceFit(1080, 2400, 2.625f, 132, hole, 110, false)
+        assertEquals(0f, IslandLayout(pixel, IslandSettings(expandedMarginDp = 8f)).cardTopInset, 0.01f)
+    }
+
+    @Test fun noHoleLeavesAPillCardAsItWas() {
+        val layout = IslandLayout(xperia, IslandSettings(fitMode = FitMode.CUTOUT))
+        assertEquals(0f, layout.cardTopInset, 0.01f)
+    }
+
+    @Test fun anAttachedNotchKeepsTheStatusBarFree() {
+        val layout = IslandLayout(xperia, IslandSettings(expandedAttached = true))
+        assertEquals(76f, layout.cardTopInset, 0.01f)
+    }
+
     @Test fun forcedNotchIgnoresTheHole() {
         val pixel = DeviceFit(1080, 2424, 2.625f, 110, Hole(510, 30, 570, 90), 110, false)
         assertTrue(IslandLayout(pixel, IslandSettings(fitMode = FitMode.NOTCH)).notch)
