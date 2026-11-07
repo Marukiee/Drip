@@ -50,6 +50,7 @@ import nl.markmaaktmedia.drip.R
 import nl.markmaaktmedia.drip.graph
 import nl.markmaaktmedia.drip.island.Haptics
 import nl.markmaaktmedia.drip.island.IslandHub
+import nl.markmaaktmedia.drip.island.shortSpeakerName
 import nl.markmaaktmedia.drip.ui.theme.DripIcons
 import androidx.compose.runtime.collectAsState
 
@@ -84,7 +85,7 @@ fun VolumeCard(hub: IslandHub) {
                 ExpressiveSlider(
                     value = speaker.level,
                     onChange = { f, _ -> np.commands.setRemoteVolume(f) },
-                    icon = DripIcons.SpeakerGroup, label = speaker.name ?: np.appLabel,
+                    icon = DripIcons.SpeakerGroup, label = speaker.name?.let(::shortSpeakerName) ?: np.appLabel,
                     height = 40.dp, steps = speaker.steps,
                 )
             }

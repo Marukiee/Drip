@@ -81,6 +81,7 @@ import nl.markmaaktmedia.drip.R
 import nl.markmaaktmedia.drip.graph
 import nl.markmaaktmedia.drip.island.Haptics
 import nl.markmaaktmedia.drip.island.IslandHub
+import nl.markmaaktmedia.drip.island.shortSpeakerName
 import nl.markmaaktmedia.drip.island.NowPlaying
 import nl.markmaaktmedia.drip.island.RepeatMode
 import nl.markmaaktmedia.drip.ui.theme.DripIcons
@@ -605,7 +606,7 @@ private fun VolumeBar(hub: IslandHub, np: NowPlaying, concentric: Boolean) {
             volume <= 0.001f -> DripIcons.VolumeOff
             else -> DripIcons.VolumeUp
         },
-        label = remote?.name,
+        label = remote?.name?.let(::shortSpeakerName),
         concentric = concentric,
         steps = remote?.steps ?: 0,
     )

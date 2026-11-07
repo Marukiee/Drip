@@ -41,10 +41,13 @@ internal class MediaSource(
     @Volatile var ownVolumeAt = 0L
 
     // A speaker reports every step of its volume, many a second while a finger drags it, and each report would rebuild
-    // every player and redraw the whole card. The steps are gathered and shown together, a few frames later.
+    // every player and redraw the whole card. The first step shows at once (a volume button must answer straight away);
+    // the ones right after it are gathered and shown together.
     private var volumePending = false
+    private var volumeShownAt = 0L
     private val volumeUpdate = Runnable {
         volumePending = false
+        volumeShownAt = SystemClock.uptimeMillis()
         update()
     }
     private val component = ComponentName(context, DripListener::class.java)
@@ -419,8 +422,13 @@ internal class MediaSource(
         // A speaker's volume moved: the buttons of the phone, the speaker itself, or Drip.
         override fun onAudioInfoChanged(info: MediaController.PlaybackInfo) {
             if (volumePending) return
-            volumePending = true
-            handler.postDelayed(volumeUpdate, VOLUME_GATHER_MS)
+            val wait = VOLUME_GATHER_MS - (SystemClock.uptimeMillis() - volumeShownAt)
+            if (wait <= 0) {
+                volumeUpdate.run()
+            } else {
+                volumePending = true
+                handler.postDelayed(volumeUpdate, wait)
+            }
         }
 
         // The name of the speaker can come along in the session's extras, and the wish to hide the island.
@@ -574,7 +582,7 @@ internal class MediaSource(
         const val ART_MAX_PX = 512
         /** More players than this at once is a phone full of forgotten sessions, not music. */
         const val MAX_PLAYERS = 3
-        /** How long the steps of a speaker's volume are gathered before the card shows them: a few frames, no more. */
+        /** How long after showing a speaker's volume the next steps are gathered: a few frames, no more. */
         const val VOLUME_GATHER_MS = 50L
         /**
          * Where a player can name the speaker it plays on, in its session's extras: "Living room + Kitchen". Drip's own

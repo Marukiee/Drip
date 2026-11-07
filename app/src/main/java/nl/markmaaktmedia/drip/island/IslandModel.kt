@@ -50,6 +50,17 @@ interface MediaCommands {
  */
 data class RemoteVolume(val level: Float, val steps: Int, val name: String?, val adjustable: Boolean)
 
+/**
+ * A group of speakers by its first one and how many more: "Marks kamer 2 + Marks kamer + Keuken" as "Marks kamer 2 +2",
+ * so it fits on a volume bar. A name the speaker's app already made short ("Living room + 1") stays as it is.
+ */
+fun shortSpeakerName(name: String): String {
+    val parts = name.split(" + ").map { it.trim() }.filter { it.isNotEmpty() }
+    if (parts.size < 2) return name
+    if (parts.size == 2 && parts[1].all { it.isDigit() }) return name
+    return "${parts[0]} +${parts.size - 1}"
+}
+
 enum class RepeatMode { OFF, ALL, ONE }
 
 data class NowPlaying(

@@ -4,15 +4,16 @@ import android.os.SystemClock
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,10 +38,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -85,8 +90,9 @@ fun ExpressiveSlider(
     // Where the finger is on the track while it drags.
     var finger by remember { mutableFloatStateOf(0f) }
     var held by remember { mutableStateOf<Pair<Float, Long>?>(null) }
-    // A speaker with a hundred steps (a Sonos) moves two of them per button press: those must show, not only a run of them.
-    val sameStep = if (steps > 0) min(SAME_STEP, 0.6f / steps) else SAME_STEP
+    // A speaker with a hundred steps (a Sonos) moves two of them per button press: those must show, not only a run of
+    // them. One step off is the speaker rounding what it was sent, and the bar stays where the finger left it.
+    val sameStep = if (steps > 0) min(SAME_STEP, 1.5f / steps) else SAME_STEP
     // Let go of only when the system reports something else than where it was left (a volume button, another app).
     LaunchedEffect(held, value) {
         val (f, at) = held ?: return@LaunchedEffect
@@ -100,7 +106,6 @@ fun ExpressiveSlider(
     val coarse = steps in 1..COARSE_STEPS
     val handle by animateDpAsState(if (dragging) 2.dp else 4.dp, spring(0.6f, 600f), label = "handle")
     var widthPx by remember { mutableStateOf(1f) }
-    var contentPx by remember { mutableStateOf(0f) }
     var lastStep by remember { mutableStateOf(-1) }
 
     fun set(x: Float, final: Boolean) {
@@ -207,34 +212,83 @@ fun ExpressiveSlider(
         if (icon != null || label != null) {
             val start = with(density) { 14.dp.toPx() }
             val gapPx = with(density) { 4.dp.toPx() }
-            // Where the handle is and whether the icon and label fit before it, the same sums as the drawing below.
-            fun handleX(): Float {
-                val hw = with(density) { handle.toPx() }
-                return (shown.value.coerceIn(0f, 1f) * widthPx).coerceIn(hw / 2, (widthPx - hw / 2).coerceAtLeast(hw / 2))
+            // Clear of the stop dot and the round end of the track.
+            val endPx = with(density) { outer.toPx() }
+            val iconPx = with(density) { if (icon != null) 20.dp.toPx() else 0f }
+            val labelStyle = LocalTextStyle.current.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            val measurer = rememberTextMeasurer()
+            // The whole icon and name, measured once: how much room they would like, whatever there is.
+            val needPx = remember(label, iconPx, labelStyle) {
+                iconPx + (label?.let { (if (icon != null) with(density) { 8.dp.toPx() } else 0f) + measurer.measure(it, labelStyle, maxLines = 1).size.width } ?: 0f)
             }
-            val inside by remember { derivedStateOf { handleX() - with(density) { handle.toPx() } / 2 - gapPx >= start * 2 + contentPx } }
-            val tint = if (inside) onActive else MaterialTheme.colorScheme.onSurfaceVariant
+            // Where the handle is, the same sums as the drawing above, and the room on either side of it.
+            fun hwPx() = with(density) { handle.toPx() }
+            fun handleX(): Float =
+                (shown.value.coerceIn(0f, 1f) * widthPx).coerceIn(hwPx() / 2, (widthPx - hwPx() / 2).coerceAtLeast(hwPx() / 2))
+            fun roomInside() = handleX() - hwPx() / 2 - gapPx - start * 2
+            fun afterX() = handleX() + hwPx() / 2 + gapPx + start * 0.85f
+            fun roomAfter() = widthPx - endPx - afterX()
+
+            // In the fill when it fits there, else after the handle; when neither fits, where there is more room. Once on a
+            // side it stays a little past the point where it would just fit, so a bar resting there does not make it flit.
+            val margin = with(density) { 12.dp.toPx() }
+            var inside by remember { mutableStateOf<Boolean?>(null) }
+            fun wantInside(): Boolean {
+                val fits = roomInside() >= needPx + if (inside == true) -margin else margin
+                return when {
+                    fits -> true
+                    roomAfter() >= needPx -> false
+                    else -> roomInside() >= roomAfter()
+                }
+            }
+            // 0 in the fill, 1 after the handle. Changing sides fades out at the one and back in at the other, so the name
+            // never jumps across.
+            val side = remember { Animatable(0f) }
+            LaunchedEffect(needPx) {
+                snapshotFlow { if (widthPx > 1f) wantInside() else null }.collect { want ->
+                    if (want == null || want == inside) return@collect
+                    val first = inside == null
+                    inside = want
+                    if (first) side.snapTo(if (want) 0f else 1f) else launch { side.animateTo(if (want) 0f else 1f, tween(220)) }
+                }
+            }
+            val showInside by remember { derivedStateOf { side.value < 0.5f } }
+            val tint = if (showInside) onActive else MaterialTheme.colorScheme.onSurfaceVariant
             androidx.compose.foundation.layout.Row(
-                Modifier
-                    .onSizeChanged { contentPx = it.width.toFloat() }
-                    .offset {
-                        val x = if (inside) start else handleX() + handle.toPx() / 2 + gapPx + start * 0.85f
-                        androidx.compose.ui.unit.IntOffset(x.toInt(), 0)
-                    },
+                Modifier.layout { measurable, constraints ->
+                    val inFill = side.value < 0.5f
+                    val room = if (inFill) roomInside() else roomAfter()
+                    // Never wider than the room: the name ends in an ellipsis instead of running off the track.
+                    val p = measurable.measure(constraints.copy(minWidth = 0, maxWidth = room.toInt().coerceAtLeast(0)))
+                    layout(p.width, p.height) {
+                        val x = if (inFill) start else afterX()
+                        p.placeRelativeWithLayer(x.toInt(), 0) {
+                            val fade = kotlin.math.abs(1f - 2f * side.value)
+                            // Too little room for even the icon: it fades away rather than being cut off.
+                            val fits = if (iconPx > 0f) ((room - iconPx * 0.6f) / (iconPx * 0.4f)).coerceIn(0f, 1f) else 1f
+                            alpha = fade * fits
+                        }
+                    }
+                },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (icon != null) Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp))
-                if (label != null) Text(label, color = tint, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 8.dp), maxLines = 1)
+                if (label != null) {
+                    Text(
+                        label, color = tint, style = labelStyle, modifier = Modifier.padding(start = if (icon != null) 8.dp else 0.dp),
+                        maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
 }
 
 /**
- * How the fill moves to a new place: a tap, a volume button, another app. It does not overshoot, and it is soft enough
- * that a run of small steps coming in one after the other (a speaker's volume) flows as one movement.
+ * How the fill moves to a new place: a tap, a volume button, another app. It does not overshoot, and it gets going at
+ * once, so a volume button shows within a frame or two; a run of steps still flows as one movement.
  */
-private val GLIDE = spring<Float>(1f, 320f)
+private val GLIDE = spring<Float>(1f, 700f)
 private const val HOLD_MS = 1500L
 /**
  * Further apart than this, [value] is a different step and no longer the one the finger left it at. Sliders that give
