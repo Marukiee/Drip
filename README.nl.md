@@ -36,6 +36,10 @@ Daarna heb je GitHub nooit meer nodig: de app werkt zichzelf bij vanuit de relea
 
 Er verlaat niets de telefoon.
 
+## Nog niet ondersteund
+
+Een camera in de hoek van het scherm. Het gesloten eiland zit op de camera en loopt daar dus buiten beeld. Kies Notch in de instellingen om het in het midden te houden.
+
 ## Bouwen
 
 Je hebt JDK 21 en de Android SDK nodig.
