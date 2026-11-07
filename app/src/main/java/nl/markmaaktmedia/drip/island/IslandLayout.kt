@@ -33,6 +33,16 @@ data class DeviceFit(
 ) {
     fun dp(value: Float) = value * density
 
+    /**
+     * A camera this close to a corner is not supported yet: the closed pill sits on it and runs off the screen. Measured with
+     * the usual pill, because a size or place someone set by hand does not change where the camera is.
+     */
+    val cameraInCorner: Boolean get() {
+        val middle = cutout?.exactCenterX() ?: return false
+        val halfPill = IslandLayout(this, IslandSettings()).compactWidth / 2f
+        return middle < halfPill || screenWidth - middle < halfPill
+    }
+
     companion object {
         /** A phone shaped like an Xperia 1 VI, for previews and tests before the real one is known. */
         val Placeholder = DeviceFit(1080, 2340, 2.625f, 76, null, 92, false)

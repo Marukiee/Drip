@@ -102,6 +102,25 @@ class IslandLayoutTest {
         assertTrue(g.left >= 0f)
     }
 
+    @Test fun aCameraInACornerIsNoticedOnBothSides() {
+        assertTrue(pixel.copy(cutout = Hole(60, 33, 126, 99)).cameraInCorner)
+        assertTrue(pixel.copy(cutout = Hole(954, 33, 1020, 99)).cameraInCorner)
+    }
+
+    @Test fun aCameraWhereThePillFitsIsNotInACorner() {
+        assertFalse(pixel.cameraInCorner)
+        assertFalse(pixel.copy(cutout = null).cameraInCorner)
+        // Off centre, with room for the whole pill on both sides.
+        assertFalse(pixel.copy(cutout = Hole(330, 33, 396, 99)).cameraInCorner)
+    }
+
+    @Test fun notchKeepsTheClosedIslandInTheMiddleWithACameraInACorner() {
+        val corner = pixel.copy(cutout = Hole(60, 33, 126, 99))
+        val g = IslandLayout(corner, IslandSettings(fitMode = FitMode.NOTCH)).geometry(Stage.COMPACT)
+        assertEquals(540f, g.centerX, 0.01f)
+        assertTrue(g.left >= 0f && g.right <= corner.screenWidth)
+    }
+
     @Test fun aForcedNotchKeepsClearOfTheCameraToo() {
         val layout = IslandLayout(pixel, IslandSettings(fitMode = FitMode.NOTCH))
         val clear = pixelHole.bottom + 3f * pixel.density

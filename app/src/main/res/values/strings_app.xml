@@ -100,6 +100,7 @@
     <string name="fit_cutout">Camera</string>
     <string name="fit_auto_note">Auto makes a notch on a phone without a camera hole and a ring around the camera on one with it.</string>
     <string name="fit_ring_note">This phone does not report its camera. Put the ring around yours with the size and place below, and nothing runs through it.</string>
+    <string name="fit_corner_note">A camera in the corner of the screen is not supported yet: the closed island runs off the screen there. Notch keeps it in the middle.</string>
     <string name="shape_section_fit">On this phone</string>
     <string name="shape_section_closed">Closed island</string>
     <string name="shape_section_opened">Opened island</string>

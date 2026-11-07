@@ -23,6 +23,11 @@ it also looks for the seek bar and the song's title, so the music on the island 
 reads nothing else on screen and keeps nothing. The second is notification access, for music, calls and live updates.
 Nothing leaves the phone.
 
+## Not supported yet
+
+A camera in the corner of the screen. The closed island sits on the camera, so there it runs off the screen. Choose Notch
+in the settings to keep it in the middle.
+
 ## Build
 
 JDK 21 and the Android SDK, then `./gradlew :app:assembleDebug`.

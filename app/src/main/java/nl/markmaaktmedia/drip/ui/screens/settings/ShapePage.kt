@@ -58,7 +58,8 @@ internal fun ShapePage(onBack: () -> Unit) {
     val graph = context.graph
     val (island, edit) = rememberIsland()
     val guess = rememberAutoGuess(island)
-    val hasCutout = remember { DeviceFit.read(context).cutout != null }
+    val phone = remember { DeviceFit.read(context) }
+    val hasCutout = phone.cutout != null
     var showOpened by remember { mutableStateOf(false) }
 
     // The opened island is only on screen when something opens it, so each drag of one of its sliders opens it (it may
@@ -124,6 +125,17 @@ internal fun ShapePage(onBack: () -> Unit) {
         ) {
             Text(
                 stringResource(R.string.fit_ring_note),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp),
+            )
+        }
+        AnimatedVisibility(
+            visible = island.fitMode != FitMode.NOTCH && phone.cameraInCorner,
+            enter = expandVertically(DripMotion.sizeSpring()) + fadeIn(DripMotion.fadeSpec()),
+            exit = shrinkVertically(DripMotion.sizeSpring()) + fadeOut(DripMotion.fadeSpec()),
+        ) {
+            Text(
+                stringResource(R.string.fit_corner_note),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp),
             )
