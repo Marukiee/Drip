@@ -16,7 +16,7 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 - De verversing van het scherm met de equalizer op halve snelheid: zakt die nu onder de 60 Hz?
 - Pauze op de kaart met de echte Sonos-app ernaast: het icoon draait meteen om (nagespeeld met nep-spelers, niet met de Sonos).
 - De pil in de echte PixelPlayer: geen flits na het meldingenpaneel, en weg in het Connect device-paneel (`HIDE_ISLAND`, vanaf mod.16).
-- De volumebalk glijdt bij een tik en aan het begin van slepen (nagekeken op de emulator), en met de Sonos soepel en in kleine stappen, bij slepen en met de knoppen.
+- De volumebalk met de Sonos: het glijden na een tik is op de telefoon gemeten en goed. Nog na te kijken: de speakernaam (kort, binnen de balk, vervaagt van kant) en de volumeknoppen zonder vertraging.
 
 ## Nakijken op een telefoon met cameragat
 

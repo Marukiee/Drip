@@ -1,5 +1,29 @@
 [
   {
+    "version": "0.1.26",
+    "date": "2026-11-07",
+    "en": {
+      "title": "Speaker names that fit",
+      "better": [
+        "A group of speakers shows as the first one and how many more: Kitchen +1",
+        "The volume buttons move a speaker's bar at once"
+      ],
+      "fixed": [
+        "The speaker name stays inside the volume bar and no longer jumps"
+      ]
+    },
+    "nl": {
+      "title": "Speakernaam past",
+      "better": [
+        "Een groep speakers heet de eerste plus het aantal: Keuken +1",
+        "De volumeknoppen bewegen de balk van een speaker meteen"
+      ],
+      "fixed": [
+        "De speakernaam blijft in de volumebalk en springt niet meer"
+      ]
+    }
+  },
+  {
     "version": "0.1.25",
     "date": "2026-11-07",
     "en": {
