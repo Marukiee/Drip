@@ -1,6 +1,7 @@
 package nl.markmaaktmedia.drip.island
 
 import android.content.Context
+import android.graphics.Rect
 import android.graphics.RectF
 import android.view.DisplayCutout
 import android.hardware.display.DisplayManager
@@ -27,6 +28,8 @@ data class DeviceFit(
     /** Radius of the top screen corners, or null when the phone does not say. */
     val screenCornerRadius: Int?,
     val landscape: Boolean,
+    /** How far a camera on the left or right edge reaches into the screen: where it is when the phone lies on its side. */
+    val sideHole: Int = 0,
 ) {
     fun dp(value: Float) = value * density
 
@@ -43,7 +46,8 @@ data class DeviceFit(
             val display = context.getSystemService(DisplayManager::class.java).getDisplay(Display.DEFAULT_DISPLAY)
             val density = context.resources.displayMetrics.density
             val statusBar = insets.getInsetsIgnoringVisibility(WindowInsets.Type.statusBars()).top
-            val cutout = (insets.displayCutout ?: display?.cutout)?.let { holeOf(it) }
+            val reported = insets.displayCutout ?: display?.cutout
+            val cutout = reported?.let { holeOf(it) }
             val corner = insets.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)?.radius
                 ?: display?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)?.radius
             return DeviceFit(
@@ -54,6 +58,7 @@ data class DeviceFit(
                 cutout = cutout,
                 screenCornerRadius = corner?.takeIf { it > 0 },
                 landscape = bounds.width() > bounds.height(),
+                sideHole = reported?.let { sideHoleOf(it, bounds.width()) } ?: 0,
             )
         }
 
@@ -64,15 +69,24 @@ data class DeviceFit(
          */
         private fun holeOf(cutout: DisplayCutout): Hole? {
             val box = cutout.boundingRectTop.takeIf { !it.isEmpty } ?: return null
-            val path = cutout.cutoutPath
-            if (path != null) {
-                val bounds = RectF()
-                path.computeBounds(bounds, true)
-                if (bounds.intersect(RectF(box))) {
-                    return Hole(bounds.left.toInt(), bounds.top.toInt(), bounds.right.toInt(), bounds.bottom.toInt())
-                }
+            val lens = lensIn(cutout, box)
+            return Hole(lens.left, lens.top, lens.right, lens.bottom)
+        }
+
+        private fun sideHoleOf(cutout: DisplayCutout, screenWidth: Int): Int {
+            val left = cutout.boundingRectLeft.takeIf { !it.isEmpty }?.let { lensIn(cutout, it).right } ?: 0
+            val right = cutout.boundingRectRight.takeIf { !it.isEmpty }?.let { screenWidth - lensIn(cutout, it).left } ?: 0
+            return max(left, right)
+        }
+
+        private fun lensIn(cutout: DisplayCutout, box: Rect): Rect {
+            val bounds = RectF()
+            cutout.cutoutPath?.computeBounds(bounds, true)
+            return if (bounds.intersect(RectF(box))) {
+                Rect(bounds.left.toInt(), bounds.top.toInt(), bounds.right.toInt(), bounds.bottom.toInt())
+            } else {
+                box
             }
-            return Hole(box.left, box.top, box.right, box.bottom)
         }
     }
 }
@@ -113,6 +127,12 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
 
     private val topNudge = dp(settings.offsetYDp)
 
+    /**
+     * Where a pill centres itself: the middle of the camera hole, or the middle of the status bar when pill is chosen on a
+     * phone without one.
+     */
+    private val cutoutMiddle: Float? = if (notch) null else (cutout?.exactCenterY() ?: (fit.statusBarHeight / 2f)) + topNudge
+
     /** Height of the closed island. On a notch phone it fills most of the status bar, around a camera it hugs the hole. */
     val idleHeight: Float = settings.idleHeightDp?.let(::dp) ?: if (cutout != null) {
         cutout.height() + 2 * dp(settings.cutoutPaddingDp)
@@ -126,19 +146,47 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
         dp(88f)
     }
 
+    /**
+     * The camera, whatever shape the island takes: what the display reports, and on a phone that reports nothing, the ring
+     * someone placed around theirs by hand in Camera mode. Nothing that can be read goes through this.
+     */
+    val hole: Hole? = fit.cutout ?: placedRing()
+
+    /** A ring left at its automatic size and place says nothing about where a camera is. */
+    private fun placedRing(): Hole? {
+        val placed = settings.idleWidthDp != null || settings.idleHeightDp != null || settings.offsetXDp != 0f || settings.offsetYDp != 0f
+        val middle = cutoutMiddle
+        if (settings.fitMode != FitMode.CUTOUT || !placed || middle == null || fit.landscape) return null
+        val padding = dp(settings.cutoutPaddingDp)
+        // A lens is round unless someone made the ring wider than it is tall.
+        val width = ((settings.idleWidthDp?.let(::dp) ?: idleHeight) - 2 * padding).coerceAtLeast(0f)
+        val height = (idleHeight - 2 * padding).coerceAtLeast(0f)
+        return Hole(
+            (centerX - width / 2f).toInt(), (middle - height / 2f).toInt(),
+            (centerX + width / 2f).toInt(), (middle + height / 2f).toInt(),
+        )
+    }
+
+    /** The least room anything keeps from the lens, however tight the ring around it is set. */
+    private val holeClearance: Float = max(dp(settings.cutoutPaddingDp), dp(3f))
+
     /** Tall enough for a line of text and an icon, and at least as tall as the closed island. */
     val compactHeight: Float = max(
         idleHeight,
         if (cutout != null) max(cutout.height() + 2 * dp(settings.cutoutPaddingDp), dp(30f)) else max(fit.statusBarHeight + dp(4f), dp(30f)),
     )
 
-    val compactWidth: Float = settings.compactWidthDp?.let(::dp)
-        ?: max(idleWidth + dp(72f), dp(150f)).coerceAtMost(fit.screenWidth * 0.45f)
-
     val margin: Float = dp(settings.expandedMarginDp)
 
-    /** The widest the island gets: the screen less the margin on both sides. */
-    val fullWidth: Float = fit.screenWidth - 2 * margin
+    /** The widest the island gets: the screen less the margin on both sides, and clear of a camera on the side. */
+    val fullWidth: Float = fit.screenWidth - 2 * if (fit.sideHole > 0) max(margin, fit.sideHole + holeClearance) else margin
+
+    val compactWidth: Float = settings.compactWidthDp?.let(::dp) ?: run {
+        val usual = max(idleWidth + dp(72f), dp(150f)).coerceAtMost(fit.screenWidth * 0.45f)
+        // Between the lens and the curve of the end there must be room for a clock with hours.
+        val besideLens = hole?.let { it.width() + 2 * (holeClearance + compactHeight / 2f + dp(CLOCK_ROOM_DP)) } ?: 0f
+        max(usual, besideLens).coerceAtMost(fullWidth)
+    }
 
     /**
      * Top corners of the opened island. Automatic means concentric with the screen corner: the screen radius less the
@@ -172,16 +220,29 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
      * only one short word, and a card that changes height with every song would be restless.
      */
     val cardTopInset: Float get() = if (notch && settings.expandedAttached) {
-        fit.statusBarHeight.toFloat()
+        max(fit.statusBarHeight.toFloat(), belowHole(0f, cardPadding))
     } else {
-        fit.cutout?.let { max(it.bottom + dp(settings.cutoutPaddingDp) - margin - cardPadding, 0f) } ?: 0f
+        belowHole(margin, cardPadding)
     }
 
+    /** How far content [contentTop] under the top of a shape at [shapeTop] has to move down to start below the camera. */
+    private fun belowHole(shapeTop: Float, contentTop: Float): Float =
+        hole?.let { max(it.bottom + holeClearance - shapeTop - contentTop, 0f) } ?: 0f
+
     /**
-     * Where a pill centres itself: the middle of the camera hole, or the middle of the status bar when pill is chosen on a
-     * phone without one.
+     * The part of a closed shape the camera sits behind, in pixels from the left of that shape and with room on either
+     * side, or null when the camera is somewhere else.
      */
-    private val cutoutMiddle: Float? = if (notch) null else (cutout?.exactCenterY() ?: (fit.statusBarHeight / 2f)) + topNudge
+    fun holeSpan(g: IslandGeometry): ClosedFloatingPointRange<Float>? {
+        val h = hole ?: return null
+        val from = h.left - holeClearance
+        val to = h.right + holeClearance
+        if (to <= g.left || from >= g.right || h.bottom <= g.top || h.top >= g.bottom) return null
+        return (from - g.left)..(to - g.left)
+    }
+
+    private val alertBaseHeight = dp(74f)
+    private val alertBottomRadius = min(expandedBottomRadius, alertBaseHeight / 2f)
 
     fun geometry(stage: Stage, contentHeight: Float = dp(160f)): IslandGeometry {
         val roundness = settings.collapsedRoundness.coerceIn(0f, 1f)
@@ -200,12 +261,16 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
             Stage.MINI -> collapsedShape(min(compactWidth + dp(56f), fullWidth), compactHeight, roundness)
             Stage.ALERT -> {
                 // A photo, two lines and a button: the status bar is covered anyway, no room is kept free for it.
-                val h = dp(74f)
+                // Around a camera it grows upward until the words start below the lens; its round bottom stays the same.
+                val top = if (notch) 0f else margin
+                val wordsTop = alertBaseHeight - alertBottomRadius - dp(ALERT_WORDS_ABOVE_MIDDLE_DP)
+                val h = alertBaseHeight + belowHole(top, wordsTop)
                 val w = min(fullWidth, dp(380f))
                 if (notch) {
-                    IslandGeometry(centerX, 0f, w, h, shoulder, min(expandedBottomRadius, h / 2f))
+                    IslandGeometry(centerX, top, w, h, shoulder, alertBottomRadius)
                 } else {
-                    IslandGeometry(centerX, margin, w, h, -min(expandedTopRadius, h / 2f), min(expandedBottomRadius, h / 2f))
+                    // On the middle of the screen like an opened card, or a camera near a corner pushes it off the edge.
+                    IslandGeometry(fit.screenWidth / 2f, top, w, h, -min(expandedTopRadius, h / 2f), alertBottomRadius)
                 }
             }
             Stage.EXPANDED -> {
@@ -276,5 +341,11 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
     companion object {
         /** What most phones without a reported corner come close to. */
         const val DEFAULT_SCREEN_CORNER_DP = 32f
+
+        /** How far the two lines of an announcement start above the middle of its round end. */
+        const val ALERT_WORDS_ABOVE_MIDDLE_DP = 22f
+
+        /** What a clock with hours needs beside the camera, past where the curve of the end starts. */
+        private const val CLOCK_ROOM_DP = 50f
     }
 }

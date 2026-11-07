@@ -154,7 +154,7 @@ fun AlertPopup(alert: Alert, layout: IslandLayout, controller: IslandController,
             Modifier
                 .padding(start = textStart, end = textEnd)
                 .fillMaxWidth()
-                .offset(y = middle - 22.dp)
+                .offset(y = middle - IslandLayout.ALERT_WORDS_ABOVE_MIDDLE_DP.dp)
                 .graphicsLayer {
                     translationY = (1f - follow.value) * 8.dp.toPx()
                     alpha = follow.value.coerceIn(0f, 1f)

@@ -117,6 +117,17 @@ internal fun ShapePage(onBack: () -> Unit) {
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp),
             )
         }
+        AnimatedVisibility(
+            visible = island.fitMode == FitMode.CUTOUT && !hasCutout,
+            enter = expandVertically(DripMotion.sizeSpring()) + fadeIn(DripMotion.fadeSpec()),
+            exit = shrinkVertically(DripMotion.sizeSpring()) + fadeOut(DripMotion.fadeSpec()),
+        ) {
+            Text(
+                stringResource(R.string.fit_ring_note),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp),
+            )
+        }
 
         SectionHeader(stringResource(R.string.shape_section_closed), top = 20.dp)
         SettingsGroup {

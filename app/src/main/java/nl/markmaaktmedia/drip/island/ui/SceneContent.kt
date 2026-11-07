@@ -29,6 +29,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -41,16 +43,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -80,12 +85,12 @@ fun SceneContent(scene: Scene, privacy: PrivacyInfo, controller: IslandControlle
         }
         Stage.COMPACT -> {
             val height = with(density) { layout.compactHeight.toDp() }
-            CompactContent(scene.content, privacy, height, Modifier.fillMaxSize())
+            CompactContent(scene.content, privacy, height, layout.holeBehind(Stage.COMPACT, density), Modifier.fillMaxSize())
         }
         Stage.MINI -> {
             val alert = (scene.content as? IslandContent.Notice)?.alert
             val height = with(density) { layout.compactHeight.toDp() }
-            if (alert != null) MiniContent(alert, height, Modifier.fillMaxSize())
+            if (alert != null) MiniContent(alert, height, layout.holeBehind(Stage.MINI, density), Modifier.fillMaxSize())
         }
         Stage.ALERT -> {
             val alert = (scene.content as? IslandContent.Notice)?.alert
@@ -123,13 +128,25 @@ private fun playerStep(players: List<nl.markmaaktmedia.drip.island.NowPlaying>, 
     return if (b < a) -1 else 1
 }
 
+/** Where the camera sits behind a closed shape, counted from the right end of it: where it stops and where it starts. */
+private class HoleBehind(val stops: Dp, val starts: Dp) {
+    /** What is at the right end, [inset] from it, ends here at the latest. */
+    fun room(inset: Dp): Dp = (stops - inset).coerceAtLeast(0.dp)
+}
+
+private fun IslandLayout.holeBehind(stage: Stage, density: Density): HoleBehind? {
+    val g = geometry(stage)
+    val span = holeSpan(g) ?: return null
+    return with(density) { HoleBehind((g.width - span.endInclusive).toDp(), (g.width - span.start).toDp()) }
+}
+
 /**
  * The closed island with something going on: a small thing at each end. Each sits in the middle of the round end of the
  * island, the same distance from the top, the side and the bottom, so a cover or an icon is concentric with the curve
  * around it instead of being pushed into it.
  */
 @Composable
-private fun CompactContent(content: IslandContent?, privacy: PrivacyInfo, height: Dp, modifier: Modifier) {
+private fun CompactContent(content: IslandContent?, privacy: PrivacyInfo, height: Dp, hole: HoleBehind?, modifier: Modifier) {
     val accent = MaterialTheme.colorScheme.primary
     val gap = (height * 0.15f).coerceIn(3.dp, 6.dp)
     val slot = height - gap * 2
@@ -139,6 +156,7 @@ private fun CompactContent(content: IslandContent?, privacy: PrivacyInfo, height
         val start = Modifier.align(Alignment.CenterStart).padding(start = gap).size(slot)
         val endSlot = Modifier.align(Alignment.CenterEnd).padding(end = gap).size(slot)
         val endText = Modifier.align(Alignment.CenterEnd).padding(end = textInset)
+            .then(hole?.let { Modifier.widthIn(max = it.room(textInset)) } ?: Modifier)
         val icon = slot * 0.72f
         when (content) {
             is IslandContent.Music -> {
@@ -218,7 +236,9 @@ private fun CompactContent(content: IslandContent?, privacy: PrivacyInfo, height
             else -> Unit
         }
         if (privacy.camera || privacy.microphone) {
-            PrivacyDots(privacy, Modifier.align(Alignment.TopCenter).padding(top = gap))
+            // Beside a camera behind the island: in the middle they would be inside the lens.
+            val place = if (hole != null) Modifier.align(Alignment.CenterEnd).padding(end = hole.starts) else Modifier.align(Alignment.TopCenter).padding(top = gap)
+            PrivacyDots(privacy, place)
         }
     }
 }
@@ -226,8 +246,18 @@ private fun CompactContent(content: IslandContent?, privacy: PrivacyInfo, height
 /** A clock, a percentage or a word at the end of the closed island. Numbers roll when they change. */
 @Composable
 private fun SlotText(text: String, color: Color, modifier: Modifier) {
-    if (text.length <= 9 && text.any(Char::isDigit)) RollingText(text, color, 14.sp, modifier)
-    else Text(text, modifier = modifier, color = color, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    if (text.length <= 9 && text.any(Char::isDigit)) {
+        // Wider than its room, a clock loses its first digits and not the running seconds. Only the sides are cut, the
+        // digits still roll in from above and below.
+        Box(
+            modifier.drawWithContent { clipRect(top = -size.height, bottom = 2 * size.height) { this@drawWithContent.drawContent() } },
+            contentAlignment = Alignment.CenterEnd,
+        ) {
+            RollingText(text, color, 14.sp, Modifier.wrapContentWidth(Alignment.End, unbounded = true))
+        }
+    } else {
+        Text(text, modifier = modifier, color = color, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
 }
 
 /**
@@ -235,7 +265,7 @@ private fun SlotText(text: String, color: Color, modifier: Modifier) {
  * Moving the volume on and on only moves the bar.
  */
 @Composable
-private fun MiniContent(alert: Alert, height: Dp, modifier: Modifier) {
+private fun MiniContent(alert: Alert, height: Dp, hole: HoleBehind?, modifier: Modifier) {
     val accent = alertAccent(alert)
     val gap = (height * 0.15f).coerceIn(3.dp, 6.dp)
     val slot = height - gap * 2
@@ -247,16 +277,18 @@ private fun MiniContent(alert: Alert, height: Dp, modifier: Modifier) {
             }
         }
         val level = alert.level
-        val end = Modifier.align(Alignment.CenterEnd).padding(end = height / 2 - 2.dp)
+        val endInset = height / 2 - 2.dp
+        val end = Modifier.align(Alignment.CenterEnd).padding(end = endInset)
+        val room = hole?.room(endInset)
         if (level != null && alert.kind != AlertKind.CHARGING && alert.kind != AlertKind.BATTERY_FULL) {
             val shown by animateFloatAsState(level, spring(1f, 700f), label = "level")
-            LevelBar(shown, accent, end.size(72.dp, 5.dp))
+            LevelBar(shown, accent, end.size(if (room != null) minOf(72.dp, room) else 72.dp, 5.dp))
         } else {
             val words = when (alert.kind) {
                 AlertKind.CHARGING, AlertKind.BATTERY_FULL -> alert.text ?: alert.level?.let { "${(it * 100).toInt()}%" } ?: alert.title
                 else -> alert.title
             }
-            Text(words, end, color = accent, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(words, if (room != null) end.widthIn(max = room) else end, color = accent, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

@@ -17,6 +17,10 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 - Pauze op de kaart met de echte Sonos-app ernaast: het icoon draait meteen om (nagespeeld met nep-spelers, niet met de Sonos).
 - De pil in de echte PixelPlayer: geen flits na het meldingenpaneel, en weg in het Connect device-paneel (`HIDE_ISLAND`, vanaf mod.16).
 
+## Nakijken op een telefoon met cameragat
+
+- De banner onder de lens, en de klok en de volumebalk ernaast (nagekeken op emulators).
+
 ## Muziek
 
 - Een equalizer die echt op de muziek beweegt (Visualizer, vraagt microfoonrecht, daarom een keuze).
@@ -50,7 +54,6 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 
 - Meerdere meldingen gestapeld, met kleine bolletjes van de apps die wachten.
 - Per app een eigen haptiek en kleur.
-- Meldingsbanner op een telefoon met cameragat: een lange afzendernaam loopt nog door het gat. De open kaarten beginnen al onder het gat; de banner zou daarvoor ongeveer 20 dp hoger worden.
 
 ## Bediening en uitbreiden
 
@@ -59,6 +62,7 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 
 ## Uiterlijk
 
+- Camera in de hoek van het scherm: de gesloten pil staat op het midden van de camera en loopt daardoor half buiten beeld. Op het scherm houden, met de inhoud naast de lens en de kleine druppel aan de andere kant.
 - Glas: de geopende kaart met een vervaagde achtergrond in plaats van zwart.
 - Licht eiland in licht thema.
 - Liggend en in games: een klein eiland in de hoek, of alleen gesprekken laten zien.
