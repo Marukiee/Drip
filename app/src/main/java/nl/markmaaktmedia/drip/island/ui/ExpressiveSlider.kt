@@ -19,10 +19,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -52,9 +54,10 @@ import kotlin.math.abs
  * handle with a small gap on both sides, the lighter rest of the track and a stop dot at its end. The handle narrows
  * while it is held. The outer corners are round; with [concentric] the bottom ones follow the island instead.
  *
- * Under the finger the fill follows it exactly. Let go, and it stays where it was left: while the system catches up, and
- * after that for as long as what [value] reports is that same step, so it never hops to the exact value of the step.
- * Only a slider with a few coarse steps (the torch) settles on its step, with a spring.
+ * Nothing jumps: a tap glides to where it landed, and a drag that starts away from the handle glides over to the finger
+ * first. From then on the fill keeps pace with the finger exactly. Let go, and it stays where it was left: while the
+ * system catches up, and after that for as long as what [value] reports is that same step, so it never hops to the exact
+ * value of the step. Only a slider with a few coarse steps (the torch) settles on its step, with a spring.
  *
  * The icon and label sit at the start of the filled part. When that is too short to hold them they move to just after
  * the handle, on the track, as the Material 3 slider does, so the handle never runs through them.
@@ -78,6 +81,8 @@ fun ExpressiveSlider(
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     var dragging by remember { mutableStateOf(false) }
+    // Where the finger is on the track while it drags.
+    var finger by remember { mutableFloatStateOf(0f) }
     var held by remember { mutableStateOf<Pair<Float, Long>?>(null) }
     // Let go of only when the system reports something else than where it was left (a volume button, another app).
     LaunchedEffect(held, value) {
@@ -88,7 +93,7 @@ fun ExpressiveSlider(
     }
     val shown = remember { Animatable(value) }
     val target = held?.first ?: value
-    LaunchedEffect(target, dragging) { if (!dragging) shown.animateTo(target, spring(0.9f, 500f)) }
+    LaunchedEffect(target, dragging) { if (!dragging) shown.animateTo(target, GLIDE) }
     val coarse = steps in 1..COARSE_STEPS
     val handle by animateDpAsState(if (dragging) 2.dp else 4.dp, spring(0.6f, 600f), label = "handle")
     var widthPx by remember { mutableStateOf(1f) }
@@ -99,7 +104,7 @@ fun ExpressiveSlider(
         val f = (x / widthPx).coerceIn(0f, 1f)
         val snapped = if (steps > 0) Math.round(f * steps).toFloat() / steps else f
         val rest = if (final && coarse) snapped else f
-        scope.launch { if (final && coarse) shown.animateTo(rest, spring(0.7f, 600f)) else shown.snapTo(rest) }
+        if (final) scope.launch { shown.animateTo(rest, if (coarse) spring(0.7f, 600f) else GLIDE) } else finger = rest
         if (steps > 0) {
             val step = Math.round(f * steps)
             if (step != lastStep) {
@@ -109,6 +114,22 @@ fun ExpressiveSlider(
         }
         onChange(snapped, final)
         if (final) held = rest to SystemClock.elapsedRealtime()
+    }
+
+    // The bar moves with the finger frame by frame; only the distance to where the finger took hold closes with a spring,
+    // so the pace of the finger itself is never smoothed away.
+    fun follow(from: Float) {
+        finger = (from / widthPx).coerceIn(0f, 1f)
+        scope.launch {
+            val gap = Animatable(shown.value - finger)
+            val closing = launch { gap.animateTo(0f, spring(1f, 600f)) }
+            while (true) {
+                withFrameNanos { }
+                if (!dragging) break
+                shown.snapTo((finger + gap.value).coerceIn(0f, 1f))
+            }
+            closing.cancel()
+        }
     }
 
     val outer = height / 2
@@ -122,8 +143,14 @@ fun ExpressiveSlider(
             .pointerInput(Unit) { detectTapGestures { set(it.x, final = true) } }
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
-                    onDragStart = { dragging = true; lastStep = -1; context.graph.haptics.play(Haptics.Kind.TICK) },
-                    onDragEnd = { set(shown.value * widthPx, final = true); dragging = false },
+                    onDragStart = {
+                        dragging = true
+                        lastStep = -1
+                        context.graph.haptics.play(Haptics.Kind.TICK)
+                        follow(it.x)
+                    },
+                    // Not dragging first, so the last frame of following cannot cut off the glide to where it was left.
+                    onDragEnd = { dragging = false; set(finger * widthPx, final = true) },
                     onDragCancel = { dragging = false },
                 ) { change, _ ->
                     change.consume()
@@ -200,6 +227,8 @@ fun ExpressiveSlider(
     }
 }
 
+/** How the fill moves to a new place: a tap, a volume button, another app. */
+private val GLIDE = spring<Float>(0.9f, 500f)
 private const val HOLD_MS = 1500L
 /** Further apart than this, [value] is a different step and no longer the one the finger left it at. */
 private const val SAME_STEP = 0.05f
