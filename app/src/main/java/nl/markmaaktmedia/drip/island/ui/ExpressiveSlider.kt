@@ -48,6 +48,7 @@ import kotlinx.coroutines.launch
 import nl.markmaaktmedia.drip.graph
 import nl.markmaaktmedia.drip.island.Haptics
 import kotlin.math.abs
+import kotlin.math.min
 
 /**
  * A Material 3 Expressive slider, the kind of the volume sliders of Android 16: a thick filled part, a slim upright
@@ -84,12 +85,14 @@ fun ExpressiveSlider(
     // Where the finger is on the track while it drags.
     var finger by remember { mutableFloatStateOf(0f) }
     var held by remember { mutableStateOf<Pair<Float, Long>?>(null) }
+    // A speaker with a hundred steps (a Sonos) moves two of them per button press: those must show, not only a run of them.
+    val sameStep = if (steps > 0) min(SAME_STEP, 0.6f / steps) else SAME_STEP
     // Let go of only when the system reports something else than where it was left (a volume button, another app).
     LaunchedEffect(held, value) {
         val (f, at) = held ?: return@LaunchedEffect
         val wait = HOLD_MS - (SystemClock.elapsedRealtime() - at)
         if (wait > 0) delay(wait)
-        if (abs(f - value) > SAME_STEP) held = null
+        if (abs(f - value) > sameStep) held = null
     }
     val shown = remember { Animatable(value) }
     val target = held?.first ?: value
@@ -227,9 +230,15 @@ fun ExpressiveSlider(
     }
 }
 
-/** How the fill moves to a new place: a tap, a volume button, another app. */
-private val GLIDE = spring<Float>(0.9f, 500f)
+/**
+ * How the fill moves to a new place: a tap, a volume button, another app. It does not overshoot, and it is soft enough
+ * that a run of small steps coming in one after the other (a speaker's volume) flows as one movement.
+ */
+private val GLIDE = spring<Float>(1f, 320f)
 private const val HOLD_MS = 1500L
-/** Further apart than this, [value] is a different step and no longer the one the finger left it at. */
+/**
+ * Further apart than this, [value] is a different step and no longer the one the finger left it at. Sliders that give
+ * their steps use less than one of those.
+ */
 private const val SAME_STEP = 0.05f
 private const val COARSE_STEPS = 8

@@ -39,6 +39,14 @@ internal class MediaSource(
 
     /** When Drip itself last moved a speaker's volume, so that is not announced as news. */
     @Volatile var ownVolumeAt = 0L
+
+    // A speaker reports every step of its volume, many a second while a finger drags it, and each report would rebuild
+    // every player and redraw the whole card. The steps are gathered and shown together, a few frames later.
+    private var volumePending = false
+    private val volumeUpdate = Runnable {
+        volumePending = false
+        update()
+    }
     private val component = ComponentName(context, DripListener::class.java)
     private var manager: MediaSessionManager? = null
     private var sessions: List<Session> = emptyList()
@@ -55,6 +63,8 @@ internal class MediaSource(
     }
 
     fun stop() {
+        handler.removeCallbacks(volumeUpdate)
+        volumePending = false
         artLoader.shutdown()
         safely("media stop") { manager?.removeOnActiveSessionsChangedListener(onSessions) }
         manager = null
@@ -407,7 +417,11 @@ internal class MediaSource(
         }
 
         // A speaker's volume moved: the buttons of the phone, the speaker itself, or Drip.
-        override fun onAudioInfoChanged(info: MediaController.PlaybackInfo) = update()
+        override fun onAudioInfoChanged(info: MediaController.PlaybackInfo) {
+            if (volumePending) return
+            volumePending = true
+            handler.postDelayed(volumeUpdate, VOLUME_GATHER_MS)
+        }
 
         // The name of the speaker can come along in the session's extras, and the wish to hide the island.
         override fun onExtrasChanged(extras: android.os.Bundle?) = update()
@@ -560,6 +574,8 @@ internal class MediaSource(
         const val ART_MAX_PX = 512
         /** More players than this at once is a phone full of forgotten sessions, not music. */
         const val MAX_PLAYERS = 3
+        /** How long the steps of a speaker's volume are gathered before the card shows them: a few frames, no more. */
+        const val VOLUME_GATHER_MS = 50L
         /**
          * Where a player can name the speaker it plays on, in its session's extras: "Living room + Kitchen". Drip's own
          * key, and a short one for players that would rather not carry a package name around.
