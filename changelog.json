@@ -1,5 +1,21 @@
 [
   {
+    "version": "0.1.25",
+    "date": "2026-11-07",
+    "en": {
+      "title": "Smoother speaker volume",
+      "fixed": [
+        "The volume bar of a speaker like a Sonos moves smoothly, in small steps"
+      ]
+    },
+    "nl": {
+      "title": "Soepeler speakervolume",
+      "fixed": [
+        "De volumebalk van een speaker zoals een Sonos beweegt soepel, in kleine stappen"
+      ]
+    }
+  },
+  {
     "version": "0.1.24",
     "date": "2026-11-07",
     "en": {
