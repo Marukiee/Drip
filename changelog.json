@@ -1,5 +1,23 @@
 [
   {
+    "version": "0.1.23",
+    "date": "2026-11-07",
+    "en": {
+      "title": "Nothing through the camera",
+      "better": [
+        "Announcements, clocks and level bars stay clear of the camera, wherever the phone says it is",
+        "No camera reported? Place the ring around yours in Camera mode and it counts as the camera"
+      ]
+    },
+    "nl": {
+      "title": "Niets door de camera",
+      "better": [
+        "Meldingen, klokken en balken blijven van de camera af, waar de telefoon die ook meldt",
+        "Meldt je telefoon geen camera? Zet de ring er in de Camera-stand omheen, dan telt die als camera"
+      ]
+    }
+  },
+  {
     "version": "0.1.22",
     "date": "2026-11-06",
     "en": {
