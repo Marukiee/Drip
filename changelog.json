@@ -1,5 +1,27 @@
 [
   {
+    "version": "0.1.24",
+    "date": "2026-11-07",
+    "en": {
+      "title": "Smooth volume",
+      "better": [
+        "Shape and fit says so when a camera in the corner is not supported yet"
+      ],
+      "fixed": [
+        "The volume bar glides when you tap it or start dragging, instead of jumping"
+      ]
+    },
+    "nl": {
+      "title": "Soepel volume",
+      "better": [
+        "Vorm en passing zegt het als een camera in de hoek nog niet ondersteund wordt"
+      ],
+      "fixed": [
+        "De volumebalk glijdt als je erop tikt of begint te slepen, in plaats van te springen"
+      ]
+    }
+  },
+  {
     "version": "0.1.23",
     "date": "2026-11-07",
     "en": {
