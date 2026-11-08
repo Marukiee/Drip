@@ -100,7 +100,7 @@ fun ExpressiveSlider(
         if (wait > 0) delay(wait)
         if (abs(f - value) > sameStep) held = null
     }
-    val shown = remember { Animatable(value) }
+    val shown = remember { Animatable(value, SETTLE) }
     val target = held?.first ?: value
     LaunchedEffect(target, dragging) { if (!dragging) shown.animateTo(target, GLIDE) }
     val coarse = steps in 1..COARSE_STEPS
@@ -112,7 +112,7 @@ fun ExpressiveSlider(
         val f = (x / widthPx).coerceIn(0f, 1f)
         val snapped = if (steps > 0) Math.round(f * steps).toFloat() / steps else f
         val rest = if (final && coarse) snapped else f
-        if (final) scope.launch { shown.animateTo(rest, if (coarse) spring(0.7f, 600f) else GLIDE) } else finger = rest
+        if (final) scope.launch { shown.animateTo(rest, if (coarse) spring(0.7f, 600f, SETTLE) else GLIDE) } else finger = rest
         if (steps > 0) {
             val step = Math.round(f * steps)
             if (step != lastStep) {
@@ -129,8 +129,8 @@ fun ExpressiveSlider(
     fun follow(from: Float) {
         finger = (from / widthPx).coerceIn(0f, 1f)
         scope.launch {
-            val gap = Animatable(shown.value - finger)
-            val closing = launch { gap.animateTo(0f, spring(1f, 600f)) }
+            val gap = Animatable(shown.value - finger, SETTLE)
+            val closing = launch { gap.animateTo(0f, spring(1f, 600f, SETTLE)) }
             while (true) {
                 withFrameNanos { }
                 if (!dragging) break
@@ -288,8 +288,14 @@ fun ExpressiveSlider(
  * How the fill moves to a new place: a tap, a volume button, another app. It does not overshoot, and it gets going at
  * once, so a volume button shows within a frame or two; a run of steps still flows as one movement.
  */
-private val GLIDE = spring<Float>(1f, 700f)
+private val GLIDE = spring(1f, 700f, SETTLE)
 private const val HOLD_MS = 1500L
+/**
+ * When a glide counts as arrived: half a pixel on a bar as wide as the phone. Each spring needs it itself; without, it
+ * stops a hundredth of the way short, about ten pixels here, and the rest of every step jumped in one frame: most of a
+ * Sonos step of two.
+ */
+private const val SETTLE = 0.0005f
 /**
  * Further apart than this, [value] is a different step and no longer the one the finger left it at. Sliders that give
  * their steps use less than one of those.
