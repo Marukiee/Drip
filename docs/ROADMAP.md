@@ -24,9 +24,6 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 
 ## Muziek
 
-- Spotify Connect: de eerste seconden na het verbinden met een speaker meldt Spotify dat het op de telefoon speelt,
-  dan regelt de balk het telefoonvolume. Daarna (speaker, 24 stappen) werkt de balk. Gemeten op 2026-11-08. Mogelijk:
-  de balk grijs met uitleg zolang een speler speelt zonder geluid op de telefoon.
 - Een equalizer die echt op de muziek beweegt (Visualizer, vraagt microfoonrecht, daarom een keuze).
 - De hoes vervaagd als achtergrond van de geopende kaart.
 - De pil ook weg als er een venster over de eigen speler ligt (wachtrij, uitvoer kiezen).
