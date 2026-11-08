@@ -373,7 +373,8 @@ class IslandController(
         if (expandedKey != null) collapse() else expand()
     }
 
-    private var typing = false
+    var typing = false
+        private set
 
     /** While a reply is typed the card stays open; afterwards it closes after the usual while again. */
     fun setTyping(on: Boolean) {

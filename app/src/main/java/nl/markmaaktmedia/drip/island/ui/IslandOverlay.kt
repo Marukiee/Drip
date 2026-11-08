@@ -273,8 +273,12 @@ fun IslandOverlay(
                             if (!handled && !longPressed) {
                                 when {
                                     travel.getDistance() < swipe -> when (stage) {
-                                        // Tapping where the closed island sits closes the opened one again.
-                                        Stage.EXPANDED -> if (layout.geometry(Stage.COMPACT).bounds.inflate(8.dp.toPx()).contains(at)) controller.collapse()
+                                        // Tapping where the closed island sits closes the opened one again. Anywhere
+                                        // else on an opened message opens it, the chat itself, as a tap in the shade does.
+                                        Stage.EXPANDED -> when {
+                                            layout.geometry(Stage.COMPACT).bounds.inflate(8.dp.toPx()).contains(at) -> controller.collapse()
+                                            else -> openMessage(current, controller, context)
+                                        }
                                         // A slim announcement opens into the card of what it is about (the volume, the battery).
                                         Stage.MINI -> controller.expand()
                                         else -> {
@@ -471,6 +475,19 @@ private fun tap(
         return
     }
     onGesture(action, content)
+}
+
+/**
+ * A tap on an opened message that no button took: the message opens, like its Open button. Not while a reply is being
+ * typed, and not on the slim announcements (the volume, the ringer), which are no messages.
+ */
+private fun openMessage(content: IslandContent?, controller: IslandController, context: android.content.Context) {
+    val alert = (content as? IslandContent.Notice)?.alert ?: return
+    if (alert.kind in IslandController.MINI_KINDS || controller.typing) return
+    val open = alert.open ?: return
+    context.graph.haptics.play(Haptics.Kind.TAP)
+    open()
+    controller.dismissAlert()
 }
 
 /** Which set of gestures applies to what is showing. */
