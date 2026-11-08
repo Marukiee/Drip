@@ -24,6 +24,8 @@ Wensen die nog moeten. Met een ster wat het meeste oplevert.
 
 ## Muziek
 
+- De volumebalk met Spotify Connect doet niets. Eerst op de telefoon uitlezen wat Spotify aan Android meldt
+  (alleen stappen, of een vaste stand die het negeert), dan pas repareren.
 - Een equalizer die echt op de muziek beweegt (Visualizer, vraagt microfoonrecht, daarom een keuze).
 - De hoes vervaagd als achtergrond van de geopende kaart.
 - De pil ook weg als er een venster over de eigen speler ligt (wachtrij, uitvoer kiezen).
