@@ -1,5 +1,27 @@
 [
   {
+    "version": "0.1.27",
+    "date": "2026-11-08",
+    "en": {
+      "title": "Open from the card",
+      "better": [
+        "Tap an opened message to go to the chat"
+      ],
+      "fixed": [
+        "The volume bar glides all the way, without a jump at the end"
+      ]
+    },
+    "nl": {
+      "title": "Openen vanuit de kaart",
+      "better": [
+        "Tik op een geopend bericht om naar de chat te gaan"
+      ],
+      "fixed": [
+        "De volumebalk glijdt helemaal door, zonder sprongetje aan het eind"
+      ]
+    }
+  },
+  {
     "version": "0.1.26",
     "date": "2026-11-07",
     "en": {
