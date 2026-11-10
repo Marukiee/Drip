@@ -16,6 +16,11 @@ class DemoReceiver : BroadcastReceiver() {
             val mode = FitMode.entries.firstOrNull { it.name == fit.uppercase() } ?: return@let
             context.graph.scope.launch { context.graph.prefs.editIsland { it.copy(fitMode = mode) } }
         }
+        // --ef offsetY 4 moves the closed island by hand, as the slider in Shape does (0 puts it back).
+        if (intent.hasExtra("offsetY")) {
+            val y = intent.getFloatExtra("offsetY", 0f)
+            context.graph.scope.launch { context.graph.prefs.editIsland { it.copy(offsetYDp = y) } }
+        }
         val kind = intent.getStringExtra("kind")?.uppercase() ?: return
         val demo = Demo.entries.firstOrNull { it.name == kind } ?: return
         android.util.Log.d("DripIsland", "demo $demo")
