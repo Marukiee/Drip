@@ -1,5 +1,21 @@
 [
   {
+    "version": "0.1.28",
+    "date": "2026-11-10",
+    "en": {
+      "title": "No room for a missing camera",
+      "fixed": [
+        "On a phone without a camera hole, a pill moved by hand no longer adds room above the banner and cards"
+      ]
+    },
+    "nl": {
+      "title": "Geen ruimte voor een camera die er niet is",
+      "fixed": [
+        "Op een telefoon zonder cameragat geeft een verplaatste pil geen extra ruimte meer boven de banner en kaarten"
+      ]
+    }
+  },
+  {
     "version": "0.1.27",
     "date": "2026-11-08",
     "en": {
