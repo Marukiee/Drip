@@ -119,17 +119,6 @@ internal fun ShapePage(onBack: () -> Unit) {
             )
         }
         AnimatedVisibility(
-            visible = island.fitMode == FitMode.CUTOUT && !hasCutout,
-            enter = expandVertically(DripMotion.sizeSpring()) + fadeIn(DripMotion.fadeSpec()),
-            exit = shrinkVertically(DripMotion.sizeSpring()) + fadeOut(DripMotion.fadeSpec()),
-        ) {
-            Text(
-                stringResource(R.string.fit_ring_note),
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp),
-            )
-        }
-        AnimatedVisibility(
             visible = island.fitMode != FitMode.NOTCH && phone.cameraInCorner,
             enter = expandVertically(DripMotion.sizeSpring()) + fadeIn(DripMotion.fadeSpec()),
             exit = shrinkVertically(DripMotion.sizeSpring()) + fadeOut(DripMotion.fadeSpec()),

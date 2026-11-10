@@ -157,25 +157,10 @@ class IslandLayout(val fit: DeviceFit, val settings: IslandSettings) {
     }
 
     /**
-     * The camera, whatever shape the island takes: what the display reports, and on a phone that reports nothing, the ring
-     * someone placed around theirs by hand in Camera mode. Nothing that can be read goes through this.
+     * The camera, whatever shape the island takes: only what the display reports. A pill moved or resized by hand on a
+     * phone without a hole is just a pill, so nothing makes room for a lens that is not there.
      */
-    val hole: Hole? = fit.cutout ?: placedRing()
-
-    /** A ring left at its automatic size and place says nothing about where a camera is. */
-    private fun placedRing(): Hole? {
-        val placed = settings.idleWidthDp != null || settings.idleHeightDp != null || settings.offsetXDp != 0f || settings.offsetYDp != 0f
-        val middle = cutoutMiddle
-        if (settings.fitMode != FitMode.CUTOUT || !placed || middle == null || fit.landscape) return null
-        val padding = dp(settings.cutoutPaddingDp)
-        // A lens is round unless someone made the ring wider than it is tall.
-        val width = ((settings.idleWidthDp?.let(::dp) ?: idleHeight) - 2 * padding).coerceAtLeast(0f)
-        val height = (idleHeight - 2 * padding).coerceAtLeast(0f)
-        return Hole(
-            (centerX - width / 2f).toInt(), (middle - height / 2f).toInt(),
-            (centerX + width / 2f).toInt(), (middle + height / 2f).toInt(),
-        )
-    }
+    val hole: Hole? = fit.cutout
 
     /** The least room anything keeps from the lens, however tight the ring around it is set. */
     private val holeClearance: Float = max(dp(settings.cutoutPaddingDp), dp(3f))

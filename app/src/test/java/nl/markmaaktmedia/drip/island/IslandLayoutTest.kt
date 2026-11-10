@@ -159,23 +159,15 @@ class IslandLayoutTest {
         assertEquals(null, layout.holeSpan(layout.geometry(Stage.COMPACT)))
     }
 
-    @Test fun aRingPlacedByHandCountsAsTheCamera() {
+    @Test fun aPillPlacedByHandOnAPhoneWithoutAHoleMakesNoRoomForALens() {
         val s = IslandSettings(fitMode = FitMode.CUTOUT, idleWidthDp = 36f, idleHeightDp = 36f, offsetYDp = 10f, cutoutPaddingDp = 3f)
-        val layout = IslandLayout(xperia, s)
-        val hole = layout.hole!!
-        val d = xperia.density
-        assertEquals(30f * d, hole.width().toFloat(), 1f)
-        assertEquals(30f * d, hole.height().toFloat(), 1f)
-        assertEquals(540f, hole.exactCenterX(), 1f)
-        assertEquals(38f + 10f * d, hole.exactCenterY(), 1f)
-        assertEquals(hole.bottom + 3f * d, bannerWordsTop(layout.geometry(Stage.ALERT), d), 0.01f)
-        assertTrue(layout.holeSpan(layout.geometry(Stage.COMPACT)) != null)
-    }
-
-    @Test fun aRingMovedByHandIsRoundUnlessItWasMadeWider() {
-        val s = IslandSettings(fitMode = FitMode.CUTOUT, offsetXDp = 4f)
-        val layout = IslandLayout(xperia, s)
-        assertEquals(layout.hole!!.height().toFloat(), layout.hole!!.width().toFloat(), 1f)
+        val placed = IslandLayout(xperia, s)
+        val plain = IslandLayout(xperia, IslandSettings(fitMode = FitMode.CUTOUT))
+        assertEquals(null, placed.hole)
+        assertEquals(plain.geometry(Stage.ALERT).height, placed.geometry(Stage.ALERT).height, 0.01f)
+        assertEquals(74f * xperia.density, placed.geometry(Stage.ALERT).height, 0.01f)
+        assertEquals(plain.cardTopInset, placed.cardTopInset, 0.01f)
+        assertEquals(null, placed.holeSpan(placed.geometry(Stage.COMPACT)))
     }
 
     @Test fun nothingPlacedOrAskedMeansNoCamera() {
@@ -184,14 +176,9 @@ class IslandLayoutTest {
         assertEquals(null, IslandLayout(xperia, IslandSettings(fitMode = FitMode.NOTCH, idleWidthDp = 60f)).hole)
     }
 
-    @Test fun whatTheDisplayReportsBeatsAPlacedRing() {
+    @Test fun aPillMovedByHandKeepsTheCameraTheDisplayReports() {
         val s = IslandSettings(fitMode = FitMode.CUTOUT, offsetXDp = 20f)
         assertEquals(pixelHole, IslandLayout(pixel, s).hole)
-    }
-
-    @Test fun aRingIsNotACameraOnItsSide() {
-        val s = IslandSettings(fitMode = FitMode.CUTOUT, idleWidthDp = 36f)
-        assertEquals(null, IslandLayout(xperia.copy(landscape = true), s).hole)
     }
 
     @Test fun onItsSideTheCardsStayClearOfTheCamera() {
