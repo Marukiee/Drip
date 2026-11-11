@@ -137,7 +137,8 @@ class IslandService : AccessibilityService() {
         val className = event.className?.toString().orEmpty()
         // A screenshot was taken: its preview and editor have their buttons along the top, right where an open card is.
         if ("screenshot" in className.lowercase() || "screenshot" in pkg || "markup" in pkg) controller.stepAside()
-        if (!isApp(pkg) || "InputMethod" in className) return
+        // Every keyboard's window is the framework's android.inputmethodservice.SoftInputWindow.
+        if (!isApp(pkg) || className.contains("inputmethod", ignoreCase = true)) return
         setFrontApp(pkg)
     }
 

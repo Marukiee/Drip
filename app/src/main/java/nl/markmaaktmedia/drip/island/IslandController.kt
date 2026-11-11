@@ -138,8 +138,8 @@ class IslandController(
                     expandJob?.cancel()
                 }
                 if (call == null) dismissedRinging = null
-                // Picked up: the opened call card closes by itself after a while, like any other.
-                if (wasRinging && call != null && !call.incoming && expandedKey == IslandContent.Call(call).key) poke()
+                // Picked up: the call card opened by itself for the ringing, so it closes by itself again after a while.
+                if (wasRinging && call != null && !call.incoming && expandedKey == IslandContent.Call(call).key) closeLater()
                 refresh()
             }
         }
@@ -152,10 +152,6 @@ class IslandController(
         }
         scope.launch {
             hub.alerts.collect { onAlert(it) }
-        }
-        scope.launch {
-            // Opening or closing the lyrics stops or starts the card's own time again.
-            hub.lyricsOpen.collect { poke() }
         }
     }
 
@@ -376,21 +372,28 @@ class IslandController(
     var typing = false
         private set
 
-    /** While a reply is typed the card stays open; afterwards it closes after the usual while again. */
+    /**
+     * While a reply is typed nothing closes or hides the card: not an app that seems to come to the front, and not the
+     * status bar that seems gone while the keyboard is up.
+     */
     fun setTyping(on: Boolean) {
+        if (on == typing) return
         typing = on
-        if (on) expandJob?.cancel() else poke()
+        poke()
+        refresh()
     }
 
-    /** Someone touched the opened card: it stays open a while longer. */
+    /**
+     * Someone touched the opened card. A card opened by hand stays until it is closed by hand (a tap beside it, a swipe
+     * up), so this only stops one that opened by itself from closing.
+     */
     fun poke() {
         expandJob?.cancel()
-        // Lyrics are read along with the song, and an opened message may be kept to read or answer later: those cards
-        // stay until they are closed by hand. The slim ones (volume, charging) still close by themselves.
-        val reading = expandedKey?.startsWith(IslandContent.Music.PREFIX) == true && settings.showLyrics && hub.lyricsOpen.value
-        val message = (expandedFallback as? IslandContent.Notice)?.alert?.kind?.let { it !in MINI_KINDS } == true
-        val done = (expandedFallback as? IslandContent.Live)?.live?.finished == true
-        if (expandedKey == null || typing || reading || message || done) return
+    }
+
+    /** A card that opened by itself (a ringing call, now picked up) closes again after a while unless it is touched. */
+    private fun closeLater() {
+        expandJob?.cancel()
         expandJob = scope.launch {
             delay(EXPANDED_IDLE_MS)
             collapse()
@@ -437,7 +440,7 @@ class IslandController(
 
     private fun refresh() {
         val ringing = (primary as? IslandContent.Call)?.call?.incoming == true
-        val hidden = !settings.enabled || (!ringing && (
+        val hidden = !settings.enabled || (!ringing && !typing && (
             // On the lock screen the status bar is part of the lock screen's own window, so it looks like full screen
             // there; the lock screen has its own switch instead.
             (settings.hideFullscreen && !visibility.statusBarShown && !visibility.locked) ||
@@ -459,8 +462,6 @@ class IslandController(
             expandedKey = null
             expandedFallback = null
         } else if (expanded != null) {
-            // A download that finished while its card was open: the card now waits for the person, like a message.
-            if ((expanded as? IslandContent.Live)?.live?.finished == true) expandJob?.cancel()
             expandedFallback = expanded
         }
 
@@ -489,6 +490,7 @@ class IslandController(
             AlertKind.CHARGING, AlertKind.UNPLUGGED, AlertKind.BATTERY_FULL, AlertKind.UNLOCK, AlertKind.HEADPHONES,
         )
         const val DUPLICATE_WINDOW_MS = 6_000L
+        /** How long the card of a picked-up call stays after it opened by itself for the ringing. */
         const val EXPANDED_IDLE_MS = 9_000L
         const val MAX_QUEUE = 4
     }
