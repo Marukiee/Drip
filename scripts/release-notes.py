@@ -21,7 +21,7 @@ else:
     for key, head in (("new", "New"), ("better", "Better"), ("fixed", "Fixed")):
         items = en.get(key) or []
         if items:
-            print(f"**{head}**")
+            print(f"**{head}**\n")
             for item in items:
                 print(f"- {item}")
             print()

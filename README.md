@@ -1,26 +1,39 @@
 # Drip
 
-A dynamic island for Android, shaped for your phone. On a phone without a camera hole, like the Sony Xperia 1 VI, it is a
-notch that hangs from the top edge of the screen. On a phone with one, like the Pixel 10, it is a pill around the camera.
-The shape comes from the phone itself: its camera cutout, its status bar and the radius of its screen corners, so an opened
-island keeps an even gap to the rounded edge of the screen.
+[![Release](https://img.shields.io/github/v/release/Marukiee/Drip?label=release)](https://github.com/Marukiee/Drip/releases/latest)
+[![License](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
+[![Android](https://img.shields.io/badge/Android-12%2B-3DDC84?logo=android&logoColor=white)](#install)
 
-What it shows: music with cover, a wavy progress line, controls and a volume bar; phone calls with their buttons; timers,
-rides, deliveries and other live updates; charging; the torch with its strength; notifications; the camera and microphone
-dots; and short announcements for volume, ringer, do not disturb, rotation lock, battery saver, headphones and more.
+English | [Nederlands](README.nl.md)
 
-Tap to open, swipe up or tap beside it to close, hold or swipe for your own actions. It moves on springs, at the refresh rate
-of the screen, with haptic feedback that rises when it opens and falls when it closes.
+**A dynamic island for Android.** Music, calls, timers, live updates and notifications show up in one pill at the top of your screen. It opens with a tap and moves on springs at the refresh rate of your screen, with haptic feedback that rises when it opens and falls when it closes.
+
+The shape comes from your phone: its camera cutout, its status bar and the radius of its screen corners, so an opened island keeps an even gap to the rounded edge. On a phone with a camera hole, like the Pixel 10, it is a pill around the camera. On a phone without one, like the Sony Xperia 1 VI, it is a notch that hangs from the top edge.
+
+## What it does
+
+- **Music.** Cover, a wavy progress line, controls and a volume bar
+- **Calls.** Answer and hang up from the island
+- **Live updates.** Timers, rides, deliveries and other updates from your apps
+- **Charging and torch.** Charging status, and the torch with its strength
+- **Notifications.** Shown on the island, with the camera and microphone dots when an app uses them
+- **Short announcements.** Volume, ringer, do not disturb, rotation lock, battery saver, headphones and more
+- **Your own actions.** Tap to open, swipe up or tap beside it to close, hold or swipe for actions you choose
+- **Out of the way.** It shows nothing when there is nothing to show, and steps aside in full screen apps
 
 ## Install
 
-Download `Drip.apk` from the [latest release](https://github.com/Marukiee/Drip/releases/latest). The app updates itself
-from there.
+1. Download `Drip.apk` from the [latest release](https://github.com/Marukiee/Drip/releases/latest) on your phone.
+2. Open it. Android asks once whether the app you open it with (your browser or files app) may install apps from unknown sources. Turn that on, go back and tap Install.
+3. Open Drip and follow the steps to give it the two permissions below.
 
-Drip asks for two things: the accessibility service, which is the only way an app may draw above the status bar and is used
-for the island, its gestures and to see where windows are so it can step aside in full screen apps. In a music app that plays
-it also looks for the seek bar and the song's title, so the music on the island can make way for that app's own player; it
-reads nothing else on screen and keeps nothing. The second is notification access, for music, calls and live updates.
+After that you never need GitHub again: the app updates itself from the releases. You can also add the repository to [Obtainium](https://obtainium.imranr.dev).
+
+### What Drip asks for
+
+- **Accessibility service.** The only way an app may draw above the status bar. Drip uses it for the island, its gestures, and to see where windows are so it can step aside in full screen apps. In a music app that plays, it also looks for the seek bar and the song's title, so the island can make way for that app's own player. It reads nothing else on screen and keeps nothing
+- **Notification access.** For music, calls and live updates
+
 Nothing leaves the phone.
 
 ## Not supported yet
@@ -30,6 +43,12 @@ in the settings to keep it in the middle.
 
 ## Build
 
-JDK 21 and the Android SDK, then `./gradlew :app:assembleDebug`.
+You need JDK 21 and the Android SDK.
 
-MIT licensed. Made by Mark Maakt Media.
+```sh
+./gradlew :app:assembleDebug
+```
+
+## License
+
+AGPL-3.0, see [LICENSE](LICENSE). Made by Mark Maakt Media.
