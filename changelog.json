@@ -1,5 +1,27 @@
 [
   {
+    "version": "0.1.29",
+    "date": "2026-11-11",
+    "en": {
+      "title": "Cards stay open",
+      "better": [
+        "An opened card stays until you tap beside it"
+      ],
+      "fixed": [
+        "Typing a reply no longer closes the card after a few seconds"
+      ]
+    },
+    "nl": {
+      "title": "Kaarten blijven open",
+      "better": [
+        "Een geopende kaart blijft staan tot je ernaast tikt"
+      ],
+      "fixed": [
+        "Een antwoord typen sluit de kaart niet meer na een paar seconden"
+      ]
+    }
+  },
+  {
     "version": "0.1.28",
     "date": "2026-11-10",
     "en": {
