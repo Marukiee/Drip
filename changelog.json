@@ -1,5 +1,21 @@
 [
   {
+    "version": "0.1.30",
+    "date": "2026-11-21",
+    "en": {
+      "title": "New update card",
+      "new": [
+        "A new version shows as a card on the home screen and installs itself after the download"
+      ]
+    },
+    "nl": {
+      "title": "Nieuwe updatekaart",
+      "new": [
+        "Een nieuwe versie staat als kaart op het beginscherm en installeert zichzelf na het downloaden"
+      ]
+    }
+  },
+  {
     "version": "0.1.29",
     "date": "2026-11-11",
     "en": {
