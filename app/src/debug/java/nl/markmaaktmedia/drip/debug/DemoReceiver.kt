@@ -24,7 +24,9 @@ class DemoReceiver : BroadcastReceiver() {
         // --es update preview|fail|clear shows the shared update card with a made-up version, as Keeper's debug command does.
         when (intent.getStringExtra("update")) {
             "preview" -> nl.markmaaktmedia.markupdate.MarkUpdate.get().showPreview()
-            "fail" -> nl.markmaaktmedia.markupdate.MarkUpdate.get().showFailurePreview("GitHub is not reachable")
+            "fail" -> nl.markmaaktmedia.markupdate.MarkUpdate.get().showFailurePreview(
+                context.getString(nl.markmaaktmedia.markupdate.R.string.markupdate_reason_unreachable),
+            )
             "clear" -> nl.markmaaktmedia.markupdate.MarkUpdate.get().reset()
         }
         val kind = intent.getStringExtra("kind")?.uppercase() ?: return

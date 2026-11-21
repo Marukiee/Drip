@@ -296,7 +296,8 @@ class IslandService : AccessibilityService() {
         super.onConfigurationChanged(newConfig)
         fit.value = DeviceFit.read(this)
         visibility = visibility.copy(landscape = newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE)
-        controller.setVisibility(visibility)
+        // A change can come in while the service is starting, before it is connected and has its controller.
+        if (::controller.isInitialized) controller.setVisibility(visibility)
     }
 
     private fun onInsets(@Suppress("UNUSED_PARAMETER") insets: WindowInsets) {
