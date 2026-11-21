@@ -21,6 +21,12 @@ class DemoReceiver : BroadcastReceiver() {
             val y = intent.getFloatExtra("offsetY", 0f)
             context.graph.scope.launch { context.graph.prefs.editIsland { it.copy(offsetYDp = y) } }
         }
+        // --es update preview|failed|clear shows the update card with a made-up version, to press through or to look at.
+        when (intent.getStringExtra("update")) {
+            "preview" -> context.graph.updater.showPreview()
+            "failed" -> context.graph.updater.showFailedPreview()
+            "clear" -> context.graph.updater.reset()
+        }
         val kind = intent.getStringExtra("kind")?.uppercase() ?: return
         val demo = Demo.entries.firstOrNull { it.name == kind } ?: return
         android.util.Log.d("DripIsland", "demo $demo")

@@ -11,11 +11,9 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,7 +24,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
@@ -44,8 +41,6 @@ import nl.markmaaktmedia.drip.ui.screens.ChangelogScreen
 import nl.markmaaktmedia.drip.ui.screens.HomeScreen
 import nl.markmaaktmedia.drip.ui.screens.OnboardingScreen
 import nl.markmaaktmedia.drip.ui.screens.settings.SettingsPageScreen
-import nl.markmaaktmedia.drip.ui.theme.DripMotion
-import nl.markmaaktmedia.drip.ui.update.UpdateBanner
 
 @Composable
 fun AppRoot() {
@@ -102,15 +97,14 @@ private fun MainNavigation() {
         }
     }
 
-    // The update banner is drawn over the pages, so the pages move down by its height while it is there and nothing
-    // sits under it. It already includes the status bar, which the pages add again themselves, so that part is taken off.
-    val density = androidx.compose.ui.platform.LocalDensity.current
-    val statusBar = WindowInsets.statusBars.getTop(density)
-    var bannerPx by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
-    val below by androidx.compose.animation.core.animateDpAsState(
-        with(density) { (bannerPx - statusBar).coerceAtLeast(0).toDp() },
-        DripMotion.spatial(), label = "bannerSpace",
-    )
+    // An update goes on where it stopped when the app is back in front, whichever page is open: after the switch to
+    // install apps was turned on, or with the question of the installer that waited while the app was out of sight.
+    val graph = androidx.compose.ui.platform.LocalContext.current.graph
+    val scope = rememberCoroutineScope()
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+        scope.launch { graph.updater.resumeAfterPermission() }
+        graph.updater.resumeConfirmation()
+    }
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         transition.AnimatedContent(
                 transitionSpec = {
@@ -132,16 +126,10 @@ private fun MainNavigation() {
                             .apply { targetContentZIndex = -1f }
                     }
                 },
-                // The spring that moves it overshoots, so it can dip below nothing for a moment, and a padding may not be negative.
-                modifier = Modifier.fillMaxSize().padding(top = below.coerceAtLeast(0.dp)),
+                modifier = Modifier.fillMaxSize(),
             ) { route ->
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) { RouteContent(route, nav) }
             }
-        // Over every screen: an update is worth seeing wherever you are in the app.
-        UpdateBanner(
-            Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp)
-                .onSizeChanged { bannerPx = it.height + with(density) { 8.dp.roundToPx() } + statusBar },
-        )
     }
 }
 

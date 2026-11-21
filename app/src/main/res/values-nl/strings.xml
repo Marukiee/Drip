@@ -30,6 +30,12 @@
     <string name="language_restart_cancel">Niet nu</string>
     <string name="update_download">Download</string>
     <string name="update_on_version">Je hebt %1$s</string>
+    <string name="update_card_title">Nieuwe versie %1$s</string>
+    <string name="update_card_progress">%1$s van %2$s MB</string>
+    <string name="update_card_installing_title">%1$s wordt geïnstalleerd</string>
+    <string name="update_card_restart">De app start zo opnieuw</string>
+    <string name="update_card_installing">Installeren…</string>
+    <string name="update_card_retry">Opnieuw</string>
     <string name="update_allow_install">Android vraagt één keer of Drip apps mag installeren</string>
     <string name="update_banner_title">Update %1$s</string>
     <string name="swipe_delete">Verwijder</string>

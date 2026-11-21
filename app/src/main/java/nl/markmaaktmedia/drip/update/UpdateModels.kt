@@ -11,6 +11,8 @@ data class ReleaseInfo(
     val sha256Url: String?,
     val htmlUrl: String,
     val publishedAt: String,
+    /** Two short lines of what is new, per language ("en", "nl"), for the update card. */
+    val notes: Map<String, List<String>> = emptyMap(),
 )
 
 /** Where the update flow currently is. Drives the banner and the settings row. */

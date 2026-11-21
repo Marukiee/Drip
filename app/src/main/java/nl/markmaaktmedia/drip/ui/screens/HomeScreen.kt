@@ -239,7 +239,13 @@ private fun Overview(summaries: Map<SettingsCategory, String>, listState: LazyLi
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = top + 4.dp, bottom = bottom),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item(key = "master") { MasterSwitch(allowed = access.island, modifier = Modifier.animateItem()) }
+        // A new version first, above the switch; gone again the moment it is installed or put off.
+        item(key = "master") {
+            Column(Modifier.animateItem()) {
+                nl.markmaaktmedia.drip.ui.update.UpdateCard(gap = 12.dp)
+                MasterSwitch(allowed = access.island)
+            }
+        }
 
         // Only what is missing, and gone the moment it is allowed: nothing here stays as a warning.
         if (missing.isNotEmpty()) {
@@ -288,7 +294,7 @@ private fun Overview(summaries: Map<SettingsCategory, String>, listState: LazyLi
     }
 }
 
-// Update notices are not here: they are optional, and a card for something declined on purpose would never go away.
+// Updating is not on this list of things to do: a version put off with Later stays put off, so its card goes away.
 private enum class Missing { Island, Listener }
 
 /** One category: its icon, its name, and a line that says how it is set right now. */

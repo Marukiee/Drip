@@ -27,6 +27,8 @@ import org.json.JSONObject
 import java.io.File
 import java.security.MessageDigest
 import androidx.core.graphics.drawable.toBitmap
+import nl.markmaaktmedia.drip.ui.update.changelogNotes
+import nl.markmaaktmedia.drip.ui.update.updateNotes
 
 /**
  * Checks the GitHub releases feed and, when the person asks, downloads the APK and
@@ -130,16 +132,19 @@ class UpdateRepository(
                         if (asset.optString("name").endsWith(".apk", ignoreCase = true)) { apk = asset; break }
                     }
                 }
+                val summary = releaseSummary(root.optString("body"))
                 ReleaseInfo(
                     tag = tag,
                     versionName = VersionComparator.normalise(tag),
                     title = root.optString("name").ifBlank { tag },
-                    changelog = releaseSummary(root.optString("body")),
+                    changelog = summary,
                     apkUrl = apk?.optString("browser_download_url"),
                     apkSizeBytes = apk?.optLong("size") ?: 0L,
                     sha256Url = sha,
                     htmlUrl = root.optString("html_url").ifBlank { releasesPageUrl },
                     publishedAt = root.optString("published_at"),
+                    // The release text is English only; the changelog of that version also has the Dutch lines.
+                    notes = fetchNotes(tag).ifEmpty { mapOf("en" to updateNotes(summary)) },
                 )
             }
         }.getOrElse { error ->
@@ -148,14 +153,30 @@ class UpdateRepository(
         }
     }
 
-    /** Developer options: shows a fake update so the banner can be pressed through. */
+    /** The lines of changelog.json as it was at [tag], in both languages. Nothing when it cannot be read. */
+    private fun fetchNotes(tag: String): Map<String, List<String>> = runCatching {
+        val url = "https://raw.githubusercontent.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}/$tag/changelog.json"
+        client.newCall(Request.Builder().url(url).header("User-Agent", "Drip/${BuildConfig.VERSION_NAME}").build()).execute().use { response ->
+            if (!response.isSuccessful) emptyMap() else changelogNotes(response.body?.string().orEmpty(), VersionComparator.normalise(tag))
+        }
+    }.getOrElse { emptyMap() }
+
+    /** A fake update the card can be pressed through (the debug demo), with the lines of this version's changelog. */
     fun showPreview() {
+        val notes = listOf("en", "nl").associateWith { language ->
+            Changelog.load(context, language).firstOrNull()?.let { (it.new + it.better + it.fixed).take(2) }.orEmpty()
+        }
         _state.value = UpdateState.Available(
             ReleaseInfo(
-                tag = PREVIEW_TAG, versionName = "9.9.9", title = "Preview", changelog = "", apkUrl = null,
-                apkSizeBytes = 0, sha256Url = null, htmlUrl = "", publishedAt = "",
+                tag = PREVIEW_TAG, versionName = "0.2.0", title = "Preview", changelog = "", apkUrl = null,
+                apkSizeBytes = 8_228_233, sha256Url = null, htmlUrl = "", publishedAt = "", notes = notes,
             ),
         )
+    }
+
+    /** The card when fetching went wrong, for the debug demo. */
+    fun showFailedPreview() {
+        _state.value = UpdateState.Failed(context.getString(R.string.update_reason_unreachable))
     }
 
     /** The release the person is in the middle of installing, so a failure can offer to carry on. */
@@ -170,11 +191,15 @@ class UpdateRepository(
     suspend fun downloadAndInstall(release: ReleaseInfo) {
         current = release
         if (release.tag == PREVIEW_TAG) {
-            for (step in 0..20) {
-                _state.value = UpdateState.Downloading(release, step / 20f)
-                kotlinx.coroutines.delay(120)
+            // A download that speeds up and slows at the end, then the install, which a real update ends with a restart.
+            for (step in 0..60) {
+                val x = step / 60f
+                _state.value = UpdateState.Downloading(release, if (x < 0.5f) 2 * x * x else 1 - (-2 * x + 2) * (-2 * x + 2) / 2)
+                kotlinx.coroutines.delay(60)
             }
-            _state.value = UpdateState.ReadyToInstall(release, PREVIEW_TAG)
+            _state.value = UpdateState.Installing(release)
+            kotlinx.coroutines.delay(5000)
+            _state.value = UpdateState.Idle
             return
         }
         if (!canRequestInstalls()) {
@@ -301,6 +326,8 @@ class UpdateRepository(
                 }
                 val intent = Intent(context, InstallResultReceiver::class.java).setAction(InstallResultReceiver.ACTION)
                 val pending = PendingIntent.getBroadcast(context, id, intent, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+                // Updated while looking at the app: it opens again when the new version is in. Not from elsewhere.
+                if (appIsInFront()) relaunchMarks(context).edit().putLong(RELAUNCH_AT, System.currentTimeMillis()).commit()
                 session.commit(pending.intentSender)
             }
         }.onFailure { error ->
@@ -311,6 +338,7 @@ class UpdateRepository(
 
     /** The installer said no, or the person backed out of its screen. */
     fun reportInstallFailure(reason: String) {
+        relaunchMarks(context).edit().remove(RELAUNCH_AT).apply()
         clearConfirmation()
         _state.value = UpdateState.Failed(reason, current)
     }
@@ -387,14 +415,33 @@ class UpdateRepository(
 
     private fun updatesDir(): File = File(context.cacheDir, "updates").apply { mkdirs() }
 
-    private companion object {
-        const val TAG = "UpdateRepository"
-        const val APK_NAME = "Drip.apk"
+    companion object {
+        /**
+         * Opens the app again after it updated itself while it was in front: the card said it would. Called when the
+         * island's service is back, which Android starts again after every update and which may open a screen.
+         */
+        fun relaunchIfUpdated(context: Context) {
+            val marks = relaunchMarks(context)
+            val at = marks.getLong(RELAUNCH_AT, 0L)
+            if (at == 0L) return
+            marks.edit().remove(RELAUNCH_AT).apply()
+            if (System.currentTimeMillis() - at > RELAUNCH_WINDOW_MS) return
+            val open = context.packageManager.getLaunchIntentForPackage(context.packageName)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) ?: return
+            runCatching { context.startActivity(open) }.onFailure { Log.w(TAG, "could not open the app after the update", it) }
+        }
+
+        private fun relaunchMarks(context: Context) = context.getSharedPreferences("update_relaunch", Context.MODE_PRIVATE)
+        private const val RELAUNCH_AT = "at"
+        /** An update takes seconds; a mark older than this is from one that never finished. */
+        private const val RELAUNCH_WINDOW_MS = 3 * 60 * 1000L
+
+        private const val TAG = "UpdateRepository"
+        private const val APK_NAME = "Drip.apk"
         private const val PREVIEW_TAG = "preview"
         private const val NOTIFICATION_ID = 4017
 
         /** Every time the app is opened, at most once a minute so switching back and forth does not hammer GitHub. */
-        const val CHECK_INTERVAL_MS = 60 * 1000L
+        private const val CHECK_INTERVAL_MS = 60 * 1000L
     }
 }
 

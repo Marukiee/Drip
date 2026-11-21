@@ -33,6 +33,12 @@
     <string name="language_restart_cancel">Not now</string>
     <string name="update_download">Download</string>
     <string name="update_on_version">You have %1$s</string>
+    <string name="update_card_title">New version %1$s</string>
+    <string name="update_card_progress">%1$s of %2$s MB</string>
+    <string name="update_card_installing_title">%1$s is being installed</string>
+    <string name="update_card_restart">The app restarts in a moment</string>
+    <string name="update_card_installing">Installing…</string>
+    <string name="update_card_retry">Try again</string>
     <string name="update_allow_install">Android will ask once to let Drip install apps</string>
     <string name="update_banner_title">Update %1$s</string>
     <string name="swipe_delete">Remove</string>

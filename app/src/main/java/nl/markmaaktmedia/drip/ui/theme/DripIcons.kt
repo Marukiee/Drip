@@ -137,6 +137,8 @@ object DripIcons {
     val Lock: Painter @Composable get() = painterResource(R.drawable.sym_lock)
     val Coffee: Painter @Composable get() = painterResource(R.drawable.sym_coffee)
     val Update: Painter @Composable get() = painterResource(R.drawable.sym_system_update)
+    /** A new version is out: the sparkle on the update card. */
+    val NewVersion: Painter @Composable get() = painterResource(R.drawable.sym_auto_awesome)
     val Sync: Painter @Composable get() = painterResource(R.drawable.sym_sync)
     val Person: Painter @Composable get() = painterResource(R.drawable.sym_person)
     val Restart: Painter @Composable get() = painterResource(R.drawable.sym_restart_alt)
