@@ -79,7 +79,7 @@ import nl.markmaaktmedia.markupdate.MarkUpdate
 import nl.markmaaktmedia.markupdate.MarkUpdater
 import nl.markmaaktmedia.markupdate.ReleaseInfo
 import nl.markmaaktmedia.markupdate.UpdateState
-import nl.markmaaktmedia.markupdate.releaseHighlights
+import nl.markmaaktmedia.markupdate.highlights
 
 /** Waar de kaart is: wachten op een tik, downloaden of (de download is klaar) installeren. */
 private enum class Phase { Rest, Busy, Installing }
@@ -89,6 +89,9 @@ private class Shown(var release: ReleaseInfo? = null, var failure: UpdateState.F
 
 private val IconSize = 46.dp
 private val ButtonHeight = 46.dp
+
+/** Later neemt een derde van de breedte, Bijwerken de rest. */
+private const val LaterFraction = 1f / 3f
 
 /**
  * De kaart bovenaan de app als er een nieuwe versie is: een icoon, "Nieuwe versie X", in twee korte regels wat er nieuw is, en Later en
@@ -174,7 +177,7 @@ private fun UpdateContent(
 ) {
     val colors = MaterialTheme.colorScheme
     val dutch = LocalConfiguration.current.locales[0].language == "nl"
-    val lines = remember(release.body, dutch) { releaseHighlights(release.body, dutch) }
+    val lines = remember(release, dutch) { release.highlights(dutch) }
     // De echte voortgang; de balk volgt hem iets zachter (een veer), want hij komt binnen in stappen van een procent.
     val progress = when (phase) {
         Phase.Rest -> 0f
@@ -196,7 +199,7 @@ private fun UpdateContent(
                         when (p) {
                             Phase.Rest -> if (state is UpdateState.NeedsPermission) stringResource(R.string.markupdate_needs_permission) else stringResource(R.string.markupdate_on_version, currentVersion)
                             Phase.Busy -> downloaded(release, progress)
-                            Phase.Installing -> if (state is UpdateState.AwaitingConfirmation) stringResource(R.string.markupdate_confirm_hint) else stringResource(R.string.markupdate_installing_sub)
+                            Phase.Installing -> if (state is UpdateState.AwaitingConfirmation) stringResource(R.string.markupdate_confirm_hint) else style.installingSubtitle ?: stringResource(R.string.markupdate_installing_sub)
                         },
                         // Gelijke cijferbreedte alleen bij de teller, zodat die niet heen en weer springt; in een versienummer maakt het de punten te wijd.
                         style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = if (p == Phase.Busy) "tnum" else null),
@@ -224,14 +227,14 @@ private fun UpdateContent(
     }
 }
 
-/** "6,3 van 22 MB", of alleen het percentage als de release niet zegt hoe groot het bestand is. */
+/** "6,3 van 22,0 MB" (megabytes met één decimaal), of alleen het percentage als de release niet zegt hoe groot het bestand is. */
 @Composable
 private fun downloaded(release: ReleaseInfo, progress: Float): String {
     val total = release.apkSizeBytes
     if (total <= 0) return stringResource(R.string.markupdate_downloading, (progress * 100).toInt())
-    val symbols = DecimalFormatSymbols(Locale.getDefault())
-    val done = DecimalFormat("0.0", symbols).format(total * progress / 1e6)
-    val all = DecimalFormat("0.#", symbols).format(total / 1e6)
+    val format = DecimalFormat("0.0", DecimalFormatSymbols(Locale.getDefault()))
+    val done = format.format(total * progress / 1e6)
+    val all = format.format(total / 1e6)
     return stringResource(R.string.markupdate_progress, done, all)
 }
 
@@ -261,7 +264,7 @@ private fun UpdateIcon(done: Boolean, style: UpdateCardStyle) {
 }
 
 /**
- * Later en Bijwerken delen de breedte (een deel en twee delen). Begint het bijwerken, dan krimpt Later tot niets en vervaagt, en Bijwerken
+ * Later (een derde van de breedte) en Bijwerken (de rest) staan naast elkaar. Begint het bijwerken, dan krimpt Later tot niets en vervaagt, en Bijwerken
  * groeit tot een balk over de hele breedte: de vulling volgt de download, het percentage staat in het midden. Is het klaar, dan blijft
  * de balk vol en zegt hij "Installeren…" met een zachte glans.
  */
@@ -269,10 +272,8 @@ private fun UpdateIcon(done: Boolean, style: UpdateCardStyle) {
 private fun Actions(phase: Phase, progress: Float, style: UpdateCardStyle, restLabel: String, barEnabled: Boolean, onBar: () -> Unit, onLater: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val motion = style.motion
-    val laterShare by animateFloatAsState(
-        if (phase == Phase.Rest) 1f else 0f,
-        spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessMediumLow), label = "laterShare",
-    )
+    // Later is een derde van de breedte en krimpt tot niets: de breedte zelf is de veer, geen gewicht (dat krimpt te snel).
+    val laterFraction by animateFloatAsState(if (phase == Phase.Rest) LaterFraction else 0f, motion.laterSpring(), label = "laterFraction")
     // Doorzichtigheid is een tween, geen veer: een veer laat het knopje flikkeren.
     val laterAlpha by animateFloatAsState(if (phase == Phase.Rest) 1f else 0f, tween(260), label = "laterAlpha")
     val barFill by animateColorAsState(
@@ -285,10 +286,10 @@ private fun Actions(phase: Phase, progress: Float, style: UpdateCardStyle, restL
     val pill = RoundedCornerShape(percent = 50)
 
     Row(Modifier.padding(top = 14.dp).fillMaxWidth().height(ButtonHeight)) {
-        if (laterShare > 0.005f) {
-            val share = laterShare.coerceIn(0f, 1f)
+        if (laterFraction > 0.002f) {
+            val fraction = laterFraction.coerceIn(0.001f, LaterFraction)
             Box(
-                Modifier.weight(share.coerceAtLeast(0.001f)).fillMaxHeight().graphicsLayer { alpha = laterAlpha }
+                Modifier.weight(fraction).fillMaxHeight().graphicsLayer { alpha = laterAlpha }
                     .clip(pill).background(colors.surfaceContainerHighest).pressable(phase == Phase.Rest, style, onLater),
                 contentAlignment = Alignment.Center,
             ) {
@@ -297,10 +298,10 @@ private fun Actions(phase: Phase, progress: Float, style: UpdateCardStyle, restL
                     color = colors.primary, maxLines = 1, softWrap = false,
                 )
             }
-            Spacer(Modifier.width(8.dp * share))
+            Spacer(Modifier.width(8.dp * (fraction / LaterFraction)))
         }
         Box(
-            Modifier.weight(2f).fillMaxHeight().clip(pill).background(barFill).pressable(barEnabled, style, onBar),
+            Modifier.weight(1f - laterFraction.coerceIn(0f, LaterFraction)).fillMaxHeight().clip(pill).background(barFill).pressable(barEnabled, style, onBar),
         ) {
             Box(
                 Modifier.fillMaxHeight().fillMaxWidth(shownProgress.coerceIn(0f, 1f)).graphicsLayer { alpha = fillAlpha }

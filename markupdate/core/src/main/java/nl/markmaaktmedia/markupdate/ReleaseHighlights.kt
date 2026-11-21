@@ -1,6 +1,15 @@
 package nl.markmaaktmedia.markupdate
 
 /**
+ * De regels voor de kaart van [this] release: die uit `changelog.json` in de taal van de telefoon (Nederlands of Engels; heeft het bestand
+ * die taal niet, dan de Engelse), en lukt dat niet, dan de punten uit de releasetekst ([releaseHighlights]).
+ */
+fun ReleaseInfo.highlights(dutch: Boolean, max: Int = 2): List<String> {
+    val fromChangelog = (notes[if (dutch) "nl" else "en"]?.takeIf { it.isNotEmpty() } ?: notes["en"]).orEmpty()
+    return fromChangelog.take(max).ifEmpty { releaseHighlights(body, dutch, max) }
+}
+
+/**
  * De korte regels voor op de updatekaart: de eerste punten van wat er nieuw is, in de taal van de app als de release die heeft.
  *
  * De tekst van een release heeft een deel per taal ("## What's new (English)" en "## Wat is nieuw (Nederlands)"), een tabel met bestanden

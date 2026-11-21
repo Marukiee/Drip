@@ -12,6 +12,11 @@ data class ReleaseInfo(
     val sha256Url: String?,
     val htmlUrl: String,
     val publishedAt: String,
+    /**
+     * De korte regels uit `changelog.json` op de tag van deze release, per taal ("en", "nl"); leeg als de app dat bestand niet heeft of
+     * het niet te lezen was. [highlights] kiest daaruit en valt anders terug op [body].
+     */
+    val notes: Map<String, List<String>> = emptyMap(),
 )
 
 /** Waar het updaten nu is. Stuurt de kaart en de update-rij in de instellingen. */

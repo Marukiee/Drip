@@ -23,6 +23,11 @@ internal class UpdateStore(context: Context) {
         get() = prefs.getLong(LAST_CHECK, 0L)
         set(value) { prefs.edit().putLong(LAST_CHECK, value).apply() }
 
+    /** De versie van de app de vorige keer dat hij startte; zo is te zien dat hij sindsdien is bijgewerkt. */
+    var lastVersion: String?
+        get() = prefs.getString(LAST_VERSION, null)
+        set(value) { prefs.edit().putString(LAST_VERSION, value).apply() }
+
     fun dismiss(tag: String) {
         prefs.edit().putString(DISMISSED, tag).apply()
         _dismissed.value = tag
@@ -42,5 +47,6 @@ internal class UpdateStore(context: Context) {
         const val DISMISSED = "dismissed"
         const val AUTO_CHECK = "auto_check"
         const val LAST_CHECK = "last_check"
+        const val LAST_VERSION = "last_version"
     }
 }

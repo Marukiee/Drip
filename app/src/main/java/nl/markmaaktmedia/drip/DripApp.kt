@@ -29,9 +29,10 @@ class DripApp : Application() {
                 notificationChannelId = Channels.UPDATE,
                 // As before: every time the app is opened, at most once a minute so switching back and forth costs nothing.
                 checkIntervalMs = 60 * 1000L,
+                // Updated while in front, Drip opens again when its island service is back (see UpdateRelaunch).
+                installHook = UpdateRelaunch,
             ),
         )
-        UpdateRelaunch.watch(this, graph.scope)
     }
 }
 
