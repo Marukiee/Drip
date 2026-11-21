@@ -22,3 +22,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Drip"
 include(":app")
+// The updater and update card all of Mark's apps share, a copy of Keeper's (see markupdate/README.md and markupdate/BRON).
+include(":markupdate:core", ":markupdate:card")

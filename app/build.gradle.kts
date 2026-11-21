@@ -128,6 +128,7 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.okhttp)
+    implementation(project(":markupdate:card"))
     implementation(libs.androidx.media)
 
     implementation(libs.shizuku.api)

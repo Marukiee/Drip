@@ -11,11 +11,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,11 +22,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
@@ -44,8 +38,7 @@ import nl.markmaaktmedia.drip.ui.screens.ChangelogScreen
 import nl.markmaaktmedia.drip.ui.screens.HomeScreen
 import nl.markmaaktmedia.drip.ui.screens.OnboardingScreen
 import nl.markmaaktmedia.drip.ui.screens.settings.SettingsPageScreen
-import nl.markmaaktmedia.drip.ui.theme.DripMotion
-import nl.markmaaktmedia.drip.ui.update.UpdateBanner
+import nl.markmaaktmedia.markupdate.MarkUpdate
 
 @Composable
 fun AppRoot() {
@@ -57,12 +50,12 @@ fun AppRoot() {
     // A cold start: the answer to "has the person set up the app" comes a moment after the screen is up, which is
     // after the effect below has already seen the app come to the front, so that one skips this start.
     LaunchedEffect(onboarded) {
-        if (onboarded == true) graph.updater.checkIfDue()
+        if (onboarded == true) MarkUpdate.get().checkIfDue()
     }
     // Every time the app comes to the front, so a release from an hour ago is not missed
     // just because the process has been alive for days.
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_START) {
-        if (onboarded == true) scope.launch { graph.updater.checkIfDue() }
+        if (onboarded == true) scope.launch { MarkUpdate.get().checkIfDue() }
     }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -102,15 +95,12 @@ private fun MainNavigation() {
         }
     }
 
-    // The update banner is drawn over the pages, so the pages move down by its height while it is there and nothing
-    // sits under it. It already includes the status bar, which the pages add again themselves, so that part is taken off.
-    val density = androidx.compose.ui.platform.LocalDensity.current
-    val statusBar = WindowInsets.statusBars.getTop(density)
-    var bannerPx by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
-    val below by androidx.compose.animation.core.animateDpAsState(
-        with(density) { (bannerPx - statusBar).coerceAtLeast(0).toDp() },
-        DripMotion.spatial(), label = "bannerSpace",
-    )
+    // The update card does this itself, but only while it is on screen: an update also carries on when the app comes back
+    // on another page, after the switch to install apps was turned on or with the installer's question that waited.
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+        MarkUpdate.get().resume()
+        MarkUpdate.get().resumeConfirmation()
+    }
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         transition.AnimatedContent(
                 transitionSpec = {
@@ -132,16 +122,10 @@ private fun MainNavigation() {
                             .apply { targetContentZIndex = -1f }
                     }
                 },
-                // The spring that moves it overshoots, so it can dip below nothing for a moment, and a padding may not be negative.
-                modifier = Modifier.fillMaxSize().padding(top = below.coerceAtLeast(0.dp)),
+                modifier = Modifier.fillMaxSize(),
             ) { route ->
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) { RouteContent(route, nav) }
             }
-        // Over every screen: an update is worth seeing wherever you are in the app.
-        UpdateBanner(
-            Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp)
-                .onSizeChanged { bannerPx = it.height + with(density) { 8.dp.roundToPx() } + statusBar },
-        )
     }
 }
 

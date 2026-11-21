@@ -4,7 +4,6 @@
 
     <!-- Updates come from the GitHub releases of the app. -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- The volume slider on the music card. -->
@@ -117,10 +116,6 @@
             android:exported="false">
             <meta-data android:name="autoStoreLocales" android:value="true" />
         </service>
-
-        <receiver
-            android:name=".update.InstallResultReceiver"
-            android:exported="false" />
 
         <!-- Tasker and other automation apps put their own things on the island. Does nothing until allowed in the settings. -->
         <receiver

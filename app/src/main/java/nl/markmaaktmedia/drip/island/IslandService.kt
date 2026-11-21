@@ -64,6 +64,7 @@ class IslandService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        nl.markmaaktmedia.drip.update.UpdateRelaunch.relaunchIfUpdated(applicationContext)
         val graph = applicationContext.graph
         controller = IslandController(scope, graph.hub, graph.haptics)
         controller.start(graph.prefs.island)

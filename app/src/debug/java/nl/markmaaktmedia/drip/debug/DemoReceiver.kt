@@ -21,6 +21,12 @@ class DemoReceiver : BroadcastReceiver() {
             val y = intent.getFloatExtra("offsetY", 0f)
             context.graph.scope.launch { context.graph.prefs.editIsland { it.copy(offsetYDp = y) } }
         }
+        // --es update preview|fail|clear shows the shared update card with a made-up version, as Keeper's debug command does.
+        when (intent.getStringExtra("update")) {
+            "preview" -> nl.markmaaktmedia.markupdate.MarkUpdate.get().showPreview()
+            "fail" -> nl.markmaaktmedia.markupdate.MarkUpdate.get().showFailurePreview("GitHub is not reachable")
+            "clear" -> nl.markmaaktmedia.markupdate.MarkUpdate.get().reset()
+        }
         val kind = intent.getStringExtra("kind")?.uppercase() ?: return
         val demo = Demo.entries.firstOrNull { it.name == kind } ?: return
         android.util.Log.d("DripIsland", "demo $demo")

@@ -9,7 +9,9 @@ import nl.markmaaktmedia.drip.data.DripPrefs
 import nl.markmaaktmedia.drip.engine.Channels
 import nl.markmaaktmedia.drip.island.Haptics
 import nl.markmaaktmedia.drip.island.IslandHub
-import nl.markmaaktmedia.drip.update.UpdateRepository
+import nl.markmaaktmedia.drip.update.UpdateRelaunch
+import nl.markmaaktmedia.markupdate.MarkUpdate
+import nl.markmaaktmedia.markupdate.MarkUpdateConfig
 
 class DripApp : Application() {
     lateinit var graph: Graph
@@ -19,6 +21,17 @@ class DripApp : Application() {
         super.onCreate()
         graph = Graph(this)
         Channels.create(this)
+        MarkUpdate.init(
+            this,
+            MarkUpdateConfig(
+                owner = BuildConfig.GITHUB_OWNER, repo = BuildConfig.GITHUB_REPO, apkAsset = "Drip.apk",
+                currentVersion = BuildConfig.VERSION_NAME, appName = "Drip", notificationIcon = R.drawable.ic_stat_drip,
+                notificationChannelId = Channels.UPDATE,
+                // As before: every time the app is opened, at most once a minute so switching back and forth costs nothing.
+                checkIntervalMs = 60 * 1000L,
+            ),
+        )
+        UpdateRelaunch.watch(this, graph.scope)
     }
 }
 
@@ -29,7 +42,6 @@ class Graph(app: Context) {
     val prefs = DripPrefs(app)
     val hub = IslandHub()
     val haptics = Haptics(app)
-    val updater = UpdateRepository(app, prefs)
 }
 
 val Context.graph: Graph

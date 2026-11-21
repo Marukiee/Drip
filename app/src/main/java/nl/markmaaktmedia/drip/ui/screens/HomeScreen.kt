@@ -50,6 +50,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Matrix
@@ -239,7 +240,21 @@ private fun Overview(summaries: Map<SettingsCategory, String>, listState: LazyLi
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = top + 4.dp, bottom = bottom),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item(key = "master") { MasterSwitch(allowed = access.island, modifier = Modifier.animateItem()) }
+        // A new version first, above the switch: the shared update card. The room under it is only there while the card
+        // is, growing with it, so a hidden card leaves no gap.
+        item(key = "master") {
+            Column(Modifier.animateItem()) {
+                val gap = with(androidx.compose.ui.platform.LocalDensity.current) { 12.dp.roundToPx() }
+                nl.markmaaktmedia.markupdate.ui.UpdateCard(
+                    Modifier.layout { measurable, constraints ->
+                        val card = measurable.measure(constraints)
+                        val room = minOf(gap, card.height)
+                        layout(card.width, card.height + room) { card.place(0, 0) }
+                    },
+                )
+                MasterSwitch(allowed = access.island)
+            }
+        }
 
         // Only what is missing, and gone the moment it is allowed: nothing here stays as a warning.
         if (missing.isNotEmpty()) {
@@ -288,7 +303,7 @@ private fun Overview(summaries: Map<SettingsCategory, String>, listState: LazyLi
     }
 }
 
-// Update notices are not here: they are optional, and a card for something declined on purpose would never go away.
+// Updating is not on this list of things to do: a version put off with Later stays put off, so its card goes away.
 private enum class Missing { Island, Listener }
 
 /** One category: its icon, its name, and a line that says how it is set right now. */

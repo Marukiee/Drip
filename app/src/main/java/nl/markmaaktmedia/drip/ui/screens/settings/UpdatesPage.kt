@@ -28,7 +28,8 @@ import nl.markmaaktmedia.drip.ui.components.SettingsGroup
 import nl.markmaaktmedia.drip.ui.components.SwitchRow
 import nl.markmaaktmedia.drip.ui.components.DripConfirmDialog
 import nl.markmaaktmedia.drip.ui.theme.DripIcons
-import nl.markmaaktmedia.drip.update.UpdateState
+import nl.markmaaktmedia.markupdate.MarkUpdate
+import nl.markmaaktmedia.markupdate.UpdateState
 
 /** Updates and backup: the version, checking for a new one, what is new, and saving or restoring the settings in a file. */
 @Composable
@@ -38,8 +39,9 @@ internal fun UpdatesPage(onBack: () -> Unit, onOpen: (nl.markmaaktmedia.drip.ui.
     val prefs = graph.prefs
     val scope = rememberCoroutineScope()
 
-    val autoUpdate by prefs.autoUpdateCheck.collectAsState(initial = true)
-    val updateState by graph.updater.state.collectAsState()
+    val updater = MarkUpdate.get()
+    val autoUpdate by updater.autoCheck.collectAsState()
+    val updateState by updater.state.collectAsState()
     var pendingLanguage by remember { mutableStateOf<String?>(null) }
     val currentLanguage = appLanguage()
 
@@ -80,7 +82,7 @@ internal fun UpdatesPage(onBack: () -> Unit, onOpen: (nl.markmaaktmedia.drip.ui.
                 InfoRow(0, 4, DripIcons.Info, stringResource(R.string.settings_version), BuildConfig.VERSION_NAME)
             }
             SettingsTarget(FocusKeys.AutoUpdate, 1, 4) {
-                SwitchRow(1, 4, DripIcons.Update, stringResource(R.string.settings_auto_update), stringResource(R.string.settings_auto_update_sub), autoUpdate, { scope.launch { prefs.setAutoUpdateCheck(it) } })
+                SwitchRow(1, 4, DripIcons.Update, stringResource(R.string.settings_auto_update), stringResource(R.string.settings_auto_update_sub), autoUpdate, { updater.setAutoCheck(it) })
             }
             ActionRow(
                 2, 4, DripIcons.Refresh, stringResource(R.string.settings_check_update),
@@ -93,7 +95,7 @@ internal fun UpdatesPage(onBack: () -> Unit, onOpen: (nl.markmaaktmedia.drip.ui.
                     is UpdateState.NeedsPermission -> stringResource(R.string.update_needs_permission)
                     else -> null
                 },
-                { scope.launch { graph.updater.check() } },
+                { updater.checkAsync() },
                 modifier = Modifier.settingsTarget(FocusKeys.CheckUpdate, 2, 4),
             )
             // What is new in each version lives with the update, not under About.

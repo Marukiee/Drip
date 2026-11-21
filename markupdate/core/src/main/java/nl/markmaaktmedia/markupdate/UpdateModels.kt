@@ -1,11 +1,12 @@
-package nl.markmaaktmedia.drip.update
+package nl.markmaaktmedia.markupdate
 
-/** A release as published on GitHub, reduced to what the banner needs. */
+/** Een release zoals GitHub hem publiceert, teruggebracht tot wat de kaart nodig heeft. */
 data class ReleaseInfo(
     val tag: String,
     val versionName: String,
     val title: String,
-    val changelog: String,
+    /** De hele tekst van de release; [releaseHighlights] haalt er de korte regels voor de kaart uit. */
+    val body: String,
     val apkUrl: String?,
     val apkSizeBytes: Long,
     val sha256Url: String?,
@@ -13,7 +14,7 @@ data class ReleaseInfo(
     val publishedAt: String,
 )
 
-/** Where the update flow currently is. Drives the banner and the settings row. */
+/** Waar het updaten nu is. Stuurt de kaart en de update-rij in de instellingen. */
 sealed interface UpdateState {
     data object Idle : UpdateState
     data object Checking : UpdateState
@@ -22,31 +23,29 @@ sealed interface UpdateState {
     data class Downloading(val release: ReleaseInfo, val progress: Float) : UpdateState
     data class ReadyToInstall(val release: ReleaseInfo, val filePath: String) : UpdateState
 
-    /** The download is waiting for the "install unknown apps" switch; it carries on when the person comes back. */
+    /** De download wacht op de schakelaar "onbekende apps installeren"; hij gaat door als de gebruiker terugkomt. */
     data class NeedsPermission(val release: ReleaseInfo, val filePath: String? = null) : UpdateState
 
-    /** Handed to the installer, which is showing its own confirmation or working. */
+    /** Aan de installer gegeven, die bezig is of zelf een vraag toont. */
     data class Installing(val release: ReleaseInfo) : UpdateState
 
     /**
-     * The installer is waiting for a tap and Android did not let it ask: the app was not in front. The banner has the
-     * button, and a notification says so as well.
+     * De installer wacht op een tik en Android liet hem niet vragen: de app stond niet voorin. De kaart heeft dan de knop en er
+     * staat een melding; komt de app naar voren, dan opent de vraag vanzelf.
      */
     data class AwaitingConfirmation(val release: ReleaseInfo) : UpdateState
 
-    /** [release] is set when trying again can pick up where it stopped, without asking GitHub again. */
+    /** [release] is gezet als opnieuw proberen kan doorgaan waar het stopte, zonder GitHub opnieuw te vragen. */
     data class Failed(val reason: String, val release: ReleaseInfo? = null) : UpdateState
 }
 
 /**
- * Compares two version names the way a person would read them, so "1.10.0" beats
- * "1.9.0". Anything after the numbers (a "-rc1" suffix, say) counts as older than
- * the plain release with the same numbers.
+ * Vergelijkt twee versienamen zoals een mens ze leest, zodat "1.10.0" boven "1.9.0" staat. Wat na de cijfers komt (een "-rc1")
+ * telt als ouder dan de gewone release met dezelfde cijfers.
  */
 object VersionComparator {
 
-    fun isNewer(candidate: String, current: String): Boolean =
-        compare(candidate, current) > 0
+    fun isNewer(candidate: String, current: String): Boolean = compare(candidate, current) > 0
 
     fun compare(left: String, right: String): Int {
         val leftParts = numericParts(left)
@@ -57,7 +56,6 @@ object VersionComparator {
             val b = rightParts.getOrElse(index) { 0 }
             if (a != b) return a.compareTo(b)
         }
-        // Same numbers: a build with a suffix is a pre-release of the plain one.
         val leftSuffix = suffix(left)
         val rightSuffix = suffix(right)
         return when {
@@ -70,12 +68,14 @@ object VersionComparator {
 
     fun normalise(raw: String): String = raw.trim().removePrefix("v").removePrefix("V")
 
-    private fun numericParts(raw: String): List<Int> =
-        normalise(raw)
-            .substringBefore('-')
-            .split('.')
-            .map { part -> part.takeWhile(Char::isDigit).toIntOrNull() ?: 0 }
+    /**
+     * De versie van de draaiende app. Een debug-build heet "0.1.0-debug"; zonder het achtervoegsel zou de vergelijking hem onder de
+     * release van 0.1.0 zetten en zag elke debug-build een update. Daarom hier en niet in elke app.
+     */
+    fun normaliseCurrent(raw: String): String = normalise(raw.trim().removeSuffix("-debug"))
 
-    private fun suffix(raw: String): String =
-        normalise(raw).substringAfter('-', "").lowercase()
+    private fun numericParts(raw: String): List<Int> =
+        normalise(raw).substringBefore('-').split('.').map { part -> part.takeWhile(Char::isDigit).toIntOrNull() ?: 0 }
+
+    private fun suffix(raw: String): String = normalise(raw).substringAfter('-', "").lowercase()
 }

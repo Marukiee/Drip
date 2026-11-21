@@ -249,9 +249,6 @@ class DripPrefs(private val context: Context) {
 
     private object Keys {
         val onboarded = booleanPreferencesKey("onboarded")
-        val autoUpdateCheck = booleanPreferencesKey("auto_update_check")
-        val dismissedUpdate = stringPreferencesKey("dismissed_update")
-        val lastUpdateCheck = longPreferencesKey("last_update_check")
 
         val themeMode = stringPreferencesKey("theme_mode")
         val colourSeed = stringPreferencesKey("colour_seed")
@@ -261,17 +258,12 @@ class DripPrefs(private val context: Context) {
     }
 
     /** Set by the app itself, not by a person, so a restored backup leaves them alone. */
-    private val notBackedUp = setOf("onboarded", "last_update_check", "dismissed_update")
+    // The update keys are left from before the shared updater, which keeps its own; they stay out of a backup.
+    private val notBackedUp = setOf("onboarded", "last_update_check", "dismissed_update", "auto_update_check")
 
     val onboarded: Flow<Boolean> = data.map { it[Keys.onboarded] ?: false }
     suspend fun setOnboarded(value: Boolean) = set(Keys.onboarded, value)
 
-    val autoUpdateCheck: Flow<Boolean> = data.map { it[Keys.autoUpdateCheck] ?: true }
-    val dismissedUpdate: Flow<String?> = data.map { it[Keys.dismissedUpdate] }
-    val lastUpdateCheck: Flow<Long> = data.map { it[Keys.lastUpdateCheck] ?: 0L }
-    suspend fun setAutoUpdateCheck(value: Boolean) = set(Keys.autoUpdateCheck, value)
-    suspend fun setLastUpdateCheck(value: Long) = set(Keys.lastUpdateCheck, value)
-    suspend fun setDismissedUpdate(value: String) = set(Keys.dismissedUpdate, value)
 
     val appearance: Flow<Appearance> = data.map { prefs ->
         Appearance(

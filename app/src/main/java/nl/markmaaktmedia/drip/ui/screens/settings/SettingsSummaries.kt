@@ -18,7 +18,8 @@ import nl.markmaaktmedia.drip.ui.screens.rememberAccess
 import nl.markmaaktmedia.drip.ui.screens.seedLabel
 import nl.markmaaktmedia.drip.ui.theme.LocalAppearance
 import nl.markmaaktmedia.drip.ui.theme.ThemeMode
-import nl.markmaaktmedia.drip.update.UpdateState
+import nl.markmaaktmedia.markupdate.MarkUpdate
+import nl.markmaaktmedia.markupdate.UpdateState
 import kotlin.math.roundToInt
 
 /**
@@ -89,7 +90,7 @@ internal fun rememberCategorySummaries(): Map<SettingsCategory, String> {
 
     val keep = stringResource(if (access.keeper) R.string.settings_sum_keep_on else R.string.settings_sum_keep_off)
 
-    val updateState by graph.updater.state.collectAsState()
+    val updateState by MarkUpdate.get().state.collectAsState()
     val version = BuildConfig.VERSION_NAME
 
     return mapOf(
