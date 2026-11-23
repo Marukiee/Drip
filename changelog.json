@@ -3,6 +3,28 @@
     "version": "0.1.31",
     "date": "2026-11-23",
     "en": {
+      "title": "Update from the settings",
+      "new": [
+        "Update from Settings, Updates and backup, too"
+      ],
+      "better": [
+        "The update bar is easier to read"
+      ]
+    },
+    "nl": {
+      "title": "Bijwerken vanuit de instellingen",
+      "new": [
+        "Bijwerken kan ook vanuit Instellingen, Updates en back-up"
+      ],
+      "better": [
+        "De updatebalk is beter te lezen"
+      ]
+    }
+  },
+  {
+    "version": "0.1.31",
+    "date": "2026-11-23",
+    "en": {
       "title": "An update bar you can read",
       "fixed": [
         "The update bar is a clear bar now, and the percentage sits on the edge of it instead of vanishing into it"
