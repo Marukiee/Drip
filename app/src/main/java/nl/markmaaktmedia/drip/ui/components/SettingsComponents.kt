@@ -97,6 +97,8 @@ fun ActionRow(
     /** For a row whose state shows in its icon (something is being shared): the colours of the icon and of its disc. */
     iconTint: Color? = null,
     iconContainer: Color? = null,
+    /** Something that belongs to the row and sits under it in the same slab, such as the update bar under checking for updates. */
+    below: @Composable (() -> Unit)? = null,
 ) {
     GroupedRow(index, total, modifier = modifier, onClick = onClick) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -112,6 +114,7 @@ fun ActionRow(
             RowText(title, subtitle, Modifier.weight(1f), danger)
             if (trailing != null) trailing() else Icon(DripIcons.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
         }
+        below?.invoke()
     }
 }
 

@@ -11,6 +11,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.Dispatchers
@@ -86,17 +90,28 @@ internal fun UpdatesPage(onBack: () -> Unit, onOpen: (nl.markmaaktmedia.drip.ui.
             }
             ActionRow(
                 2, 4, DripIcons.Refresh, stringResource(R.string.settings_check_update),
+                // A newer version and its download show in the bar below, so the line does not say them again.
                 when (val state = updateState) {
                     is UpdateState.Checking -> stringResource(R.string.settings_checking)
                     is UpdateState.UpToDate -> stringResource(R.string.settings_up_to_date)
-                    is UpdateState.Available -> stringResource(R.string.update_available, state.release.versionName)
                     is UpdateState.Failed -> state.reason
-                    is UpdateState.Downloading -> stringResource(R.string.update_downloading, (state.progress * 100).toInt())
                     is UpdateState.NeedsPermission -> stringResource(R.string.update_needs_permission)
                     else -> null
                 },
                 { updater.checkAsync() },
                 modifier = Modifier.settingsTarget(FocusKeys.CheckUpdate, 2, 4),
+                below = {
+                    // The bar of the update card on its own: "Update to version X" while a newer one is out, a tap does what
+                    // Update on the card does. The room under it is only there while the bar is, so the row is its usual
+                    // height without one.
+                    val room = with(androidx.compose.ui.platform.LocalDensity.current) { 14.dp.roundToPx() }
+                    nl.markmaaktmedia.markupdate.ui.UpdateBar(
+                        Modifier.padding(horizontal = 16.dp).fillMaxWidth().layout { measurable, constraints ->
+                            val bar = measurable.measure(constraints)
+                            layout(bar.width, bar.height + minOf(room, bar.height)) { bar.place(0, 0) }
+                        },
+                    )
+                },
             )
             // What is new in each version lives with the update, not under About.
             ActionRow(
