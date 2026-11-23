@@ -22,22 +22,6 @@
     }
   },
   {
-    "version": "0.1.31",
-    "date": "2026-11-23",
-    "en": {
-      "title": "An update bar you can read",
-      "fixed": [
-        "The update bar is a clear bar now, and the percentage sits on the edge of it instead of vanishing into it"
-      ]
-    },
-    "nl": {
-      "title": "Een updatebalk die je kunt lezen",
-      "fixed": [
-        "De updatebalk is nu een duidelijke balk en het percentage staat op de rand ervan in plaats van erin te verdwijnen"
-      ]
-    }
-  },
-  {
     "version": "0.1.30",
     "date": "2026-11-21",
     "en": {
